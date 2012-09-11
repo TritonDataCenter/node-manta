@@ -176,6 +176,7 @@ test('add input keys', function (t) {
                 CHILD1,
                 CHILD2
         ];
+
         this.client.addJobKey(JOB, keys, function (err) {
                 t.ifError(err);
                 t.end();
@@ -214,6 +215,22 @@ test('wait for job', function (t) {
         }
 
         getState();
+});
+
+
+test('get job output', function (t) {
+        this.client.jobOutput(JOB, function (err, res) {
+                t.ifError(err);
+                t.ok(res);
+
+                res.on('key', function (k) {
+                        t.ok(k);
+                });
+
+                res.once('end', function () {
+                        t.end();
+                });
+        });
 });
 
 
