@@ -21,6 +21,10 @@
         "devDependencies": {
                 "nodeunit": "0.7.4"
         },
+        "directories": {
+                "bin": "./bin",
+                "lib": "./lib"
+        },
         "engines": {
                 "node": ">=0.8"
         }

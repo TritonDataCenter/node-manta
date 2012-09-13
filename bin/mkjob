@@ -16,6 +16,8 @@ var manta = require('../lib');
 
 ///--- Globals
 
+var MANTA_URL = 'http://manta.bh1-kvm1.joyent.us';
+
 var LOG = bunyan.createLogger({
         name: path.basename(process.argv[1]),
         level: (process.env.LOG_LEVEL || 'info'),
@@ -29,7 +31,7 @@ var LOG = bunyan.createLogger({
 
 function ifError(err) {
         if (err) {
-                console.error(err.toString());
+                console.error(err.stack);
                 process.exit(1);
         }
 }
@@ -39,8 +41,12 @@ function ls(client, opts, cb) {
         client.ls(opts.path, function (err, res) {
                 ifError(err);
 
-                res.on('directory', printEntry);
-                res.on('object', printEntry);
+                function print(obj) {
+                        console.log('%j', obj);
+                }
+
+                res.on('directory', print);
+                res.on('object', print);
                 res.once('end', cb);
         });
 }
@@ -48,8 +54,11 @@ function ls(client, opts, cb) {
 
 function parseOptions() {
         var option;
-        var opts = {};
-        var parser = new getopt.BasicParser('vlh:k:u:',
+        var opts = {
+                map: [],
+                reduce: []
+        };
+        var parser = new getopt.BasicParser('vh:k:m:r:u:',
                                             process.argv);
         var tmp;
 
@@ -64,11 +73,21 @@ function parseOptions() {
                         break;
 
                 case 'k':
-                        opts.keyId = option.optarg;
+                        opts.keyId = option.keyId;
                         break;
 
-                case 'l':
-                        opts.lsl = true;
+                case 'm':
+                        opts.map.push({
+                                exec: option.optarg,
+                                type: 'storage-map'
+                        });
+                        break;
+
+                case 'r':
+                        opts.reduce.push({
+                                exec: option.optarg,
+                                type: 'reduce'
+                        });
                         break;
 
                 case 'u':
@@ -90,32 +109,17 @@ function parseOptions() {
 
         }
 
-        if (!opts.url && !process.env.MANTA_URL)
-                usage('url is a required argument');
-
         if (!opts.user && !process.env.MANTA_USER)
                 usage('account is a required argument');
 
         if (!opts.keyId && !process.env.MANTA_KEY_ID)
                 usage('keyId is a required argument');
 
-        var _path;
-        if (parser.optind() >= process.argv.length) {
-                _path = '/';
-        } else {
-                _path = path.normalize(process.argv[parser.optind()]);
-        }
+        if (parser.optind() >= process.argv.length)
+                usage('missing required argument: "name"');
 
-        opts.keyId = opts.keyId || process.env.MANTA_KEY_ID;
-        opts.path = _path;
-        opts.url = opts.url || process.env.MANTA_URL;
-        opts.user = opts.user || process.env.MANTA_USER;
+        opts.name = process.argv[parser.optind()];
         return (opts);
-}
-
-
-function printEntry(obj) {
-        console.log('%j', obj);
 }
 
 
@@ -124,7 +128,7 @@ function usage(msg) {
                 console.error(msg);
 
         var str = 'usage: ' + path.basename(process.argv[1]);
-        str += '[-v] [-a account] [-u url] [-k keyId] path';
+        str += '[-v] [-a account] [-u url] -k keyId path';
         console.error(str);
         process.exit(1);
 }
@@ -140,24 +144,27 @@ var _client = manta.createClient({
         log: LOG,
         retry: false,
         sign: manta.sshAgentSigner({
-                keyId: _options.keyId,
+                keyId: _options.keyId || process.env.MANTA_KEY_ID,
                 log: LOG,
-                user: _options.user
+                user: _options.user || process.env.MANTA_USER
         }),
-        url: _options.url,
-        user: /^\/.*\/stor/.test(_options.path) ? undefined : _options.user
+        url: _options.url || process.env.MANTA_URL || MANTA_URL,
+        user: _options.user || process.env.MANTA_USER
+});
+var _job = {
+        name: _options.name,
+        phases: []
+};
+_options.map.forEach(function (e) {
+        _job.phases.push(e);
+});
+_options.reduce.forEach(function (e) {
+        _job.phases.push(e);
 });
 
-_client.info(_options.path, function (err, info) {
+_client.createJob(_job, function (err, jobId) {
         ifError(err);
 
-        if (info.extension === 'directory') {
-                ls(_client, _options, function (err) {
-                        ifError(err);
-                        process.exit(0);
-                });
-        } else {
-                printEntry(info);
-                process.exit(1);
-        }
+        console.log(jobId);
+        process.exit(0);
 });

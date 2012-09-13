@@ -35,21 +35,10 @@ function ifError(err) {
 }
 
 
-function ls(client, opts, cb) {
-        client.ls(opts.path, function (err, res) {
-                ifError(err);
-
-                res.on('directory', printEntry);
-                res.on('object', printEntry);
-                res.once('end', cb);
-        });
-}
-
-
 function parseOptions() {
         var option;
         var opts = {};
-        var parser = new getopt.BasicParser('vlh:k:u:',
+        var parser = new getopt.BasicParser('vh:k:u:',
                                             process.argv);
         var tmp;
 
@@ -65,10 +54,6 @@ function parseOptions() {
 
                 case 'k':
                         opts.keyId = option.optarg;
-                        break;
-
-                case 'l':
-                        opts.lsl = true;
                         break;
 
                 case 'u':
@@ -99,15 +84,11 @@ function parseOptions() {
         if (!opts.keyId && !process.env.MANTA_KEY_ID)
                 usage('keyId is a required argument');
 
-        var _path;
-        if (parser.optind() >= process.argv.length) {
-                _path = '/';
-        } else {
-                _path = path.normalize(process.argv[parser.optind()]);
-        }
+        if (parser.optind() >= process.argv.length)
+                usage('missing required argument: "path"');
 
         opts.keyId = opts.keyId || process.env.MANTA_KEY_ID;
-        opts.path = _path;
+        opts.path = path.normalize(process.argv[parser.optind()]);
         opts.url = opts.url || process.env.MANTA_URL;
         opts.user = opts.user || process.env.MANTA_USER;
         return (opts);
@@ -151,13 +132,13 @@ var _client = manta.createClient({
 _client.info(_options.path, function (err, info) {
         ifError(err);
 
-        if (info.extension === 'directory') {
-                ls(_client, _options, function (err) {
-                        ifError(err);
-                        process.exit(0);
-                });
-        } else {
-                printEntry(info);
+        if (info.extension !== 'directory') {
+                console.error(_options.path + ' is not a directory');
                 process.exit(1);
         }
+
+        _client.unlink(_options.path, function (err2) {
+                ifError(err2);
+                process.exit(0);
+        });
 });
