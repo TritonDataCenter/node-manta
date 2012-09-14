@@ -1,0 +1,157 @@
+#!/usr/bin/env node
+// -*- mode: js -*-
+// Copyright (c) 2012, Joyent, Inc. All rights reserved.
+
+var path = require('path');
+var url = require('url');
+
+var bunyan = require('bunyan');
+var getopt = require('posix-getopt');
+var restify = require('restify');
+var uuid = require('node-uuid');
+
+var manta = require('../lib');
+
+
+
+///--- Globals
+
+var LOG = bunyan.createLogger({
+        name: path.basename(process.argv[1]),
+        level: (process.env.LOG_LEVEL || 'info'),
+        stream: process.stderr,
+        serializers: restify.bunyan.serializers
+});
+
+
+
+///--- Functions
+
+function ifError(err) {
+        if (err) {
+                console.error(err.stack);
+                process.exit(1);
+        }
+}
+
+
+function parseOptions() {
+        var option;
+        var opts = {
+        };
+        var parser = new getopt.BasicParser('veoh:k:u:',
+                                            process.argv);
+        var tmp;
+
+        while ((option = parser.getopt()) !== undefined && !option.error) {
+                switch (option.option) {
+                case 'a':
+                        opts.user = option.optarg;
+                        break;
+
+                case 'e':
+                        opts.end = true;
+                        break;
+
+                case 'k':
+                        opts.keyId = option.keyId;
+                        break;
+
+                case 'o':
+                        opts.output = true;
+                        break;
+
+                case 'u':
+                        opts.url = url.parse(option.optarg).href;
+                        break;
+
+                case 'v':
+                        // Allows us to set -vvv -> this little hackery
+                        // just ensures that we're never < TRACE
+                        LOG.level(Math.max(bunyan.TRACE, (LOG.level() - 10)));
+                        if (LOG.level() <= bunyan.DEBUG)
+                                LOG = LOG.child({src: true});
+                        break;
+
+                default:
+                        process.exit(1);
+                        break;
+                }
+
+        }
+
+        if (!opts.url && !process.env.MANTA_URL)
+                usage('url is a required argument');
+
+        if (!opts.user && !process.env.MANTA_USER)
+                usage('account is a required argument');
+
+        if (!opts.keyId && !process.env.MANTA_KEY_ID)
+                usage('keyId is a required argument');
+
+        if (parser.optind() >= process.argv.length)
+                usage('missing required argument: "jobId"');
+
+        opts.keyId = opts.keyId || process.env.MANTA_KEY_ID;
+        opts.id = process.argv[parser.optind()];
+        opts.url = opts.url || process.env.MANTA_URL;
+        opts.user = opts.user || process.env.MANTA_USER;
+
+        return (opts);
+}
+
+
+function usage(msg) {
+        if (msg)
+                console.error(msg);
+
+        var str = 'usage: ' + path.basename(process.argv[1]);
+        str += '[-v] [-a account] [-u url] [-k keyId] [-e] [-o] jobId';
+        console.error(str);
+        process.exit(1);
+}
+
+
+
+///--- Mainline
+// Leading _ to avoid scope conflicts in functions
+
+var _options = parseOptions();
+var _client = manta.createClient({
+        connectTimeout: 1000,
+        log: LOG,
+        retry: false,
+        sign: manta.sshAgentSigner({
+                keyId: _options.keyId,
+                log: LOG,
+                user: _options.user,
+        }),
+        url: _options.url,
+        user: /^\/.*\/jobs/.test(_options.path) ? undefined : _options.user
+});
+
+_client.job(_options.id, function (err, job) {
+        ifError(err);
+
+        console.log(JSON.stringify(job, null, 2));
+
+        if (_options.output) {
+                _client.jobOutput(_options.id, function (err2, out) {
+                        ifError(err);
+
+                        process.stdout.write('[');
+                        out.on('key', function (k) {
+                                process.stdout.write('\n"' + k + '",');
+                        });
+                        out.once('end', function () {
+                                process.stdout.write(']\n');
+                        });
+                });
+        }
+
+        if (_options.end) {
+                _client.endJob(_options.id, function (err) {
+                        ifError(err);
+                });
+        }
+});

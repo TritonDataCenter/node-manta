@@ -16,8 +16,6 @@ var manta = require('../lib');
 
 ///--- Globals
 
-var MANTA_URL = 'http://manta.bh1-kvm1.joyent.us';
-
 var LOG = bunyan.createLogger({
         name: path.basename(process.argv[1]),
         level: (process.env.LOG_LEVEL || 'info'),
@@ -37,28 +35,13 @@ function ifError(err) {
 }
 
 
-function ls(client, opts, cb) {
-        client.ls(opts.path, function (err, res) {
-                ifError(err);
-
-                function print(obj) {
-                        console.log('%j', obj);
-                }
-
-                res.on('directory', print);
-                res.on('object', print);
-                res.once('end', cb);
-        });
-}
-
-
 function parseOptions() {
         var option;
         var opts = {
                 map: [],
                 reduce: []
         };
-        var parser = new getopt.BasicParser('vh:k:m:r:u:',
+        var parser = new getopt.BasicParser('vh:k:m:n:r:u:',
                                             process.argv);
         var tmp;
 
@@ -66,10 +49,6 @@ function parseOptions() {
                 switch (option.option) {
                 case 'a':
                         opts.user = option.optarg;
-                        break;
-
-                case 'h':
-                        opts.host = option.optarg;
                         break;
 
                 case 'k':
@@ -81,6 +60,10 @@ function parseOptions() {
                                 exec: option.optarg,
                                 type: 'storage-map'
                         });
+                        break;
+
+                case 'n':
+                        opts.name = options.optarg;
                         break;
 
                 case 'r':
@@ -109,16 +92,23 @@ function parseOptions() {
 
         }
 
+        if (!opts.url && !process.env.MANTA_URL)
+                usage('url is a required argument');
+
         if (!opts.user && !process.env.MANTA_USER)
                 usage('account is a required argument');
 
         if (!opts.keyId && !process.env.MANTA_KEY_ID)
                 usage('keyId is a required argument');
 
-        if (parser.optind() >= process.argv.length)
-                usage('missing required argument: "name"');
+        if (!opts.map.length && !opts.reduce.length)
+                usage('at least one map or reduce task must be specified');
 
-        opts.name = process.argv[parser.optind()];
+        opts.keyId = opts.keyId || process.env.MANTA_KEY_ID;
+        opts.name = opts.name || uuid.v4().substr(0, 7);
+        opts.url = opts.url || process.env.MANTA_URL;
+        opts.user = opts.user || process.env.MANTA_USER;
+
         return (opts);
 }
 
@@ -128,7 +118,8 @@ function usage(msg) {
                 console.error(msg);
 
         var str = 'usage: ' + path.basename(process.argv[1]);
-        str += '[-v] [-a account] [-u url] -k keyId path';
+        str += '[-v] [-a account] [-u url] [-k keyId] ';
+        str += '[-m map] [-r reduce] [-n name]'
         console.error(str);
         process.exit(1);
 }
@@ -144,12 +135,12 @@ var _client = manta.createClient({
         log: LOG,
         retry: false,
         sign: manta.sshAgentSigner({
-                keyId: _options.keyId || process.env.MANTA_KEY_ID,
+                keyId: _options.keyId,
                 log: LOG,
-                user: _options.user || process.env.MANTA_USER
+                user: _options.user,
         }),
-        url: _options.url || process.env.MANTA_URL || MANTA_URL,
-        user: _options.user || process.env.MANTA_USER
+        url: _options.url,
+        user: /^\/.*\/jobs/.test(_options.path) ? undefined : _options.user
 });
 var _job = {
         name: _options.name,
