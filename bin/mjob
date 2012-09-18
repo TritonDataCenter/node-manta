@@ -39,7 +39,7 @@ function parseOptions() {
         var option;
         var opts = {
         };
-        var parser = new getopt.BasicParser('veoh:k:u:',
+        var parser = new getopt.BasicParser('veoh:k:u:a:',
                                             process.argv);
         var tmp;
 

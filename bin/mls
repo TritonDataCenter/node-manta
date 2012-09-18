@@ -49,7 +49,7 @@ function ls(client, opts, cb) {
 function parseOptions() {
         var option;
         var opts = {};
-        var parser = new getopt.BasicParser('vlh:k:u:',
+        var parser = new getopt.BasicParser('vlh:k:u:a:',
                                             process.argv);
         var tmp;
 

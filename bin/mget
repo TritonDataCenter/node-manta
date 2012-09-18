@@ -39,7 +39,7 @@ function ifError(err) {
 function parseOptions() {
         var option;
         var opts = {};
-        var parser = new getopt.BasicParser('vc:f:h:k:u:',
+        var parser = new getopt.BasicParser('vc:f:h:k:u:a:',
                                             process.argv);
         var tmp;
 

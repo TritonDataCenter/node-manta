@@ -41,7 +41,7 @@ function parseOptions() {
                 map: [],
                 reduce: []
         };
-        var parser = new getopt.BasicParser('vh:k:m:n:r:u:',
+        var parser = new getopt.BasicParser('vh:k:m:n:r:u:a:',
                                             process.argv);
         var tmp;
 
