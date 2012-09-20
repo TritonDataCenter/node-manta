@@ -63,7 +63,7 @@ function parseOptions() {
                         break;
 
                 case 'n':
-                        opts.name = options.optarg;
+                        opts.name = option.optarg;
                         break;
 
                 case 'r':
