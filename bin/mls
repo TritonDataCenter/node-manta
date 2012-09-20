@@ -124,7 +124,7 @@ function usage(msg) {
                 console.error(msg);
 
         var str = 'usage: ' + path.basename(process.argv[1]);
-        str += '[-v] [-a account] [-u url] [-k keyId] path';
+        str += ' [-v] [-a account] [-u url] [-k keyId] path';
         console.error(str);
         process.exit(1);
 }
