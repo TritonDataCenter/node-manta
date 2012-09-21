@@ -35,8 +35,14 @@ function ifError(err) {
 }
 
 
-function ls(client, opts, cb) {
-        client.ls(opts.path, function (err, res) {
+function ls(client, options, cb) {
+        var opts = {
+                query: {
+                        limit: options.limit,
+                        offset: options.offset
+                }
+        };
+        client.ls(options.path, opts, function (err, res) {
                 ifError(err);
 
                 res.on('directory', printEntry);
