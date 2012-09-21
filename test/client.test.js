@@ -219,17 +219,28 @@ test('wait for job', function (t) {
 
 
 test('get job output', function (t) {
+        var self = this;
+
+        var _keys = 1; // treat 'end' as a key
+        var _done = 0;
+        function cb(err) {
+                t.ifError(err);
+                if (++_done === _keys)
+                        t.end();
+        }
+
         this.client.jobOutput(JOB, function (err, res) {
                 t.ifError(err);
                 t.ok(res);
 
                 res.on('key', function (k) {
                         t.ok(k);
+                        _keys++;
+
+                        self.client.unlink(k, cb);
                 });
 
-                res.once('end', function () {
-                        t.end();
-                });
+                res.once('end', cb);
         });
 });
 
