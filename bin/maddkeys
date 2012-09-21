@@ -51,7 +51,7 @@ function parseOptions() {
                         break;
 
                 case 'e':
-                        opts.end = option.true;
+                        opts.end = true;
                         break;
 
                 case 'k':

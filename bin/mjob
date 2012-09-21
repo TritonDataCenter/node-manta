@@ -133,20 +133,23 @@ var _client = manta.createClient({
 _client.job(_options.id, function (err, job) {
         ifError(err);
 
-        console.log(JSON.stringify(job, null, 2));
-
         if (_options.output) {
                 _client.jobOutput(_options.id, function (err2, out) {
                         ifError(err);
 
                         process.stdout.write('[');
-                        out.on('key', function (k) {
-                                process.stdout.write('\n"' + k + '",');
+                        out.once('key', function (k) {
+                                process.stdout.write('\n  "' + k + '"');
+                                out.on('key', function (k) {
+                                        process.stdout.write(',\n  "' + k + '"');
+                                });
                         });
                         out.once('end', function () {
-                                process.stdout.write(']\n');
+                                process.stdout.write('\n]\n');
                         });
                 });
+        } else {
+                console.log(JSON.stringify(job, null, 2));
         }
 
         if (_options.end) {
