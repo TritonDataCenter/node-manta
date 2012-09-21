@@ -38,10 +38,13 @@ function ifError(err) {
 function ls(client, options, cb) {
         var opts = {
                 query: {
-                        limit: options.limit,
-                        offset: options.offset
                 }
         };
+        if (options.limit)
+                opts.query.limit = options.limit;
+        if (options.offset)
+                opts.query.offset = options.offset;
+
         client.ls(options.path, opts, function (err, res) {
                 ifError(err);
 
