@@ -39,9 +39,10 @@ function parseOptions() {
         var option;
         var opts = {
                 map: [],
-                reduce: []
+                reduce: [],
+                assets: []
         };
-        var parser = new getopt.BasicParser('vh:k:m:n:r:u:a:',
+        var parser = new getopt.BasicParser('vh:k:m:n:r:s:u:a:',
                                             process.argv);
         var tmp;
 
@@ -71,6 +72,9 @@ function parseOptions() {
                                 exec: option.optarg,
                                 type: 'reduce'
                         });
+                        break;
+                case 's':
+                        opts.assets.push(option.optarg);
                         break;
 
                 case 'u':
@@ -119,7 +123,7 @@ function usage(msg) {
 
         var str = 'usage: ' + path.basename(process.argv[1]);
         str += ' [-v] [-a account] [-u url] [-k keyId] ';
-        str += '[-m map] [-r reduce] [-n name]'
+        str += '[-m map] [-r reduce] [-s assets] [-n name]'
         console.error(str);
         process.exit(1);
 }
@@ -144,7 +148,8 @@ var _client = manta.createClient({
 });
 var _job = {
         name: _options.name,
-        phases: []
+        phases: [],
+        assets: _options.assets
 };
 _options.map.forEach(function (e) {
         _job.phases.push(e);
