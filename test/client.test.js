@@ -37,8 +37,8 @@ before(function (cb) {
                 f + ' ' +
                 '| awk \'{print $2}\'';
         var self = this;
-        var url = process.env.MANTA_TEST_URL || 'http://localhost:8080';
-        var user = process.env.MANTA_TEST_USER || 'admin';
+        var url = process.env.MANTA_URL || 'http://localhost:8080';
+        var user = process.env.MANTA_USER || 'admin';
 
         fs.readFile(f, 'utf8', function (err, key) {
                 if (err)

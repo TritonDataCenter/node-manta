@@ -132,7 +132,7 @@ var _client = manta.createClient({
         connectTimeout: 1000,
         log: LOG,
         retry: false,
-        sign: manta.sshAgentSigner({
+        sign: manta.cliSigner({
                 keyId: _options.keyId,
                 log: LOG,
                 user: _options.user
