@@ -1,0 +1,242 @@
+# Mark
+
+dn: uuid=7a36c494-fdb5-11e1-9204-1fcd0c6670ab, ou=users, o=smartdc
+changetype: add
+login: mcavage
+uuid: 7a36c494-fdb5-11e1-9204-1fcd0c6670ab
+userpassword: secret
+email: mark.cavage@joyent.com
+cn: Mark
+sn: Cavage
+company: Joyent
+address: 206 1st Ave S #500
+city: Seattle
+state: WA
+postalCode: 98104
+country: USA
+phone: +1 415 400 0626
+objectclass: sdcPerson
+
+dn: fingerprint=7b:c0:5c:d6:9e:11:0c:76:04:4b:03:c9:11:f2:72:7f, uuid=7a36c494-fdb5-11e1-9204-1fcd0c6670ab, ou=users, o=smartdc
+changetype: add
+name: id_rsa
+fingerprint: 7b:c0:5c:d6:9e:11:0c:76:04:4b:03:c9:11:f2:72:7f
+openssh: ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA0A5Pf5Cq/h8ogPytJE3MIcdtgjeK4qncz1wpxhOG/VldgnwoZmnv//a37e5MsJvJa7E9mnIab9RaBzTkjvIH6KFG99OImizzeFqOAm/ixHx146qmuiNmdh7jn2uHZlnkUAKLzNMQyHANwqmn5UuRzOhLRkUOLqPHXk0UFJSLvhnyXRerCsy/2/1ckabwHlSJJ1HmYfS3a1lXRgQkdUo1ouULJQIzU214hp2xcmxCAZXTSxWKeuDpZEAjIwg77qynySMo+yEuCL1oZrRrKVXLFhWcjdf9Rg+O8GpYdw7JHg/ky2I5KCLT/dsysvdC72VcgjnSf0b73Vh35L/zQNiDiQ== mark@smartzero.local
+objectclass: sdcKey
+
+dn: fingerprint=ca:64:4d:ee:3c:c8:34:3f:b2:ce:89:c9:b8:6e:7e:d6, uuid=7a36c494-fdb5-11e1-9204-1fcd0c6670ab, ou=users, o=smartdc
+changetype: add
+name: id_dsa
+fingerprint: ca:64:4d:ee:3c:c8:34:3f:b2:ce:89:c9:b8:6e:7e:d6
+openssh: ssh-dss AAAAB3NzaC1kc3MAAACBAJTdTh/rEJyEdi7GxZUhoKqxnbpREBJvkuiyu9ulXXrH8pPr0MGpvuA0umR8YOYKtNoKRsAScU4o+rEI++5Curt7GvsebHmSv5FSyWfSrLkCQfntAiWf1/e796Ky/hcU54hvwthw/Cq3piriaz6WGjRt/o8rpj+Q2cykCMTjKl+HAAAAFQCyh0FmX4j3g4cmJiNWbJg1rqitIQAAAIEAki9Uvqv266avFVCgIi9Fi5Tby80gVR9EFnP5YybqwcZWzDtT2O23PREqegxlsMxsCPPngny5O9q4ZBAcHu1qBo52imGEvsoobioHRaCcS2CG72pqhMFRb8XERUR5JQ2JuqdkA8BaxQdMckV5PMXju89CjGhouCn7+ovUjKC13wQAAACANG2maPPYrn1KrRn1qrfUkeRw0qja8QBZSoIZb8mocloPM7uiLkJudsy7f7WKjNrg/KiJ6QkFXYMQaxtINGxC4Ns1e7aOkmSGvCQheVMG30xxEBoEEhwCORPOgoW5EveQ2JUyTqcYhNxD/+ZKGG0JnZJTn0Ic45eg2gLpUBezGxk= mark@bluesnoop.local
+objectclass:sdcKey
+
+# Bill
+
+dn: uuid=3476660a-fec6-11e1-bd6b-d3f99fb834c1, ou=users, o=smartdc
+changetype: add
+login: wdp
+uuid: 3476660a-fec6-11e1-bd6b-d3f99fb834c1
+userpassword: secret
+email: wdp@joyent.com
+cn: Bill
+sn: Pijewski
+company: Joyent
+address: One Embarcadero Center, 9th Floor
+city: San Francisco
+state: CA
+postalCode: 94111
+country: USA
+phone: +1 855 4 JOYENT
+objectclass: sdcPerson
+
+dn: fingerprint=82:a9:c4:ab:47:94:e8:cf:43:22:6f:ec:a1:24:36:c3, uuid=3476660a-fec6-11e1-bd6b-d3f99fb834c1, ou=users, o=smartdc
+changetype: add
+name: id_dsa
+fingerprint: 82:a9:c4:ab:47:94:e8:cf:43:22:6f:ec:a1:24:36:c3
+openssh: ssh-dss AAAAB3NzaC1kc3MAAACBALIGo/1s6tcB7lu4y3wdTCYYsleRLn+VMU5x/VD8fy0onem6Rim2kXyE4RAVUmaMj4bRx5OwXNYdFcnhilRmlARthV2BFscj5Wi1HoIWwwXUrC3G5PxAid6VrUeHdqdlMMZ/HEPTKaNcOSuBOZqeGPVuItM08xm53WRCfDcvywlpAAAAFQD0mpEEiu5hn/nBaMlByr5texJ1PwAAAIA98kk3xBnm2YRDIor8ON8YtGRbhznc8o6Zk8G5mlAFf8X7PIJkCVhOSRaw+rxB8Y56JUCHV5BrW294VCO4m/jC6wB64IPFt5YIb8cORM1DJcg71t1vvjjN9Pau83Zl9sjykgTsEyoGqi7MWlsm5WicbxUNXI//hyLKbcKsq07xJwAAAIAP1/gz3mmdQbmNMke71NXVh6sajzOYmReijE7oVBJqdZLRpLpAupS13gUxAuKhPObfk+53G0JlItZEwKRkWcQ7ilqRIFGeP39wCnbGZKYjkqU/A7SK7Pqf3kvxmRpT6pUFuiODhhiv8EUvn8+n6mSD8eNcR+yAFldmbWIZBaLgeQ== wdp@Bill-Pijewskis-MacBook-Pro.local
+objectclass: sdcKey
+
+
+# Dave
+
+dn: uuid=bc8cd146-fecb-11e1-bd8a-bb6f54b49808, ou=users, o=smartdc
+changetype: add
+login: dap
+uuid: bc8cd146-fecb-11e1-bd8a-bb6f54b49808
+userpassword: secret
+email: dap@joyent.com
+cn: Dave
+sn: Pacheco
+company: Joyent
+address: One Embarcadero Center, 9th Floor
+city: San Francisco
+state: CA
+postalCode: 94111
+country: USA
+phone: +1 855 4 JOYENT
+objectclass: sdcPerson
+
+dn: fingerprint=56:f3:e1:56:3d:e6:f7:83:a9:ce:19:5d:62:ba:5c:1f, uuid=3476660a-fec6-11e1-bd6b-d3f99fb834c1, ou=users, o=smartdc
+changetype: add
+name: id_rsa
+fingerprint: 56:f3:e1:56:3d:e6:f7:83:a9:ce:19:5d:62:ba:5c:1f
+openssh: ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAokc8X8+OhFh8UO1+BgLM/aPrVFq79WS8fGpQ4n5IwB7KIb3jh/WwAb1hXR1zuQsZRfgGOIuUSFR+lcnGvWfEhPqIZ1j4o/uHxKCqeHOrzXWL1Aoz8c4fxluKDZFvZRgEqvde8uhyY9Y9+ZPkNZZ/qUlDr54DyIhpnn+c5rqBF4gLALVAIWZHqbi3ZgqhyqCsr0q/CpGyIl3XDXn3dAlY+Mw8JxWck1bWbU270xtR64SlkoQ0kAzL0dHrlnxfvxxGZOhyYKRvC0THL7lwjSYmSDk632LVIg7SgO50RCKUkAlv795MESDpvN3u2PHFhyBWr/NNL++sk96LI9xetSdQHw== dap@Dave-Pachecos-Macbook.local
+objectclass: sdcKey
+
+
+# Nate
+
+dn: uuid=ec9b0b88-0118-11e2-a85b-0ff8adc7a466, ou=users, o=smartdc
+changetype: add
+login: nate
+uuid: ec9b0b88-0118-11e2-a85b-0ff8adc7a466
+userpassword: secret
+email: nate.fitch@joyent.com
+cn: Nate
+sn: Fitch
+company: Joyent
+address: 206 1st Ave S #500
+city: Seattle
+state: WA
+postalCode: 94104
+country: USA
+phone: +1 855 4 JOYENT
+objectclass: sdcPerson
+
+dn: fingerprint=b7:de:31:d8:e8:cc:3f:74:b8:12:21:40:76:08:48:89, uuid=ec9b0b88-0118-11e2-a85b-0ff8adc7a466, ou=users, o=smartdc
+changetype: add
+name: id_rsa
+fingerprint: b7:de:31:d8:e8:cc:3f:74:b8:12:21:40:76:08:48:89
+openssh:  ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDQ7vgds3WjusdNUdixlvVuNfX1OJ8AByplJEtwK6Ljt+OZMj6xbdVkfytigzANA0r0hRJbRbPO5Cbj/cc33uIJhxRG8o6IJSP0xQRDVBu7pEMxwlhOsr85dnioBtUBpy66v1mjBgqCxtNuvsQkfN/f1VBJxxEBLwYKJK6JQrIEOs7p0adsTNp1Frc/1BJw1FOu6Vuu0btABmukB8besD3h/YL6xp6HdhhbKiM/iP18MHd5Ux0rF3uA8sh8t/qutk7X0FdzAky/X+xKTGg5CU0jHn2x7hXELO8chxdPSSs/VvtmfLLWMHlPVUhSBRZ4EhWm1uN6eEu+NszEgMVG/1UL nfitch@JOYENT-BASE-IMAGE-9.local
+objectclass: sdcKey
+
+
+# Yunong
+
+
+dn: uuid=25523e38-01d7-11e2-b11b-af3834558dbe, ou=users, o=smartdc
+changetype: add
+login: yunong
+uuid: 25523e38-01d7-11e2-b11b-af3834558dbe
+userpassword: secret
+email: yunong@joyent.com
+cn: Yunong
+sn: Xiao
+company: Joyent
+address: 206 1st Ave S #500
+city: Seattle
+state: WA
+postalCode: 94104
+country: USA
+phone: +1 855 4 JOYENT
+objectclass: sdcPerson
+
+dn: fingerprint=04:92:7b:23:bc:08:4f:d7:3b:5a:38:9e:4a:17:2e:df, uuid=25523e38-01d7-11e2-b11b-af3834558dbe, ou=users, o=smartdc
+changetype: add
+name: id_rsa
+fingerprint: 04:92:7b:23:bc:08:4f:d7:3b:5a:38:9e:4a:17:2e:df
+openssh: ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDcPHbgrhSMKDjA/+AZ9qrYMPqeUN4w/u5TtYQr0SUPCqQw9xp32hT9ZfLm+CFlmPcxbuiUZr/bp/bBAS0ZiRlyrSbtamA/ZNXSWJTt511MnKMuuOiP3b+pbdqFy+jrFsO4zBz6YS+3zURgyxYBT8OH+xDFwbR/8EQGwfyxbvnL5fw5M2jnY+LbA96WInF1SFxlh1ygUT0znv04l8yTcgGDkO7OCPJg/GCmWfgU/FpILkmLGmReju53S6Qf50HGliZvl7TvUzsnaxTe540qZSR1IE5TwL6GdtKKkDgiGMOLnUv9GpDj+BstTsjycfQXrHq+APn+pjsLFsBTHoAq+Djb yunong@Aiur.local
+objectclass: sdcKey
+
+
+
+# Pedro
+
+
+dn: uuid=021c0632-026e-11e2-9f56-ab6ebc71ca13, ou=users, o=smartdc
+changetype: add
+login: pedro
+uuid: 021c0632-026e-11e2-9f56-ab6ebc71ca13
+userpassword: secret
+email: pedro@joyent.com
+cn: Pedro José
+sn: Palazón Candel
+company: Joyent
+phone: +1 855 4 JOYENT
+objectclass: sdcPerson
+
+dn: fingerprint=3e:a5:3f:15:5e:ff:e3:8d:b0:8a:eb:b9:86:09:5d:84, uuid=021c0632-026e-11e2-9f56-ab6ebc71ca13, ou=users, o=smartdc
+changetype: add
+name: id_rsa
+fingerprint: 3e:a5:3f:15:5e:ff:e3:8d:b0:8a:eb:b9:86:09:5d:84
+openssh: ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCymx1xJfEugfRzb3G4HdB8pzwZWbRo6kCSSgrpElMkOSPiPYCqaRVoD7FaX1yv1wUwQzuS/9rrf9PFvdGk81CNMpy0NG/I6nlMH/v+mKvJYGvX5hc/fAg8izLwBwqCkJw/nek8Hv3PL4bJUZ18driqn4LUoj+gFlcmYoJy9+puvGkgDmXQxx5z0Vf+J6N6DQo8mymgbzvAMQNgf4xfTGCjIbUJFCVOMnH2S7XPypbGzOYS3Z8VYTbt3AZHhEq9ZK4JfC60P8ddZvx6HFxOpqcoE6lFKj2GGziXusNndxfMKjTcZx2IHHlkR2+umeEnMQhuWNEaoMFHiEIWU8h8HloD joyentcloud
+objectclass: sdcKey
+
+
+# Fred
+
+
+dn: uuid=83546bda-028d-11e2-aabe-17b87241f6ee, ou=users, o=smartdc
+changetype: add
+login: fred
+uuid: 83546bda-028d-11e2-aabe-17b87241f6ee
+userpassword: secret
+email: fred.kuo@joyent.com
+cn: Fred
+sn: Kuo
+company: Joyent
+address: 206 1st Ave S #500
+city: Seattle
+state: WA
+postalCode: 94104
+country: USA
+phone: +1 855 4 JOYENT
+objectclass: sdcPerson
+
+dn: fingerprint=e3:4d:9b:26:bd:ef:a1:db:43:ae:4b:f7:bc:69:a7:24, uuid=83546bda-028d-11e2-aabe-17b87241f6ee, ou=users, o=smartdc
+changetype: add
+name: id_rsa
+fingerprint: e3:4d:9b:26:bd:ef:a1:db:43:ae:4b:f7:bc:69:a7:24
+openssh: ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQD3Q2YNYH1FKAKM4kaT2zdNDCPBlBfElAO6oUr49GM4mDegGQujMbMCBgc3oait7NZ9D5omYz3M3kEOdEok5N+tSGel/gdNMynhOeIHi7xVuV6iacBlskDqTHgmFK6dy0gr7Ddbj59hdDIz4lhkSYIL8OiooVhlygYpZ8ern/RGOg2BwipdFULBAGpIwkooV/MAZmnaImU1XTHJGhU6ShiHap/66Qqn6MIc7KqbwxpbdT9NgCAUbNlPya+06TlUpbjlyfXZH9I9WyUeWS92xyshQWg8ShPyzgwnCDX/8eohfYUA1KLKwAFK/y1yWk17aziNtt95x1CPK14uKMHHwxJl Fred@JOYENT-BASE-IMAGE-4.local
+objectclass: sdcKey
+
+
+# Marsell
+
+dn: uuid=4cb1538a-02ac-11e2-9d31-334658c618ee, ou=users, o=smartdc
+changetype: add
+login: marsell
+uuid: 4cb1538a-02ac-11e2-9d31-334658c618ee
+userpassword: secret
+email: marsell@joyent.com
+cn: Marsell
+sn: Kukuljevic
+company: Joyent
+objectclass: sdcPerson
+
+dn: fingerprint=04:6f:8d:ee:de:3f:9b:8d:a7:85:47:77:8e:25:2b:aa, uuid=4cb1538a-02ac-11e2-9d31-334658c618ee, ou=users, o=smartdc
+changetype: add
+name: id_rsa
+fingerprint: 04:6f:8d:ee:de:3f:9b:8d:a7:85:47:77:8e:25:2b:aa
+openssh: ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAgEAowr+bg+nwKWXmsqKMBz6kEdVWcS1ki/9z7lml99IShZJjdqECBECvx9e1aIbkqzAa7I2ZqanBHfrw/xnlQPtVxVVLiUgBt/GT5YPMf/O4Kqh0C1nloErPu/vtGnVTk0/y+4gH1GyenwcORLjJR+eVhf098fkrklyESUm7nqjxPZFQWVRc7W5RbE2Cfgjts1H4ytyEAbL3NDrFSlhgT+ykZ3EHk72AoAg2/JEWG9MyaEp5jKJEOldKgXvQp4O9H62wkGOrONpQweneSqjHnxmYdkfS3pmdsZ42SspFRbkx8Q3zdxyWBtkPKruJTybNT+K4v5fL88Yx/HPazFjM8qvGbPITZgPvcw1XArJGUGFDfCTtIit6i0hHTKf5QaZUdhO5XjF5pmhxskEvc0DFoP1QzxXOo9awRR7BFfFAKTJoduXoBE4yT+OHRni6cCqeTw5tIaRLFLokaaZvzMTjFkM5sxWaxL0y9VE497ykMoq9DbPskyxmSzbXnfSV2VBIHsdRRzg8KmeDUpnwZxqezep1pnTk8kHxJ8JAAPw8qHDP1/NhLe0D9g5I/I1R2ZgshNbDSBtXkCueEiT9u66xlGWeF2Aqu08LmnoGrJ8uYp3rNlyKrFNTNXpbLim6QWHoyJmiRKcOprCXWvNo05Zck4mJXTuYUiAj4cY4f+fNRMbZ2E= marsell@joyent.com
+objectclass: sdcKey
+
+
+# Trent
+
+dn: uuid=7088a356-0416-11e2-b842-375959f5289d, ou=users, o=smartdc
+changetype: add
+login: trent
+uuid: 7088a356-0416-11e2-b842-375959f5289d
+userpassword: secret
+email: trentm+joyent@gmail.com
+cn: Trent
+sn: Mick
+company: Joyent
+objectclass: sdcPerson
+
+dn: fingerprint=b3:f0:a1:6c:18:3b:47:63:ae:6e:57:22:74:71:d4:bc, uuid=7088a356-0416-11e2-b842-375959f5289d, ou=users, o=smartdc
+changetype: add
+name: id_rsa
+fingerprint: b3:f0:a1:6c:18:3b:47:63:ae:6e:57:22:74:71:d4:bc
+openssh: ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAn6QHOqxWJr9Ice+fsqGPiURLgEOSWPt7slo1JkfncBLTlEswk/QpI36zepystMfrYq5kHNdgml3IivPgGLzLX3faNGup5z9dhFxv0Q9sX7WpDhtQNBhd9JZHX9x5PEDHq+bHpHmtJ6zDNfTkeH7Z+3pd9szVKxsSrRB96I2tB5hF4QQo4uv5H1Ljbk7+2mBlzEHxBnW3SYHgppLiADIaMolosYSPG/iIqORx9PRhAPXvu1pvvp5CTiWwvepq/S9/2dX/9acYvOo/0Ub0PY7uG+Do8dA1Nea7i4qH9L+iFNdpE95SQMPlNBSXU20YpMvKdrIUpnk4ojHw2l24uq9Lfw== trent.mick@joyent.com (take 2)
+objectclass: sdcKey
+
+
+# Operators group
+
+# dn: cn=operators, ou=groups, o=smartdc
+# change:type modify
+# add: uniquemember
+# uniquemember: uuid=7a36c494-fdb5-11e1-9204-1fcd0c6670ab, ou=users, o=smartdc
