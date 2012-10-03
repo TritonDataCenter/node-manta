@@ -261,17 +261,21 @@ test('unlink link', function (t) {
 });
 
 
-test('unlink subdir', function (t) {
-        this.client.unlink(SUBDIR2, function (err) {
+test('rmr', function (t) {
+        this.client.rmr(SUBDIR1, function (err) {
                 t.ifError(err);
                 t.end();
         });
 });
 
 
-test('unlink directory', function (t) {
-        this.client.unlink(SUBDIR1, function (err) {
+test('mkdirp/rmr', function (t) {
+        var self = this;
+        this.client.mkdirp(SUBDIR2, function (err) {
                 t.ifError(err);
-                t.end();
+                self.client.rmr(SUBDIR1, function (err2) {
+                        t.ifError(err2);
+                        t.end();
+                });
         });
 });

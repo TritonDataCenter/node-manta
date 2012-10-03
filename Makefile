@@ -37,16 +37,15 @@ include ./tools/mk/Makefile.defs
 # Repo-specific targets
 #
 .PHONY: all
-all: $(NODEUNIT) $(REPO_DEPS)
-	$(NPM) rebuild
+.PHONY: all
+all: $(SMF_MANIFESTS) deps
 
-$(NODEUNIT): | $(NPM_EXEC)
-	$(NPM) install
-
-CLEAN_FILES += $(NODEUNIT) ./node_modules/nodeunit
+.PHONY: deps
+deps: | $(REPO_DEPS) $(NPM_EXEC)
+	$(NPM_ENV) $(NPM) install
 
 .PHONY: test
-test: $(NODEUNIT)
+test: deps
 	$(NODEUNIT) test/*.test.js
 
 include ./tools/mk/Makefile.deps

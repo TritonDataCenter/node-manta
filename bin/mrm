@@ -38,7 +38,7 @@ function ifError(err) {
 function parseOptions() {
         var option;
         var opts = {};
-        var parser = new getopt.BasicParser('vh:k:u:a:',
+        var parser = new getopt.BasicParser('vrh:k:u:a:',
                                             process.argv);
         var tmp;
 
@@ -54,6 +54,10 @@ function parseOptions() {
 
                 case 'k':
                         opts.keyId = option.optarg;
+                        break;
+
+                case 'r':
+                        opts.recurse = true;
                         break;
 
                 case 'u':
@@ -105,7 +109,7 @@ function usage(msg) {
                 console.error(msg);
 
         var str = 'usage: ' + path.basename(process.argv[1]);
-        str += ' [-v] [-a account] [-u url] [-k keyId] path';
+        str += ' [-v] [-a account] [-u url] [-k keyId] [-r] path';
         console.error(str);
         process.exit(1);
 }
@@ -129,16 +133,23 @@ var _client = manta.createClient({
         user: /^\/.*\/stor/.test(_options.path) ? undefined : _options.user
 });
 
-_client.info(_options.path, function (err, info) {
-        ifError(err);
-
-        if (info.extension === 'directory') {
-                console.error(_options.path + ' is not an object');
-                process.exit(1);
-        }
-
-        _client.unlink(_options.path, function (err2) {
-                ifError(err2);
+if (_options.recurse) {
+        _client.rmr(_options.path, function (err) {
+                ifError(err);
                 process.exit(0);
         });
-});
+} else {
+        _client.info(_options.path, function (err, info) {
+                ifError(err);
+
+                if (info.extension === 'directory') {
+                        console.error(_options.path + ' is not an object');
+                        process.exit(1);
+                }
+
+                _client.unlink(_options.path, function (err2) {
+                        ifError(err2);
+                        process.exit(0);
+                });
+        });
+}

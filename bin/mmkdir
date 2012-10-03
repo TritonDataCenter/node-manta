@@ -38,7 +38,7 @@ function ifError(err) {
 function parseOptions() {
         var option;
         var opts = {};
-        var parser = new getopt.BasicParser('vh:k:u:a:',
+        var parser = new getopt.BasicParser('pvh:k:u:a:',
                                             process.argv);
         var tmp;
 
@@ -54,6 +54,10 @@ function parseOptions() {
 
                 case 'k':
                         opts.keyId = option.optarg;
+                        break;
+
+                case 'p':
+                        opts.recurse = true;
                         break;
 
                 case 'u':
@@ -100,7 +104,7 @@ function usage(msg) {
                 console.error(msg);
 
         var str = 'usage: ' + path.basename(process.argv[1]);
-        str += ' [-v] [-a account] [-u url] [-k keyId] path';
+        str += ' [-v] [-a account] [-u url] [-k keyId] [-p] path';
         console.error(str);
         process.exit(1);
 }
@@ -124,8 +128,13 @@ var _client = manta.createClient({
         user: /^\/.*\/stor/.test(_options.path) ? undefined : _options.user
 });
 
-_client.mkdir(_options.path, function (err) {
+function _done(err) {
         ifError(err);
-
         process.exit(0);
-});
+}
+
+if (_options.recurse) {
+        _client.mkdirp(_options.path, _done);
+} else {
+        _client.mkdir(_options.path, _done);
+}
