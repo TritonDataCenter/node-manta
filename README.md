@@ -1,79 +1,60 @@
-# Joyent Engineering Guide
+# Manta client tools
 
-Repository: <git@git.joyent.com:eng.git>
-Browsing: <https://mo.joyent.com/eng>
-Who: Trent Mick, Dave Pacheco
-Docs: <https://mo.joyent.com/docs/eng>
-Tickets/bugs: <https://devhub.joyent.com/jira/browse/TOOLS>
+Repository: <git@git.joyent.com:node-manta.git>
+Browsing: <https://mo.joyent.com/node-manta>
+Who: Mark Cavage
+Tickets/bugs: <https://devhub.joyent.com/jira/browse/MANTA>
 
+## Overview
 
-# Overview
+This repository provides a set of tools for interacting with Manta.
 
-This repo serves two purposes: (1) It defines the guidelines and best
-practices for Joyent engineering work (this is the primary goal), and (2) it
-also provides boilerplate for an SDC project repo, giving you a starting
-point for many of the suggestion practices defined in the guidelines. This is
-especially true for node.js-based REST API projects.
+## Set up a Manta
 
-Start with the guidelines: <https://mo.joyent.com/docs/eng>
+You must start with a working Manta install.  In the global zone of a fresh SDC
+headnode install, run:
 
+    # manta-init
+    ...
+    # manta-deploy-coal
 
-# Repository
+You can also deploy on hardware using `manta-deploy-lab` instead of `manta-deploy-coal`.
 
-    deps/           Git submodules and/or commited 3rd-party deps should go
-                    here. See "node_modules/" for node.js deps.
-    docs/           Project docs (restdown)
-    lib/            Source files.
-    node_modules/   Node.js deps, either populated at build time or commited.
-                    See Managing Dependencies.
-    pkg/            Package lifecycle scripts
-    smf/manifests   SMF manifests
-    smf/methods     SMF method scripts
-    test/           Test suite (using node-tap)
-    tools/          Miscellaneous dev/upgrade/deployment tools and data.
-    Makefile
-    package.json    npm module info (holds the project version)
-    README.md
+## Set up DNS in your working zone
 
+In order to refer to manta using `manta.coal.joyent.us` or
+`manta.bh1-kvm1.joyent.us`, you'll need to add Manta's nameservers to your
+environment's /etc/resolv.conf, whether that's on your Macbook or a SmartOS
+zone.  To find the nameservers, first find the zones that were deployed above
+using `vmadm list`.  They'll be the zones with aliases like
+`ns-1.ns.coal.joyent.us-...`.  COAL will have 1 nameserver, while lab machines
+will have 3.  Get each one's IP address with:
 
-# Development
+    # vmadm get ZONE_UUID | json nics.0.ip
 
-To run the boilerplate API server:
+and add each one to /etc/resolv.conf.
 
-    git clone git@git.joyent.com:eng.git
-    cd eng
-    git submodule update --init
-    make all
-    node server.js
+## Set up a user for manta
 
-To update the guidelines, edit "docs/index.restdown" and run `make docs`
-to update "docs/index.html".
+You'll need a user with an ssh key stored in UFDS.  The easiest way to do that is to make sure your key is in node-manta.git:data/keys.ldif and then run this in the global zone:
 
-Before commiting/pushing run `make prepush` and, if possible, get a code
-review.
+    # sdc-ldap add -f /path/to/keys.ldif
 
+## Set up your environment
 
+These instructions assume COAL, user "dap", and that your key is
+~/.ssh/id\_rsa.
 
-# Testing
+    $ export MANTA_URL=https://manta.coal.joyent.us/
+    $ export MANTA_USER=dap
+    $ export MANTA_KEY_ID=$(ssh-keygen -l -f ~/.ssh/id_rsa | awk '{print $2}')
 
-    make test
+## Use these tools
 
-If you project has setup steps necessary for testing, then describe those
-here.
+First, build this repo:
 
+    $ make
 
-# Starting a Repo Based on eng.git
+This requires that "npm" be in your path.
 
-Create a new repo called "some-cool-fish" in your "~/work" dir based on "eng.git":
-Note: run this inside the eng dir.
-
-    ./tools/mkrepo $HOME/work/some-cool-fish
-
-
-# Your Other Sections Here
-
-Add other sections to your README as necessary. E.g. Running a demo, adding
-development data.
-
-
-
+Now you can use the tools in "bin".
