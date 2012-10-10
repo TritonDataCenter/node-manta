@@ -58,7 +58,7 @@ function ls(client, options, cb) {
 function parseOptions() {
         var option;
         var opts = {};
-        var parser = new getopt.BasicParser('va:h:k:l:o:u:', process.argv);
+        var parser = new getopt.BasicParser('vha:k:l:o:u:', process.argv);
         var tmp;
 
         while ((option = parser.getopt()) !== undefined && !option.error) {
@@ -68,7 +68,7 @@ function parseOptions() {
                         break;
 
                 case 'h':
-                        opts.host = option.optarg;
+                        usage();
                         break;
 
                 case 'k':
@@ -138,7 +138,7 @@ function usage(msg) {
         var str = 'usage: ' + path.basename(process.argv[1]);
         str += '[-v] [-a account] [-u url] [-k keyId] [-l limit] [-o offset] path';
         console.error(str);
-        process.exit(1);
+        process.exit(msg ? 1 : 0);
 }
 
 

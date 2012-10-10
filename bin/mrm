@@ -38,7 +38,7 @@ function ifError(err) {
 function parseOptions() {
         var option;
         var opts = {};
-        var parser = new getopt.BasicParser('vrh:k:u:a:',
+        var parser = new getopt.BasicParser('vrhk:u:a:',
                                             process.argv);
         var tmp;
 
@@ -49,9 +49,8 @@ function parseOptions() {
                         break;
 
                 case 'h':
-                        opts.host = option.optarg;
+                        usage();
                         break;
-
                 case 'k':
                         opts.keyId = option.optarg;
                         break;
@@ -111,7 +110,7 @@ function usage(msg) {
         var str = 'usage: ' + path.basename(process.argv[1]);
         str += ' [-v] [-a account] [-u url] [-k keyId] [-r] path';
         console.error(str);
-        process.exit(1);
+        process.exit(msg ? 1 : 0);
 }
 
 

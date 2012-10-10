@@ -40,7 +40,7 @@ function parseOptions() {
         var option;
         var opts = {
         };
-        var parser = new getopt.BasicParser('veh:k:u:a:',
+        var parser = new getopt.BasicParser('vehk:u:a:',
                                             process.argv);
         var tmp;
 
@@ -52,6 +52,10 @@ function parseOptions() {
 
                 case 'e':
                         opts.end = true;
+                        break;
+
+                case 'h':
+                        usage();
                         break;
 
                 case 'k':
@@ -104,7 +108,7 @@ function usage(msg) {
         var str = 'usage: ' + path.basename(process.argv[1]);
         str += ' [-v] [-a account] [-u url] [-k keyId] [-e] jobId';
         console.error(str);
-        process.exit(1);
+        process.exit(msg ? 1 : 0);
 }
 
 

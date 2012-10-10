@@ -42,7 +42,7 @@ function parseOptions() {
                 reduce: [],
                 assets: []
         };
-        var parser = new getopt.BasicParser('vh:k:m:n:r:s:u:a:',
+        var parser = new getopt.BasicParser('vhk:m:n:r:s:u:a:',
                                             process.argv);
         var tmp;
 
@@ -50,6 +50,10 @@ function parseOptions() {
                 switch (option.option) {
                 case 'a':
                         opts.user = option.optarg;
+                        break;
+
+                case 'h':
+                        usage();
                         break;
 
                 case 'k':
@@ -125,7 +129,7 @@ function usage(msg) {
         str += ' [-v] [-a account] [-u url] [-k keyId] ';
         str += '[-m map] [-r reduce] [-s assets] [-n name]'
         console.error(str);
-        process.exit(1);
+        process.exit(msg ? 1 : 0);
 }
 
 
