@@ -102,6 +102,27 @@ test('put', function (t) {
 });
 
 
+test('put MD5 mismatch', function (t) {
+        var text = 'The lazy brown fox \nsomething \nsomething foo';
+        var size = Buffer.byteLength(text);
+        var opts = {
+                md5: new Buffer(text).toString('base64'),
+                size: size
+        }
+        var stream = new MemoryStream();
+
+        this.client.put(CHILD1, stream, opts, function (err) {
+                t.ok(err);
+                t.end();
+        });
+
+        process.nextTick(function () {
+                stream.write(text);
+                stream.end();
+        });
+});
+
+
 test('ls', function (t) {
         t.expect(5);
         this.client.ls(SUBDIR1, function (err, res) {
