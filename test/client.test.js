@@ -184,6 +184,28 @@ test('add input keys', function (t) {
 });
 
 
+test('get job input', function (t) {
+        var keys = 0;
+        function cb(err) {
+                t.ifError(err);
+                t.equal(keys, 2);
+                t.end();
+        }
+
+        this.client.jobInput(JOB, function (err, res) {
+                t.ifError(err);
+                t.ok(res);
+
+                res.on('key', function (k) {
+                        t.ok(k);
+                        keys++;
+                });
+
+                res.once('end', cb);
+        });
+});
+
+
 test('end job', function (t) {
         this.client.endJob(JOB, function (err) {
                 t.ifError(err);
