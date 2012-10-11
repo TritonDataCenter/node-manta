@@ -39,7 +39,7 @@ function parseOptions() {
         var option;
         var opts = {
         };
-        var parser = new getopt.BasicParser('veiohk:u:a:',
+        var parser = new getopt.BasicParser('vefiohk:u:a:',
                                             process.argv);
         var tmp;
 
@@ -51,6 +51,11 @@ function parseOptions() {
 
                 case 'e':
                         opts.end = true;
+                        break;
+
+
+                case 'f':
+                        opts.fail = true;
                         break;
 
                 case 'h':
@@ -97,8 +102,10 @@ function parseOptions() {
         if (!opts.keyId && !process.env.MANTA_KEY_ID)
                 usage('keyId is a required argument');
 
-        if ((opts.input || opts.output) && (opts.input && opts.output))
-                usage('-i and -o are mutually exclusive');
+        if ((opts.input || opts.output || opts.fail) &&
+            !xor(opts.fail, opts.input, opts.output )) {
+                usage('-f, -i and -o are mutually exclusive');
+        }
 
         if (parser.optind() >= process.argv.length)
                 usage('missing required argument: "jobId"');
@@ -123,6 +130,19 @@ function usage(msg) {
 }
 
 
+function xor() {
+        var b = false;
+        for (var i = 0; i < arguments.length; i++) {
+                if (arguments[i] && !b) {
+                        b = (true);
+                } else if (arguments[i] && b) {
+                        return (false);
+                }
+        }
+        return b;
+}
+
+
 
 ///--- Mainline
 // Leading _ to avoid scope conflicts in functions
@@ -144,36 +164,31 @@ var _client = manta.createClient({
 _client.job(_options.id, function (err, job) {
         ifError(err);
 
+        function streamOut(err2, out) {
+                ifError(err);
+
+                var _keys = false;
+                process.stdout.write('[');
+                out.once('key', function (k) {
+                        _keys = true;
+                        process.stdout.write('\n  "' + k + '"');
+                        out.on('key', function (k) {
+                                process.stdout.write(',\n  "' + k + '"');
+                        });
+                });
+                out.once('end', function () {
+                        if (_keys)
+                                process.stdout.write('\n');
+                        process.stdout.write(']\n');
+                });
+        }
+
         if (_options.output) {
-                _client.jobOutput(_options.id, function (err2, out) {
-                        ifError(err);
-
-                        process.stdout.write('[');
-                        out.once('key', function (k) {
-                                process.stdout.write('\n  "' + k + '"');
-                                out.on('key', function (k) {
-                                        process.stdout.write(',\n  "' + k + '"');
-                                });
-                        });
-                        out.once('end', function () {
-                                process.stdout.write('\n]\n');
-                        });
-                });
+                _client.jobOutput(_options.id, streamOut);
         } else if (_options.input) {
-                _client.jobInput(_options.id, function (err2, out) {
-                        ifError(err);
-
-                        process.stdout.write('[');
-                        out.once('key', function (k) {
-                                process.stdout.write('\n  "' + k + '"');
-                                out.on('key', function (k) {
-                                        process.stdout.write(',\n  "' + k + '"');
-                                });
-                        });
-                        out.once('end', function () {
-                                process.stdout.write('\n]\n');
-                        });
-                });
+                _client.jobInput(_options.id, streamOut);
+        } else if (_options.fail) {
+                _client.jobFailures(_options.id, streamOut);
         } else {
                 console.log(JSON.stringify(job, null, 2));
         }
