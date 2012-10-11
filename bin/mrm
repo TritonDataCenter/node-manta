@@ -139,7 +139,14 @@ if (_options.recurse) {
         });
 } else {
         _client.info(_options.path, function (err, info) {
-                ifError(err);
+                if (err) {
+                        _client.get(_options.path, function (err2) {
+                                ifError(err2);
+                                // We *shouldn't* ever hit this...
+                                ifError(err);
+                        });
+                        return;
+                }
 
                 if (info.extension === 'directory') {
                         console.error(_options.path + ' is not an object');
