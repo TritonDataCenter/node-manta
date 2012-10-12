@@ -108,7 +108,7 @@ test('put MD5 mismatch', function (t) {
         var opts = {
                 md5: new Buffer(text).toString('base64'),
                 size: size
-        }
+        };
         var stream = new MemoryStream();
 
         this.client.put(CHILD1, stream, opts, function (err) {
@@ -284,6 +284,27 @@ test('get job output', function (t) {
                 });
 
                 res.once('end', cb);
+        });
+});
+
+
+test('create and cancel job', function (t) {
+        var self = this;
+
+        this.client.createJob('grep foo', function (err, job) {
+                t.ifError(err);
+                t.ok(job);
+                self.client.cancelJob(job, function (err2) {
+                        t.ifError(err2);
+                        self.client.job(job, function (err3, job2) {
+                                t.ifError(err3);
+                                t.ok(job2);
+                                t.ok(job2.cancelled);
+                                t.ok(job2.inputDone);
+                                t.equal(job2.state, 'done');
+                                t.end();
+                        });
+                });
         });
 });
 
