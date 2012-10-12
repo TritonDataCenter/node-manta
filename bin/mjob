@@ -39,7 +39,7 @@ function parseOptions() {
         var option;
         var opts = {
         };
-        var parser = new getopt.BasicParser('vefiohk:u:a:',
+        var parser = new getopt.BasicParser('vcefiohk:u:a:',
                                             process.argv);
         var tmp;
 
@@ -49,10 +49,13 @@ function parseOptions() {
                         opts.user = option.optarg;
                         break;
 
+                case 'c':
+                        opts.cancel = true;
+                        break;
+
                 case 'e':
                         opts.end = true;
                         break;
-
 
                 case 'f':
                         opts.fail = true;
@@ -103,8 +106,12 @@ function parseOptions() {
                 usage('keyId is a required argument');
 
         if ((opts.input || opts.output || opts.fail) &&
-            !xor(opts.fail, opts.input, opts.output )) {
+            !xor(opts.fail, opts.input, opts.output)) {
                 usage('-f, -i and -o are mutually exclusive');
+        }
+
+        if ((opts.end || opts.cancel) && !xor(opts.end, opts.cancel)) {
+                usage('-c and -e are mutually exclusive');
         }
 
         if (parser.optind() >= process.argv.length)
@@ -124,7 +131,7 @@ function usage(msg) {
                 console.error(msg);
 
         var str = 'usage: ' + path.basename(process.argv[1]);
-        str += ' [-v] [-a account] [-u url] [-k keyId] [-e] [-o] jobId';
+        str += ' [-v] [-a account] [-u url] [-k keyId] [-c] [-e] [-o] jobId';
         console.error(str);
         process.exit(msg ? 1 : 0);
 }
@@ -195,6 +202,10 @@ _client.job(_options.id, function (err, job) {
 
         if (_options.end) {
                 _client.endJob(_options.id, function (err) {
+                        ifError(err);
+                });
+        } else if (_options.cancel) {
+                _client.cancelJob(_options.id, function (err) {
                         ifError(err);
                 });
         }
