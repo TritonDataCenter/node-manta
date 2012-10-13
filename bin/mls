@@ -50,6 +50,7 @@ function ls(client, options, cb) {
 
                 res.on('directory', printEntry);
                 res.on('object', printEntry);
+                res.once('error', cb);
                 res.once('end', cb);
         });
 }
