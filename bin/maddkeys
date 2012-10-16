@@ -59,7 +59,7 @@ function parseOptions() {
                         break;
 
                 case 'k':
-                        opts.keyId = option.keyId;
+                        opts.keyId = option.optarg;
                         break;
 
                 case 'u':

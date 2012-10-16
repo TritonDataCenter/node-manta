@@ -39,7 +39,7 @@ function parseOptions() {
         var option;
         var opts = {
         };
-        var parser = new getopt.BasicParser('vhk:u:a:',
+        var parser = new getopt.BasicParser('vhk:u:a:s:',
                                             process.argv);
         var tmp;
 
@@ -54,7 +54,11 @@ function parseOptions() {
                         break;
 
                 case 'k':
-                        opts.keyId = option.keyId;
+                        opts.keyId = option.optarg;
+                        break;
+
+                case 's':
+                        opts.state = option.optarg;
                         break;
 
                 case 'u':
@@ -121,8 +125,11 @@ var _client = manta.createClient({
         url: _options.url,
         user: /^\/.*\/jobs/.test(_options.path) ? undefined : _options.user
 });
+var _listOpts = {
+        state: _options.state
+}
 
-_client.listJobs(function (err, res) {
+_client.listJobs(_listOpts, function (err, res) {
         ifError(err);
 
         res.on('job', console.log.bind(console, '%j'));
