@@ -22,7 +22,7 @@ var test = helper.test;
 
 var JOB;
 var ROOT = '/admin/stor';
-var SUBDIR1 = '/' + uuid();
+var SUBDIR1 = ROOT + '/' + uuid();
 var SUBDIR2 = SUBDIR1 + '/' + uuid(); // directory
 var CHILD1 = SUBDIR1 + '/' + uuid(); // object
 var CHILD2 = SUBDIR2 + '/' + uuid(); // link

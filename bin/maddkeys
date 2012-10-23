@@ -127,7 +127,7 @@ var _client = manta.createClient({
                 user: _options.user,
         }),
         url: _options.url,
-        user: /^\/.*\/jobs/.test(_options.path) ? undefined : _options.user
+        user: _options.user
 });
 
 process.stdin.setEncoding('utf8');

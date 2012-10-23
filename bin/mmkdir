@@ -125,8 +125,10 @@ var _client = manta.createClient({
                 user: _options.user
         }),
         url: _options.url,
-        user: /^\/.*\/stor/.test(_options.path) ? undefined : _options.user
+        user: _options.user
 });
+
+ifError(manta.assertPath(_options.path, true));
 
 function _done(err) {
         ifError(err);

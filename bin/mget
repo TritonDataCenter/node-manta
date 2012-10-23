@@ -135,9 +135,9 @@ var _client = manta.createClient({
                 user: _options.user
         }),
         url: _options.url,
-        user: /^\/.*\/stor/.test(_options.path) ? undefined : _options.user
+        user: _options.user
 });
-
+ifError(manta.assertPath(_options.path, true));
 var _out = process.stdout;
 if (_options.file) {
         _out = fs.createWriteStream(_options.file);
