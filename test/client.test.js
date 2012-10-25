@@ -222,7 +222,8 @@ test('get job input', function (t) {
                         keys++;
                 });
 
-                res.once('end', cb);
+                res.once('error', cb);
+                res.once('end', cb.bind(null, null));
         });
 });
 
@@ -283,7 +284,8 @@ test('get job output', function (t) {
                         self.client.unlink(k, cb);
                 });
 
-                res.once('end', cb);
+                res.once('error', cb);
+                res.once('end', cb.bind(null, null));
         });
 });
 
