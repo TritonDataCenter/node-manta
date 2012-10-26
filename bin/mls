@@ -44,6 +44,9 @@ function ls(client, options, cb) {
                 opts.query.limit = options.limit;
         if (options.offset)
                 opts.query.offset = options.offset;
+        if (options.type) {
+                opts.query[options.type] = true;
+        }
 
         client.ls(options.path, opts, function (err, res) {
                 ifError(err);
@@ -59,7 +62,7 @@ function ls(client, options, cb) {
 function parseOptions() {
         var option;
         var opts = {};
-        var parser = new getopt.BasicParser('vha:k:l:o:u:', process.argv);
+        var parser = new getopt.BasicParser('vha:k:l:o:u:t:', process.argv);
         var tmp;
 
         while ((option = parser.getopt()) !== undefined && !option.error) {
@@ -82,6 +85,10 @@ function parseOptions() {
 
                 case 'o':
                         opts.offset = parseInt(option.optarg, 10);
+                        break;
+
+                case 't':
+                        opts.type = option.optarg;
                         break;
 
                 case 'u':
