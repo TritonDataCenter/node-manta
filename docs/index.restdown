@@ -1,9 +1,148 @@
 ---
 title: Node SDK for Joyent Manta
 markdown2extras: wiki-tables, code-friendly
-apisections:
+apisections: Directories, Objects, Links
 ---
 
-# tl;dr
+# Manta
 
-Read the source, look at tests.
+This is the reference documentation for the Manta [Node.js](http://nodejs.org/)
+SDK.Manta is Joyent's Object Storage Service, which enables you to store data in
+the cloud and process that data using a built-in compute facility.
+
+This doucment explains the Node.js API interface and describes the various
+operations, structures and error codes.
+
+## Conventions
+
+Any content formatted like this:
+
+    $ curl is https://manta.joyent.com
+
+is a command-line example that you can run from a shell. All other examples and
+information are formatted like this:
+
+    client.ls('/jill/stor/foo', function (err, res) {
+	    assert.ifError(err);
+        ...
+    });
+
+# Installation
+
+First, install the SDK as usual via [npm](http://npmjs.org/); the package name
+in npm is `manta`.  You may optionally want to install the package globally with
+the `-g` flag to npm, as this should place the node-manta CLI in your `$PATH`.
+
+    $ npm install git+ssh://@git.joyent.com:node-manta.git
+
+Once you've installed the npm package, there a few environment variables that
+are useful to set if you plan to work with the CLI; these environment variables
+are not strictly necessary, but they will save you passing in command line
+options on each invocation.  The environment variables that can be set are your
+SmartDataCenter login name and ssh public key fingerprint (manta uses the same
+credentials), and the URL of which manta endpoint you wish to interact with.
+The commands below assume that your SSH public key is the default `id_rsa.pub`
+key, located in your `$HOME/.ssh` directory (on Mac OS X and UNIX environments).
+The shell command below simply parses the SSH fingerprint and sets that in the
+requisite environment variable.
+
+    $ export MANTA_KEY_ID=`ssh-keygen -l -f ~/.ssh/id_rsa.pub | awk '{print $2}' | tr -d '\n'`
+    $ export MANTA_URL=https://manta.bh1-kvm1.joyent.us
+    $ export MANTA_USER=jill
+
+# Creating a Client
+
+In order to create a client, use the `createClient` API available on the
+top-level of the SDK.  The example below assumes that you are using the
+environment variables you set above.
+
+    var assert = require('assert');
+    var manta = require('manta');
+
+	var client = manta.createClient({
+	    sign: manta.privateKeySigner({
+		    key: process.env.HOME + '/.ssh/id_rsa',
+			keyId: process.env.MANTA_KEY_ID,
+		    user: process.env.MANTA_USER
+        }),
+		user: process.env.MANTA_USER
+	    url: process.env.MANTA_URL
+    });
+	assert.ok(client);
+
+    console.log('client setup: %s', client.toString());
+
+The options you can pass into `createClient` are:
+
+|**Name**||**JS Type**||**Description**||
+||connectTimeout||Number||_optional_: amount of milliseconds to wait for acquiring a socket to Manta; defaults to `0` (infinity)||
+||log||Object||_optional_: `bunyan` logger; default is at level `fatal` and writes to `stderr`||
+||headers||Object||_optional_: HTTP headers to send on *all* requests||
+||sign||Function||*required*: see `authenticating requests` below||
+||url||String||*required*: URL to interact with Manta on||
+||user||String||_optional_: `login` name to use when interacting with the `jobs` API||
+
+## Authenticating Requests
+
+TODO
+
+## Common API options
+
+All APIs in `node-manta` have the last two options of the function set to
+`options` and `callback`, where `options` is (usually) optional.  For example,
+these two calls to `info` are identical:
+
+    var opts = {};
+    client.info('/jill/stor/foo', opts, function (err, info) {
+	    assert.ifError(err);
+		...
+    });
+
+    client.info('/jill/stor/foo', function (err, info) {
+	    assert.ifError(err);
+		...
+    });
+
+If you are not passing in explicit options, the second form is always there for
+convenience.  All API operations allow you to pass in a standard set of options,
+which are:
+
+|**Name**||**JS Type**||**Description**||
+||headers||Object||Any HTTP headers to be included in this request||
+||req_id||String||A unique identifier for this request (SHOULD be a uuid)||
+||query||Object||A key/value set of parameters to be encoded on the URL's query string||
+
+You can always override any `node-manta` behavior by passing in explicit HTTP
+headers, but in most cases, you should just use the "higher-level" parameters
+available in the specific API you are interested in.
+
+## Common Callback Parameters
+
+In almost all cases (the exception being the "streaming" APIs like `ls`)
+callbacks will be of the form `function (error, result)`, where `err` is either
+a JavaScript
+[Error](https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Global_Objects/Error)
+object or `null`.  `result` is a standard node
+[http.ClientResponse](http://nodejs.org/api/http.html#http_http_clientresponse)
+object, where you will be able to access HTTP headers, response codes, etc.
+Note that if there was an HTTP response code >= 400, then `err` will be present
+and filled in with the Manta error code and message (see `errors`).
+
+## Errors
+
+TODO
+
+# Directories
+
+## client.mkdir(path, [options], callback)
+
+Create or overwrite a directory at `path`. `mkdir` is really a `PUT` operation,
+so it's slightly different semantics than `mkdir(2)` in POSIX (meaning, you
+can call mkdir on the same path twice).
+
+        client.mkdir('/jill/stor/foo', function (err) {
+                assert.ifError(err);
+
+                ...
+        });
+
