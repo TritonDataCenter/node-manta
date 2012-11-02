@@ -42,7 +42,7 @@ function parseOptions() {
                 reduce: [],
                 assets: []
         };
-        var parser = new getopt.BasicParser('vhk:m:n:r:s:u:a:c:',
+        var parser = new getopt.BasicParser('vhk:d:m:n:r:s:u:a:c:',
                                             process.argv);
         var tmp;
 
@@ -54,6 +54,10 @@ function parseOptions() {
 
                 case 'c':
                         opts.count = parseInt(option.optarg, 10);
+                        break;
+
+                case 'd':
+                        opts.memory = parseInt(option.optarg, 10);
                         break;
 
                 case 'h':
@@ -131,7 +135,7 @@ function usage(msg) {
 
         var str = 'usage: ' + path.basename(process.argv[1]);
         str += ' [-v] [-a account] [-u url] [-k keyId] ';
-        str += '[-m map] [-r reduce] [-s assets] [-n name]'
+        str += '[-m map] [-r reduce] [-s assets] [-d memory] [-n name]'
         console.error(str);
         process.exit(msg ? 1 : 0);
 }
@@ -163,9 +167,12 @@ _options.map.forEach(function (e) {
         _job.phases.push(e);
 });
 _options.reduce.forEach(function (e) {
-        if (_options.count) {
+        if (_options.count)
                 e.count = _options.count;
-        }
+
+        if (_options.memory)
+                e.memory = _options.memory;
+
         _job.phases.push(e);
 });
 
