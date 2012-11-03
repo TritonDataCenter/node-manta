@@ -161,15 +161,17 @@ var _client = manta.createClient({
 var _job = {
         name: _options.name,
         phases: [],
-        assets: _options.assets
 };
 _options.map.forEach(function (e) {
+        if (_options.assets)
+                e.assets = _options.assets;
         _job.phases.push(e);
 });
 _options.reduce.forEach(function (e) {
+        if (_options.assets)
+                e.assets = _options.assets;
         if (_options.count)
                 e.count = _options.count;
-
         if (_options.memory)
                 e.memory = _options.memory;
 
