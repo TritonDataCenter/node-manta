@@ -7,10 +7,10 @@
         "main": "./lib/index.js",
         "dependencies": {
                 "assert-plus": "0.1.2",
-                "bunyan": "0.16.3",
+                "bunyan": "0.16.4",
                 "carrier": "0.1.7",
                 "clone": "0.1.1",
-                "http-signature": "0.9.9",
+                "http-signature": "git://github.com/joyent/node-http-signature#ba72d40",
                 "memorystream": "0.2.0",
                 "mime": "1.2.7",
                 "node-uuid": "1.4.0",
