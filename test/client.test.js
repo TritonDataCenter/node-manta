@@ -21,7 +21,7 @@ var before = helper.before;
 var test = helper.test;
 
 var JOB;
-var ROOT = '/admin/stor';
+var ROOT = '/' + (process.env.MANTA_USER || 'admin') + '/stor';
 var SUBDIR1 = ROOT + '/' + uuid();
 var SUBDIR2 = SUBDIR1 + '/' + uuid(); // directory
 var CHILD1 = SUBDIR1 + '/' + uuid(); // object
