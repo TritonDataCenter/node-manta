@@ -124,8 +124,8 @@ manta.loadSSHKey(_options.keyId, function (load_err, key) {
         var opts = {
                 algorithm: / DSA /.test(key) ? 'DSA-SHA1' : 'RSA-SHA256',
                 expires: _options.expires,
+                host: url.parse(_options.url).host,
                 keyId: _options.keyId,
-                user: _options.user,
                 method: 'GET',
                 path: _options.path,
                 sign: manta.privateKeySigner({
@@ -133,7 +133,8 @@ manta.loadSSHKey(_options.keyId, function (load_err, key) {
                         keyId: _options.keyId,
                         log: LOG,
                         user: _options.user
-                })
+                }),
+                user: _options.user
         };
 
         manta.signUrl(opts, function (err, resource) {
