@@ -117,19 +117,27 @@ function usage(msg) {
 
 var _options = parseOptions();
 ifError(manta.assertPath(_options.path, true));
-manta.signUrl({
-        algorithm: 'rsa-sha1',
-        keyId: _options.keyId,
-        user: _options.user,
-        method: 'GET',
-        path: _options.path,
-        sign: manta.cliSigner({
-                algorithm: 'rsa-sha1',
+
+manta.loadSSHKey(_options.keyId, function (load_err, key) {
+        ifError(load_err);
+
+        var opts = {
+                algorithm: / DSA /.test(key) ? 'DSA-SHA1' : 'RSA-SHA256',
+                expires: _options.expires,
                 keyId: _options.keyId,
-                log: LOG,
-                user: _options.user
-        }),
-}, function (err, resource) {
-        ifError(err);
-        console.log(_options.url + resource);
+                user: _options.user,
+                method: 'GET',
+                path: _options.path,
+                sign: manta.privateKeySigner({
+                        key: key,
+                        keyId: _options.keyId,
+                        log: LOG,
+                        user: _options.user
+                })
+        };
+
+        manta.signUrl(opts, function (err, resource) {
+                ifError(err);
+                console.log(_options.url + resource);
+        });
 });
