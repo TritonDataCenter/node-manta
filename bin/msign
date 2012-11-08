@@ -39,7 +39,7 @@ function ifError(err) {
 function parseOptions() {
         var option;
         var opts = {};
-        var parser = new getopt.BasicParser('vhc:f:k:u:a:e:',
+        var parser = new getopt.BasicParser('vhc:f:k:m:u:a:e:',
                                             process.argv);
         var tmp;
 
@@ -59,6 +59,10 @@ function parseOptions() {
 
                 case 'k':
                         opts.keyId = option.optarg;
+                        break;
+
+                case 'm':
+                        opts.method = option.optarg;
                         break;
 
                 case 'u':
@@ -116,7 +120,6 @@ function usage(msg) {
 // Leading _ to avoid scope conflicts in functions
 
 var _options = parseOptions();
-ifError(manta.assertPath(_options.path, true));
 
 manta.loadSSHKey(_options.keyId, function (load_err, key) {
         ifError(load_err);
@@ -126,7 +129,8 @@ manta.loadSSHKey(_options.keyId, function (load_err, key) {
                 expires: _options.expires,
                 host: url.parse(_options.url).host,
                 keyId: _options.keyId,
-                method: 'GET',
+                log: LOG,
+                method: _options.method || 'GET',
                 path: _options.path,
                 sign: manta.privateKeySigner({
                         key: key,
