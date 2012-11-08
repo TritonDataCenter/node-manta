@@ -2,6 +2,8 @@
 // -*- mode: js -*-
 // Copyright (c) 2012, Joyent, Inc. All rights reserved.
 
+var http = require('http');
+var https = require('https');
 var url = require('url');
 
 var bunyan = require('bunyan');
@@ -22,7 +24,7 @@ var LOG = bunyan.createLogger({
         stream: process.stderr,
         serializers: restify.bunyan.serializers
 });
-
+var MAX_SOCKETS = parseInt(process.env.MANTA_MAX_SOCKETS || 1000, 10);
 
 
 ///--- Functions
@@ -176,6 +178,9 @@ function usage(msg) {
 
 ///--- Mainline
 // Leading _ to avoid scope conflicts in functions
+
+http.globalAgent.maxSockets = MAX_SOCKETS;
+https.globalAgent.maxSockets = MAX_SOCKETS;
 
 var _options = parseOptions();
 ifError(manta.assertPath(_options.path, true));
