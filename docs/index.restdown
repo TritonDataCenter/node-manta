@@ -74,7 +74,7 @@ environment variables you set above.
 
 The options you can pass into `createClient` are:
 
-|**Name**||**JS Type**||**Description**||
+||**Name**||**JS Type**||**Description**||
 ||connectTimeout||Number||_optional_: amount of milliseconds to wait for acquiring a socket to Manta; defaults to `0` (infinity)||
 ||log||Object||_optional_: `bunyan` logger; default is at level `fatal` and writes to `stderr`||
 ||headers||Object||_optional_: HTTP headers to send on *all* requests||
@@ -107,7 +107,7 @@ If you are not passing in explicit options, the second form is always there for
 convenience.  All API operations allow you to pass in a standard set of options,
 which are:
 
-|**Name**||**JS Type**||**Description**||
+||**Name**||**JS Type**||**Description**||
 ||headers||Object||Any HTTP headers to be included in this request||
 ||req_id||String||A unique identifier for this request (SHOULD be a uuid)||
 ||query||Object||A key/value set of parameters to be encoded on the URL's query string||
@@ -132,17 +132,202 @@ and filled in with the Manta error code and message (see `errors`).
 
 TODO
 
-# Directories
+# API
 
 ## client.mkdir(path, [options], callback)
 
 Create or overwrite a directory at `path`. `mkdir` is really a `PUT` operation,
 so it's slightly different semantics than `mkdir(2)` in POSIX (meaning, you
-can call mkdir on the same path twice).
+can call mkdir on the same path twice).  There is no return value besides a
+potentinal error.
 
         client.mkdir('/jill/stor/foo', function (err) {
-                assert.ifError(err);
-
-                ...
+		    assert.ifError(err);
+			...
         });
 
+### Inputs
+
+||**Name**||**JS Type**||**Description**||
+||directory||String||*(required)* A full Manta path to create||
+||options||Object||_(optional)_ optional overrides for this request||
+||callback||Function||*(required)* callback of the form `fn(err, res)`||
+
+
+## client.mkdirp(path, [options], callback)
+
+Same as `mkdir`, except, mkdirp creates intermediate directories as required.
+
+        client.mkdirp('/jill/stor/foo/bar/baz', function (err) {
+            assert.ifError(err);
+			...
+        });
+
+### Inputs
+
+||**Name**||**JS Type**||**Description**||
+||directory||String||*(required)* A full Manta path to create||
+||options||Object||_(optional)_ optional overrides for this request||
+||callback||Function||*(required)* callback of the form `fn(err, res)`||
+
+
+## client.ls(path, [options], callback)
+
+Lists directory contents.  This API will return an `EventEmitter` that will emit
+a stream of entries as they are returned from the server.  You can listen for
+two distinct types `directory`; records of type `object` will have slightly more
+information in the records.  Both records will have a `type` field in them.
+Otherwise, the returned entries are described below.  Optional pagination
+parameters can be included in the options block, and act as you would expect.
+There is a server-enforced limit of 1000 entries per list request, which is also
+the default limit, however you can request a smaller size if need be.  You can
+also choose to only receive objects of a certain type.
+
+    var opts = {
+		offset: 0,
+	    limit: 256,
+		type: 'object'
+	};
+    client.ls('/', opts, function (err, res) {
+        assert.ifError(err);
+
+        res.on('object', function (obj) {
+            console.log(obj);
+	    });
+
+        res.on('directory', function (dir) {
+            console.log(dir);
+        });
+
+        res.once('error', function (err) {
+		    console.error(err.stack));
+			process.exit(1);
+        });
+
+        res.once('end', function () {
+            console.log('all done');
+        });
+    });
+
+### Inputs
+
+||**Name**||**JS Type**||**Description**||
+||directory||String||*(required)* A full Manta path to list||
+||options||Object||_(optional)_ optional overrides for this request||
+||callback||Function||*(required)* callback of the form `fn(err, res)`||
+
+### Output Objects
+
+Each output object will be of this schema:
+
+    {
+	    name: 'foo',                            // basename of the entry
+		etag: 'AABBCC',                         // only set on objects
+		size: 1234,                             // only set on objects; valueOf(content-length)
+		type: 'object',                         // one of directory || object
+		mtime: '2012-11-09T12:34:56Z'           // ISO8601 timestamp of the last update time
+    }
+
+
+## client.put(path, stream, options, callback)
+
+Creates or overwrites an (object) key.  You pass it in a ReadableStream (note
+that stream *must* support pause/resume), and upon receiving a 100-continue
+from manta, the bytes get blasted up.
+
+Unlike the other APIs, you also will need to pass in an options object, that
+contains, at minimum, a 'size' attribute. Additionally, you can/should pass
+in an 'md5' attribute, and you can pass a 'type' attribute which is really
+the content-type.  If you don't pass in 'type', this API will try to guess it
+based on the name of the object (using the extension).  Lastly, you can pass
+in a 'copies' attribute, which sets the number of full object copies to make
+server side (default is 2).
+
+However, like the other APIs, you can additionally pass in extra headers, etc.
+in the options object as well.   In the case of objects this is particularly
+useful for setting CORS headers, for example.
+
+There is no return value besides error reporting.
+
+Note: The example below uses the `memorystream` module from NPM.
+
+    var crypto = require('crypto');
+    var MemoryStream = require('memorystream');
+
+    var message = 'Hello World'
+	var opts = {
+	    copies: 3,
+		headers: {
+		    'access-control-allow-origin': '*',
+			'access-control-allow-methods': 'GET'
+		},
+		md5: crypto.createHash('md5').update(chunk).digest('base64')
+	    size: Buffer.byteLength(message),
+		type: 'text/plain'
+    };
+    var stream = new MemoryStream();
+
+    client.put('/jill/stor/hello_world.txt', stream, opts, function (err) {
+        assert.ifError(err);
+        ...
+    });
+
+    process.nextTick(function () {
+	    stream.end(message));
+	});
+
+### Inputs
+
+||**Name**||**JS Type**||**Description**||
+||directory||String||*(required)* A full Manta path to read||
+||stream||Stream||*(required)* An instance of a `ReadableStream`||
+||options||Object||*(required)* overrides for this request; must include `size`||
+||callback||Function||*(required)* callback of the form `fn(err, res)`||
+
+
+## client.get(path, [options], callback)
+
+Fetches an object back from Manta, and gives you a (standard) ReadableStream.
+
+Note this API will validate ContentMD5, and so if the downloaded object does
+not match, the stream will emit an error.
+
+    client.get('/jill/stor/hello_world.txt', function (err, stream) {
+        assert.ifError(err);
+
+        stream.setEncoding('utf8');
+		stream.on('data', function (chunk) {
+		    console.log(chunk);
+        });
+		stream.on('end', function () {
+		    ...
+        });
+    });
+
+### Inputs
+
+||**Name**||**JS Type**||**Description**||
+||directory||String||*(required)* A full Manta path to create an object as||
+||options||Object||_(optional)_ overrides for this request||
+||callback||Function||*(required)* callback of the form `fn(err, stream)`||
+
+
+## client.unlink(path, [options], callback)
+
+Deletes an object or directory from Manta. If path points to a directory, the
+directory *must* be empty.
+
+There is no return value besides a possible error.
+
+    client.unlink('/jill/stor/hello_world.txt', function (err) {
+        assert.ifError(err);
+
+		...
+    });
+
+### Inputs
+
+||**Name**||**JS Type**||**Description**||
+||directory||String||*(required)* A full Manta path to delete||
+||options||Object||_(optional)_ overrides for this request||
+||callback||Function||*(required)* callback of the form `fn(err, stream)`||
