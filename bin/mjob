@@ -94,11 +94,14 @@ function parseOptions() {
                         break;
 
                 default:
+                        usage('invalid argument: ' + option.option);
                         process.exit(1);
                         break;
                 }
-
         }
+
+        if (option && option.error)
+                usage('\n');
 
         if (!opts.url && !process.env.MANTA_URL)
                 usage('url is a required argument');

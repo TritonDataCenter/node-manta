@@ -42,7 +42,7 @@ function parseOptions() {
                 reduce: [],
                 assets: []
         };
-        var parser = new getopt.BasicParser('vhk:d:m:n:r:s:u:a:c:',
+        var parser = new getopt.BasicParser('vhi:k:d:m:n:r:s:u:a:c:',
                                             process.argv);
         var tmp;
 
@@ -62,6 +62,10 @@ function parseOptions() {
 
                 case 'h':
                         usage();
+                        break;
+
+                case 'i':
+                        opts.input = option.optarg;
                         break;
 
                 case 'k':
@@ -125,6 +129,12 @@ function parseOptions() {
         opts.url = opts.url || process.env.MANTA_URL;
         opts.user = opts.user || process.env.MANTA_USER;
 
+        if (opts.input) {
+                opts.input = /\/\w+\/jobs\/\w+/.test(opts.input) ?
+                        opts.input :
+                        '/' + opts.user + '/jobs/' + opts.input
+        }
+
         return (opts);
 }
 
@@ -134,7 +144,7 @@ function usage(msg) {
                 console.error(msg);
 
         var str = 'usage: ' + path.basename(process.argv[1]);
-        str += ' [-v] [-a account] [-u url] [-k keyId] ';
+        str += ' [-v] [-a account] [-u url] [-k keyId] [-i job]';
         str += '[-m map] [-r reduce] [-s assets] [-d memory] [-n name]'
         console.error(str);
         process.exit(msg ? 1 : 0);
@@ -160,6 +170,7 @@ var _client = manta.createClient({
 });
 var _job = {
         name: _options.name,
+        input: _options.input,
         phases: [],
 };
 _options.map.forEach(function (e) {
