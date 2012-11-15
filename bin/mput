@@ -39,7 +39,8 @@ function ifError(err) {
 function parseOptions() {
         var option;
         var opts = {};
-        var parser = new getopt.BasicParser('hvc:f:k:u:a:',
+        opts.headers = {};
+        var parser = new getopt.BasicParser('hvc:f:k:u:a:H:',
                                             process.argv);
         var tmp;
 
@@ -59,6 +60,15 @@ function parseOptions() {
 
                 case 'h':
                         usage();
+                        break;
+
+                case 'H':
+                        if (option.optarg.indexOf(': ') === -1) {
+                                usage('headers must be in the format of: ' +
+                                      '[header] + ": " + [value]');
+                        }
+                        var p = option.optarg.split(': ');
+                        opts.headers[p[0]] = p[1];
                         break;
 
                 case 'k':
@@ -138,6 +148,7 @@ var _client = manta.createClient({
                 user: _options.user
         }),
         url: _options.url,
+        headers: _options.headers,
         user: _options.user
 });
 
