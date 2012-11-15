@@ -68,7 +68,7 @@ function parseOptions() {
                                       '[header] + ": " + [value]');
                         }
                         var p = option.optarg.split(': ');
-                        opts.headers[p[0]] = p[1];
+                        opts.headers[p[0]] = p.slice(1).join(': ');
                         break;
 
                 case 'k':
