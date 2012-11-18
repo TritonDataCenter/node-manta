@@ -248,7 +248,7 @@ test('wait for job', function (t) {
                         } else if (job.state === 'done') {
                                 t.end();
                         } else {
-                                if (++attempts >= 30) {
+                                if (++attempts >= 60) {
                                         t.notOk(attempts);
                                         t.end();
                                 } else {
