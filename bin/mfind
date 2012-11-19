@@ -159,7 +159,7 @@ function printEntry(opts, obj) {
         if (opts.type && opts.type === 'd' && obj.type !== 'directory')
                 return;
 
-        console.log(opts.path + '/' +obj.name);
+        console.log(opts.path + '/' + obj.name);
 }
 
 
