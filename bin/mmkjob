@@ -40,6 +40,7 @@ function parseOptions() {
         var opts = {
                 map: [],
                 reduce: [],
+                count: [],
                 assets: []
         };
         var parser = new getopt.BasicParser('vhi:k:d:m:n:r:s:u:a:c:',
@@ -53,7 +54,7 @@ function parseOptions() {
                         break;
 
                 case 'c':
-                        opts.count = parseInt(option.optarg, 10);
+                        opts.count.push(parseInt(option.optarg, 10));
                         break;
 
                 case 'd':
@@ -181,8 +182,8 @@ _options.map.forEach(function (e) {
 _options.reduce.forEach(function (e) {
         if (_options.assets)
                 e.assets = _options.assets;
-        if (_options.count)
-                e.count = _options.count;
+        if (!_options.count.isEmpty())
+                e.count = _options.count.shift();
         if (_options.memory)
                 e.memory = _options.memory;
 
