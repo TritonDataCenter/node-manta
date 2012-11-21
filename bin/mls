@@ -36,14 +36,16 @@ function ifError(err) {
 
 
 function ls(client, options, cb) {
+        var last;
         var opts = {
-                query: {
-                }
+                query: {}
         };
+        var seen = 0;
+
         if (options.limit)
                 opts.query.limit = options.limit;
-        if (options.offset)
-                opts.query.offset = options.offset;
+        if (options.marker)
+                opts.query.marker = options.marker;
         if (options.type) {
                 opts.query[options.type] = true;
         }
@@ -51,10 +53,36 @@ function ls(client, options, cb) {
         client.ls(options.path, opts, function (err, res) {
                 ifError(err);
 
-                res.on('directory', printEntry);
-                res.on('object', printEntry);
+                res.on('directory', function (dir) {
+                        last = dir.name;
+                        seen++;
+                        if (dir.name !== options.marker)
+                                printEntry(dir);
+                });
+                res.on('object', function (obj) {
+                        last = obj.name;
+                        seen++;
+
+                        if (obj.name !== options.marker)
+                                printEntry(obj);
+                });
                 res.once('error', cb);
-                res.once('end', cb.bind(null, null));
+                res.once('end', function (http_res) {
+                        var rss = parseInt(http_res.headers['result-set-size'],
+                                           10);
+                        if (options.limit !== undefined ||
+                            seen >= rss || !last) {
+                                cb(null);
+                                return;
+                        }
+
+                        var o = {
+                                marker: last,
+                                path: options.path,
+                                type: options.type
+                        };
+                        ls(client, o, cb);
+                });
         });
 }
 
@@ -62,7 +90,7 @@ function ls(client, options, cb) {
 function parseOptions() {
         var option;
         var opts = {};
-        var parser = new getopt.BasicParser('vha:k:l:o:u:t:', process.argv);
+        var parser = new getopt.BasicParser('vha:k:l:m:o:u:t:', process.argv);
         var tmp;
 
         while ((option = parser.getopt()) !== undefined && !option.error) {
@@ -81,6 +109,10 @@ function parseOptions() {
 
                 case 'l':
                         opts.limit = parseInt(option.optarg, 10);
+                        break;
+
+                case 'm':
+                        opts.marker = option.optarg;
                         break;
 
                 case 'o':
@@ -144,7 +176,8 @@ function usage(msg) {
                 console.error(msg);
 
         var str = 'usage: ' + path.basename(process.argv[1]);
-        str += '[-v] [-a account] [-u url] [-k keyId] [-l limit] [-o offset] path';
+        str += '[-v] [-a account] [-u url] [-k keyId] [-l limit] ' +
+                '[-m marker] [-o offset] path';
         console.error(str);
         process.exit(msg ? 1 : 0);
 }
