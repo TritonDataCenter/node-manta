@@ -182,7 +182,7 @@ _options.map.forEach(function (e) {
 _options.reduce.forEach(function (e) {
         if (_options.assets)
                 e.assets = _options.assets;
-        if (!_options.count.isEmpty())
+        if (_options.count && _options.count.length > 1)
                 e.count = _options.count.shift();
         if (_options.memory)
                 e.memory = _options.memory;
