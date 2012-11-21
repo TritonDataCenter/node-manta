@@ -53,19 +53,15 @@ function ls(client, options, cb) {
         client.ls(options.path, opts, function (err, res) {
                 ifError(err);
 
-                res.on('directory', function (dir) {
-                        last = dir.name;
+                function onEntry(e) {
+                        last = e.name;
                         seen++;
-                        if (dir.name !== options.marker)
-                                printEntry(dir);
-                });
-                res.on('object', function (obj) {
-                        last = obj.name;
-                        seen++;
+                        if (e.name !== options.marker)
+                                printEntry(e);
+                }
 
-                        if (obj.name !== options.marker)
-                                printEntry(obj);
-                });
+                res.on('directory', onEntry);
+                res.on('object', onEntry);
                 res.once('error', cb);
                 res.once('end', function (http_res) {
                         var rss = parseInt(http_res.headers['result-set-size'],

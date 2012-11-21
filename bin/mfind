@@ -41,15 +41,17 @@ function ls(client, options, cb) {
         var opts = {
                 query: {}
         };
+        var seen = 0;
+
         if (options.limit)
                 opts.query.limit = options.limit;
-        if (options.offset)
-                opts.query.offset = options.offset;
+        if (options.marker)
+                opts.query.marker = options.marker;
 
         client.ls(options.path, opts, function (err, res) {
                 ifError(err);
 
-                res.on('directory', function (dir) {
+                res.on('directory', function onDirectory(dir) {
                         var _opts = clone(options);
                         _opts.path = options.path + '/' + dir.name;
                         if (_opts.type === 'd')
@@ -58,11 +60,38 @@ function ls(client, options, cb) {
                                 ifError(err);
                         });
                 });
-
-                res.on('object', printEntry.bind(null, options));
+                res.on('object', function onObject(obj) {
+                        last = obj.name;
+                        seen++;
+                        if (obj.name !== options.marker)
+                                printEntry(options, obj);
+                });
                 res.once('error', cb);
-                res.once('end', cb.bind(null, null));
+                res.once('end', function (http_res) {
+                        var rss = parseInt(http_res.headers['result-set-size'],
+                                           10);
+                        if (options.limit !== undefined ||
+                            seen >= rss || !last) {
+                                cb(null);
+                                return;
+                        }
+
+                        var o = {
+                                marker: last,
+                                path: options.path,
+                                type: options.type
+                        };
+                        ls(client, o, cb);
+                });
         });
+
+        // client.ls(options.path, opts, function (err, res) {
+        //         ifError(err);
+
+        //         res.on('object', printEntry.bind(null, options));
+        //         res.once('error', cb);
+        //         res.once('end', cb.bind(null, null));
+        // });
 }
 
 
