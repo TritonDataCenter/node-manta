@@ -14,6 +14,7 @@
                 "memorystream": "0.2.0",
                 "mime": "1.2.7",
                 "node-uuid": "1.4.0",
+                "once": "1.1.1",
                 "posix-getopt": "1.0.0",
                 "restify": "git://github.com/mcavage/node-restify.git#fcabbd1",
                 "ssh-agent": "0.2.1",
