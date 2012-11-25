@@ -59,16 +59,16 @@ environment variables you set above.
     var assert = require('assert');
     var manta = require('manta');
 
-	var client = manta.createClient({
-	    sign: manta.privateKeySigner({
-		    key: process.env.HOME + '/.ssh/id_rsa',
-			keyId: process.env.MANTA_KEY_ID,
-		    user: process.env.MANTA_USER
+    var client = manta.createClient({
+        sign: manta.privateKeySigner({
+            key: process.env.HOME + '/.ssh/id_rsa',
+            keyId: process.env.MANTA_KEY_ID,
+            user: process.env.MANTA_USER
         }),
-		user: process.env.MANTA_USER
-	    url: process.env.MANTA_URL
+        user: process.env.MANTA_USER,
+        url: process.env.MANTA_URL
     });
-	assert.ok(client);
+    assert.ok(client);
 
     console.log('client setup: %s', client.toString());
 
