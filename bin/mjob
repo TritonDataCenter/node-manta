@@ -35,6 +35,43 @@ function ifError(err) {
 }
 
 
+function inputStream(client, id, opts) {
+        opts = opts || {};
+        client.jobInput(id, opts, function stream(err, out) {
+                ifError(err);
+
+                var last;
+                var seen = 0;
+                var total = 0;
+
+                out.on('key', function (k) {
+                        if (k === opts.marker)
+                                return;
+
+                        last = k;
+                        seen++;
+                        console.log(k);
+                });
+
+                out.on('err', function (e) {
+                        console.log(JSON.stringify(e));
+                });
+
+                out.once('end', function () {
+                        if (seen < total && last)
+                                inputStream(client, id, {marker: last});
+                });
+
+                out.once('result', function (res) {
+                        if (res.statusCode !== 200)
+                                return;
+                        total = parseInt(res.headers['result-set-size'] || 0,
+                                         10);
+                });
+        });
+}
+
+
 function parseOptions() {
         var option;
         var opts = {
@@ -179,9 +216,8 @@ _client.job(_options.id, function (err, job) {
         ifError(err);
 
         function streamOut(err2, out) {
-                ifError(err);
+                ifError(err2);
 
-                var _keys = false;
                 out.on('key', function (k) {
                         console.log(k);
                 });
@@ -193,7 +229,7 @@ _client.job(_options.id, function (err, job) {
         if (_options.output) {
                 _client.jobOutput(_options.id, streamOut);
         } else if (_options.input) {
-                _client.jobInput(_options.id, streamOut);
+                inputStream(_client, _options.id);
         } else if (_options.fail) {
                 _client.jobFailures(_options.id, streamOut);
         } else if (_options.errors) {
