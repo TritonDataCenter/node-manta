@@ -41,6 +41,7 @@ function ls(client, options, cb) {
         var opts = {
                 query: {}
         };
+        var last;
         var seen = 0;
 
         if (options.limit)
@@ -84,14 +85,6 @@ function ls(client, options, cb) {
                         ls(client, o, cb);
                 });
         });
-
-        // client.ls(options.path, opts, function (err, res) {
-        //         ifError(err);
-
-        //         res.on('object', printEntry.bind(null, options));
-        //         res.once('error', cb);
-        //         res.once('end', cb.bind(null, null));
-        // });
 }
 
 
@@ -215,7 +208,7 @@ var _options = parseOptions();
 ifError(manta.assertPath(_options.path, true));
 
 var _client = manta.createClient({
-        connectTimeout: 1000,
+        connectTimeout: 4000,
         log: LOG,
         retry: false,
         sign: manta.cliSigner({
