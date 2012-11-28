@@ -127,7 +127,8 @@ function usage(msg) {
                 console.error(msg);
 
         var str = 'usage: ' + path.basename(process.argv[1]);
-        str += ' [-v] [-a account] [-c copies] [-u url] [-k keyId] -f file path';
+        str += ' [-v] [-a account] [-c copies] [-u url] [-k keyId]';
+        str += ' [-H header] -f file path';
         console.error(str);
         process.exit(msg ? 1 : 0);
 }
