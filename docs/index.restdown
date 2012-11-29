@@ -114,6 +114,36 @@ following properties:
 Use-cases where you would need to write your own signer are things like signing
 with a smart-card or other HSM, making remote calls to a central system, etc.
 
+### Presigned URLs
+
+In some cases you may want your app to be able to generate a full URL, suitable
+for giving out to others as a link.  In these cases, you can use the `presigned`
+URL approach, and set an `expires` parameter.  node-manta has a simple API for
+this that utilizes the same `sign` callback as all other APIs, but simply does
+the correct canonicalization for a URL:
+
+        var manta = require('manta');
+
+        var opts = {
+            algorithm: 'RSA-SHA256',
+            expires: Date.now() + 3600, // epoch time
+            host: 'manta.us-east.joyentcloud.com',
+            keyId: process.env.MANTA_KEY_ID,
+            path: '/mark/stor/my_image.png',
+            sign: manta.privateKeySigner({
+                key: process.env.HOME + '/.ssh/id_rsa',
+                keyId: process.env.MANTA_KEY_ID,
+                user: process.env.MANTA_USER
+            }),
+            user: process.env.MANTA_USER
+        };
+
+        manta.signUrl(opts, function (err, resource) {
+            assert.ifError(err);
+
+            console.log('https://manta.us-east.joyencloud.com' + resource);
+        });
+
 ## Common API options
 
 All APIs in `node-manta` have the last two options of the function set to
