@@ -1,60 +1,69 @@
 # Manta client tools
 
-Repository: <git@git.joyent.com:node-manta.git>
-Browsing: <https://mo.joyent.com/node-manta>
-Who: Mark Cavage
-Tickets/bugs: <https://devhub.joyent.com/jira/browse/MANTA>
+[manta](http://joyent.github.com/node-manta) is a Node.js SDK for interacting
+with Joyent's Manta system.
 
-## Overview
+# Installation
 
-This repository provides a set of tools for interacting with Manta.
+    $ npm install git://github.com/joyent/node-manta.git#master
 
-## Set up a Manta
+# Usage
 
-You must start with a working Manta install.  In the global zone of a fresh SDC
-headnode install, run:
+First setup your environment to match your Joyent Manta account:
 
-    # manta-init
-    ...
-    # manta-deploy-coal
+    $ export MANTA_KEY_ID=`ssh-keygen -l -f ~/.ssh/id_rsa.pub | awk '{print $2}' | tr -d '\n'`
+    $ export MANTA_URL=https://manta.us-east.joyentcloud.com
+    $ export MANTA_USER=mark
 
-You can also deploy on hardware using `manta-deploy-lab` instead of `manta-deploy-coal`.
+Then a code snippet:
 
-## Set up DNS in your working zone
+    var client = manta.createClient({
+        sign: manta.privateKeySigner({
+            key: process.env.HOME + '/.ssh/id_rsa',
+            keyId: process.env.MANTA_KEY_ID,
+            user: process.env.MANTA_USER
+        }),
+        user: process.env.MANTA_USER,
+        url: process.env.MANTA_URL
+    });
+    console.log('manta ready: %s', client.toString());
 
-In order to refer to manta using `manta.coal.joyent.us` or
-`manta.bh1-kvm1.joyent.us`, you'll need to add Manta's nameservers to your
-environment's /etc/resolv.conf, whether that's on your Macbook or a SmartOS
-zone.  To find the nameservers, first find the zones that were deployed above
-using `vmadm list`.  They'll be the zones with aliases like
-`ns-1.ns.coal.joyent.us-...`.  COAL will have 1 nameserver, while lab machines
-will have 3.  Get each one's IP address with:
+    client.get('/mark/stor/foo', function (err, stream) {
+        assert.ifError(err);
 
-    # vmadm get ZONE_UUID | json nics.0.ip
+        stream.setEncoding('utf8');
+        stream.on('data', function (chunk) {
+            console.log(chunk);
+        });
+    });
 
-and add each one to /etc/resolv.conf.
+# CLI
 
-## Set up a user for manta
+A full set of commands for interacting with Manta is in `bin`.
 
-You'll need a user with an ssh key stored in UFDS.  The easiest way to do that is to make sure your key is in node-manta.git:data/keys.ldif and then run this in the global zone:
+## License
 
-    # sdc-ldap add -f /path/to/keys.ldif
+The MIT License (MIT)
+Copyright (c) 2012 Joyent
 
-## Set up your environment
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
 
-These instructions assume COAL, user "dap", and that your key is
-~/.ssh/id\_rsa.
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
-    $ export MANTA_URL=https://manta.coal.joyent.us/
-    $ export MANTA_USER=dap
-    $ export MANTA_KEY_ID=$(ssh-keygen -l -f ~/.ssh/id_rsa | awk '{print $2}')
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 
-## Use these tools
+## Bugs
 
-First, build this repo:
-
-    $ make
-
-This requires that "npm" be in your path.
-
-Now you can use the tools in "bin".
+See <https://github.com/joyent/node-manta/issues>.
