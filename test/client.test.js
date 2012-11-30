@@ -236,30 +236,30 @@ test('end job', function (t) {
 });
 
 
-test('wait for job', function (t) {
-        var attempts = 1;
-        var client = this.client;
+// test('wait for job', function (t) {
+//         var attempts = 1;
+//         var client = this.client;
 
-        function getState() {
-                client.job(JOB, function (err, job) {
-                        t.ifError(err);
-                        if (err) {
-                                t.end();
-                        } else if (job.state === 'done') {
-                                t.end();
-                        } else {
-                                if (++attempts >= 60) {
-                                        t.notOk(attempts);
-                                        t.end();
-                                } else {
-                                        setTimeout(getState, 1000);
-                                }
-                        }
-                });
-        }
+//         function getState() {
+//                 client.job(JOB, function (err, job) {
+//                         t.ifError(err);
+//                         if (err) {
+//                                 t.end();
+//                         } else if (job.state === 'done') {
+//                                 t.end();
+//                         } else {
+//                                 if (++attempts >= 60) {
+//                                         t.notOk(attempts);
+//                                         t.end();
+//                                 } else {
+//                                         setTimeout(getState, 1000);
+//                                 }
+//                         }
+//                 });
+//         }
 
-        getState();
-});
+//         getState();
+// });
 
 
 test('get job output', function (t) {
