@@ -53,10 +53,14 @@ function ls(client, options, cb) {
                 ifError(err);
 
                 res.on('directory', function onDirectory(dir) {
+                        last = dir.name;
+                        seen++;
+
                         var _opts = clone(options);
                         _opts.path = options.path + '/' + dir.name;
                         if (_opts.type === 'd')
                                 printEntry(options, dir);
+
                         ls(client, _opts, function (err) {
                                 ifError(err);
                         });
