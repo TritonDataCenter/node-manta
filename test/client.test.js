@@ -236,41 +236,38 @@ test('end job', function (t) {
 });
 
 
-// test('wait for job', function (t) {
-//         var attempts = 1;
-//         var client = this.client;
+test('wait for job', function (t) {
+        var attempts = 1;
+        var client = this.client;
 
-//         function getState() {
-//                 client.job(JOB, function (err, job) {
-//                         t.ifError(err);
-//                         if (err) {
-//                                 t.end();
-//                         } else if (job.state === 'done') {
-//                                 t.end();
-//                         } else {
-//                                 if (++attempts >= 60) {
-//                                         t.notOk(attempts);
-//                                         t.end();
-//                                 } else {
-//                                         setTimeout(getState, 1000);
-//                                 }
-//                         }
-//                 });
-//         }
+        function getState() {
+                client.job(JOB, function (err, job) {
+                        t.ifError(err);
+                        if (err) {
+                                t.end();
+                        } else if (job.state === 'done') {
+                                t.end();
+                        } else {
+                                if (++attempts >= 60) {
+                                        t.notOk(attempts);
+                                        t.end();
+                                } else {
+                                        setTimeout(getState, 1000);
+                                }
+                        }
+                });
+        }
 
-//         getState();
-// });
+        getState();
+});
 
 
 test('get job output', function (t) {
-        var self = this;
-
-        var _keys = 1; // treat 'end' as a key
-        var _done = 0;
+        var _keys = 0; // treat 'end' as a key
         function cb(err) {
                 t.ifError(err);
-                if (++_done === _keys)
-                        t.end();
+                t.ok(_keys);
+                t.end();
         }
 
         this.client.jobOutput(JOB, function (err, res) {
@@ -280,8 +277,6 @@ test('get job output', function (t) {
                 res.on('key', function (k) {
                         t.ok(k);
                         _keys++;
-
-                        self.client.unlink(k, cb);
                 });
 
                 res.once('error', cb);
