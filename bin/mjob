@@ -175,7 +175,8 @@ function usage(msg) {
                 console.error(msg);
 
         var str = 'usage: ' + path.basename(process.argv[1]);
-        str += ' [-v] [-a account] [-u url] [-k keyId] [-c] [-e] [-o] jobId';
+        str += ' [-v] [-a account] [-u url] [-k keyId] [-c] [-e] [-o]';
+        str += '[-f] [-i] [-x] jobId';
         console.error(str);
         process.exit(msg ? 1 : 0);
 }
