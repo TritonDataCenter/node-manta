@@ -30,6 +30,7 @@ JSL_FILES_NODE   = $(JS_FILES)
 JSSTYLE_FILES	 = $(JS_FILES)
 JSSTYLE_FLAGS    = -f tools/jsstyle.conf
 
+CLEAN_FILES += node_modules
 
 include ./tools/mk/Makefile.defs
 
