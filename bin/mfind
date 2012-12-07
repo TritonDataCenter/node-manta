@@ -18,6 +18,7 @@ var manta = require('../lib');
 
 ///--- Globals
 
+var CLIENT;
 var LOG = bunyan.createLogger({
         name: require('path').basename(process.argv[1]),
         level: (process.env.LOG_LEVEL || 'info'),
@@ -25,6 +26,7 @@ var LOG = bunyan.createLogger({
         serializers: restify.bunyan.serializers
 });
 var MAX_SOCKETS = parseInt(process.env.MANTA_MAX_SOCKETS || 1000, 10);
+
 
 
 ///--- Functions
@@ -37,65 +39,11 @@ function ifError(err) {
 }
 
 
-function ls(client, options, cb) {
-        var opts = {
-                query: {}
-        };
-        var last;
-        var seen = 0;
-
-        if (options.limit)
-                opts.query.limit = options.limit;
-        if (options.marker)
-                opts.query.marker = options.marker;
-
-        client.ls(options.path, opts, function (err, res) {
-                ifError(err);
-
-                res.on('directory', function onDirectory(dir) {
-                        last = dir.name;
-                        seen++;
-
-                        var _opts = clone(options);
-                        _opts.path = options.path + '/' + dir.name;
-                        if (_opts.type === 'd')
-                                printEntry(options, dir);
-
-                        ls(client, _opts, function (err) {
-                                ifError(err);
-                        });
-                });
-                res.on('object', function onObject(obj) {
-                        last = obj.name;
-                        seen++;
-                        if (obj.name !== options.marker)
-                                printEntry(options, obj);
-                });
-                res.once('error', cb);
-                res.once('end', function (http_res) {
-                        var rss = parseInt(http_res.headers['result-set-size'],
-                                           10);
-                        if (options.limit !== undefined ||
-                            seen >= rss || !last) {
-                                cb(null);
-                                return;
-                        }
-
-                        var o = {
-                                marker: last,
-                                path: options.path,
-                                type: options.type
-                        };
-                        ls(client, o, cb);
-                });
-        });
-}
-
-
 function parseOptions() {
         var option;
         var opts = {};
-        var parser = new getopt.BasicParser('vha:k:l:n:o:u:s:t:', process.argv);
+        var parser = new getopt.BasicParser('vha:k:l:n:o:p:u:s:t:',
+                                            process.argv);
         var tmp;
 
         while ((option = parser.getopt()) !== undefined && !option.error) {
@@ -122,6 +70,10 @@ function parseOptions() {
 
                 case 'o':
                         opts.offset = parseInt(option.optarg, 10);
+                        break;
+
+                case 'p':
+                        opts.parallel = parseInt(option.optarg, 10);
                         break;
 
                 case 's':
@@ -211,7 +163,7 @@ https.globalAgent.maxSockets = MAX_SOCKETS;
 var _options = parseOptions();
 ifError(manta.assertPath(_options.path, true));
 
-var _client = manta.createClient({
+CLIENT = manta.createClient({
         connectTimeout: 4000,
         log: LOG,
         retry: false,
@@ -224,10 +176,66 @@ var _client = manta.createClient({
         user: _options.user
 });
 
+var Q = new manta.Queue({
+        limit: _options.parallel || 10,
+        worker: function ls(options, cb) {
+                var last;
+                var opts = {
+                        query: {}
+                };
+                var seen = 0;
 
-_client.info(_options.path, function (err, info) {
+                if (options.limit)
+                        opts.query.limit = options.limit;
+                if (options.marker)
+                        opts.query.marker = options.marker;
+
+                CLIENT.ls(options.path, opts, function (err, res) {
+                        ifError(err);
+
+                        res.on('directory', function onDirectory(dir) {
+                                last = dir.name;
+                                seen++;
+
+                                var _opts = clone(options);
+                                _opts.client = options.client
+                                _opts.path = options.path + '/' + dir.name;
+                                if (_opts.type === 'd')
+                                        printEntry(options, dir);
+
+                                Q.push(_opts);
+                        });
+                        res.on('object', function onObject(obj) {
+                                last = obj.name;
+                                seen++;
+                                if (obj.name !== options.marker)
+                                        printEntry(options, obj);
+                        });
+                        res.once('error', ifError);
+                        res.once('end', function (http_res) {
+                                var l = options.limit;
+                                var rss = http_res.headers['result-set-size'];
+                                rss = parseInt(rss, 10);
+
+                                if (l !== undefined || seen >= rss || !last) {
+                                        cb();
+                                } else {
+                                        var o = {
+                                                marker: last,
+                                                path: options.path,
+                                                type: options.type
+                                        };
+                                        Q.push(o);
+                                }
+                        });
+                });
+        }
+});
+
+
+CLIENT.info(_options.path, function (err, info) {
         if (err) {
-                _client.get(_options.path, function (err2) {
+                CLIENT.get(_options.path, function (err2) {
                         ifError(err2);
                         // We *shouldn't* ever hit this...
                         ifError(err);
@@ -236,9 +244,7 @@ _client.info(_options.path, function (err, info) {
         }
 
         if (info.extension === 'directory') {
-                ls(_client, _options, function (err) {
-                        ifError(err);
-                });
+                Q.push(_options);
         } else {
                 printEntry(_options, info);
                 process.exit(1);
