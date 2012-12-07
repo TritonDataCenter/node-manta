@@ -113,22 +113,16 @@ function parseOptions() {
 
         }
 
-        if (!opts.url && !process.env.MANTA_URL)
-                usage('url is a required argument');
-
-        if (!opts.user && !process.env.MANTA_USER)
-                usage('account is a required argument');
-
-        if (!opts.keyId && !process.env.MANTA_KEY_ID)
-                usage('keyId is a required argument');
+        try {
+                manta.checkBinEnv(opts);
+        } catch (err) {
+                usage(err.message);
+        }
 
         if (!opts.map.length && !opts.reduce.length)
                 usage('at least one map or reduce task must be specified');
 
-        opts.keyId = opts.keyId || process.env.MANTA_KEY_ID;
         opts.name = opts.name || uuid.v4().substr(0, 7);
-        opts.url = opts.url || process.env.MANTA_URL;
-        opts.user = opts.user || process.env.MANTA_USER;
 
         if (opts.input) {
                 opts.input = /\/\w+\/jobs\/\w+/.test(opts.input) ?
@@ -158,18 +152,8 @@ function usage(msg) {
 // Leading _ to avoid scope conflicts in functions
 
 var _options = parseOptions();
-var _client = manta.createClient({
-        connectTimeout: 1000,
-        log: LOG,
-        retry: false,
-        sign: manta.cliSigner({
-                keyId: _options.keyId,
-                log: LOG,
-                user: _options.user,
-        }),
-        url: _options.url,
-        user: _options.user
-});
+_options.log = LOG;
+var _client = manta.createBinClient(_options);
 var _job = {
         name: _options.name,
         input: _options.input,

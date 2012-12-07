@@ -140,14 +140,12 @@ function parseOptions() {
         if (option && option.error)
                 usage('\n');
 
-        if (!opts.url && !process.env.MANTA_URL)
-                usage('url is a required argument');
+        try {
+                manta.checkBinEnv(opts);
+        } catch (err) {
+                usage(err.message);
+        }
 
-        if (!opts.user && !process.env.MANTA_USER)
-                usage('account is a required argument');
-
-        if (!opts.keyId && !process.env.MANTA_KEY_ID)
-                usage('keyId is a required argument');
 
         if ((opts.input || opts.output || opts.fail) &&
             !xor(opts.fail, opts.input, opts.output)) {
@@ -161,10 +159,7 @@ function parseOptions() {
         if (parser.optind() >= process.argv.length)
                 usage('missing required argument: "jobId"');
 
-        opts.keyId = opts.keyId || process.env.MANTA_KEY_ID;
         opts.id = process.argv[parser.optind()];
-        opts.url = opts.url || process.env.MANTA_URL;
-        opts.user = opts.user || process.env.MANTA_USER;
 
         return (opts);
 }
@@ -200,18 +195,8 @@ function xor() {
 // Leading _ to avoid scope conflicts in functions
 
 var _options = parseOptions();
-var _client = manta.createClient({
-        connectTimeout: 1000,
-        log: LOG,
-        retry: false,
-        sign: manta.cliSigner({
-                keyId: _options.keyId,
-                log: LOG,
-                user: _options.user,
-        }),
-        url: _options.url,
-        user: _options.user
-});
+_options.log = LOG;
+var _client = manta.createBinClient(_options);
 
 _client.job(_options.id, function (err, job) {
         ifError(err);

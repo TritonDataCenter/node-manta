@@ -103,23 +103,20 @@ function parseOptions() {
 
         }
 
-        if (!opts.url && !process.env.MANTA_URL)
-                usage('url is a required argument');
-
-        if (!opts.user && !process.env.MANTA_USER)
-                usage('account is a required argument');
-
-        if (!opts.keyId && !process.env.MANTA_KEY_ID)
-                usage('keyId is a required argument');
-
+        try {
+                manta.checkBinEnv(opts);
+        } catch (err) {
+                usage(err.message);
+        }
 
         opts.path = path;
-        opts.keyId = opts.keyId || process.env.MANTA_KEY_ID;
-        opts.url = opts.url || process.env.MANTA_URL;
-        opts.user = opts.user || process.env.MANTA_USER;
 
         if (parser.optind() >= process.argv.length) {
-                opts.path = '/' + opts.user + '/stor';
+                var user = opts.user || process.env.MANTA_USER;
+                if (!user) {
+                        usage('account is a required argument with no path');
+                }
+                opts.path = '/' + user + '/stor';
         } else {
                 var path = require('path');
                 opts.path = path.normalize(process.argv[parser.optind()]);
@@ -161,20 +158,10 @@ http.globalAgent.maxSockets = MAX_SOCKETS;
 https.globalAgent.maxSockets = MAX_SOCKETS;
 
 var _options = parseOptions();
+_options.log = LOG;
 ifError(manta.assertPath(_options.path, true));
 
-CLIENT = manta.createClient({
-        connectTimeout: 4000,
-        log: LOG,
-        retry: false,
-        sign: manta.cliSigner({
-                keyId: _options.keyId,
-                log: LOG,
-                user: _options.user
-        }),
-        url: _options.url,
-        user: _options.user
-});
+CLIENT = manta.createBinClient(_options);
 
 var Q = new manta.Queue({
         limit: _options.parallel || 10,

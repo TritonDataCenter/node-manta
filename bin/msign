@@ -84,6 +84,8 @@ function parseOptions() {
 
         }
 
+        // Doesn't use the common checkBinEnv because it doesn't
+        // instantiate a manta client.
         if (!opts.url && !process.env.MANTA_URL)
                 usage('url is a required argument');
 

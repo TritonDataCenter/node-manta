@@ -99,14 +99,11 @@ function parseOptions() {
 
         }
 
-        if (!opts.url && !process.env.MANTA_URL)
-                usage('url is a required argument');
-
-        if (!opts.user && !process.env.MANTA_USER)
-                usage('account is a required argument');
-
-        if (!opts.keyId && !process.env.MANTA_KEY_ID)
-                usage('keyId is a required argument');
+        try {
+                manta.checkBinEnv(opts);
+        } catch (err) {
+                usage(err.message);
+        }
 
         if (!opts.dir)
                 usage('dir is a required argument');
@@ -114,10 +111,7 @@ function parseOptions() {
         if (parser.optind() >= process.argv.length)
                 usage('missing required argument: "path"');
 
-        opts.keyId = opts.keyId || process.env.MANTA_KEY_ID;
         opts.path = path.normalize(process.argv[parser.optind()]);
-        opts.url = opts.url || process.env.MANTA_URL;
-        opts.user = opts.user || process.env.MANTA_USER;
         return (opts);
 }
 
@@ -132,7 +126,7 @@ function usage(msg) {
                 console.error(msg);
 
         var str = 'usage: ' + path.basename(process.argv[1]);
-        str += ' [-v] [-a account] [-c copies] [-u url] [-k keyId] -f file path';
+        str += ' [-v] [-a account] [-c copies] [-u url] [-k keyId] -d dir path';
         console.error(str);
         process.exit(msg ? 1 : 0);
 }
@@ -143,19 +137,8 @@ function usage(msg) {
 // Leading _ to avoid scope conflicts in functions
 
 var _options = parseOptions();
-var _client = manta.createClient({
-        connectTimeout: 1000,
-        log: LOG,
-        retry: false,
-        sign: manta.cliSigner({
-                keyId: _options.keyId,
-                log: LOG,
-                user: _options.user
-        }),
-        url: _options.url,
-        headers: _options.headers,
-        user: _options.user
-});
+_options.log = LOG;
+var _client = manta.createBinClient(_options);
 
 ifError(manta.assertPath(_options.path, true));
 
