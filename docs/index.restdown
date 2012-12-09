@@ -33,7 +33,7 @@ First, install the SDK as usual via [npm](http://npmjs.org/); the package name
 in npm is `manta`.  You may optionally want to install the package globally with
 the `-g` flag to npm, as this should place the node-manta CLI in your `$PATH`.
 
-    $ npm install git+ssh://@git.joyent.com:node-manta.git
+    $ npm install git+ssh://git@github.com:joyent/node-manta.git
 
 Once you've installed the npm package, there a few environment variables that
 are useful to set if you plan to work with the CLI; these environment variables
