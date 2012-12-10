@@ -299,7 +299,7 @@ also choose to only receive objects of a certain type.
         });
 
         res.once('error', function (err) {
-            console.error(err.stack));
+            console.error(err.stack);
             process.exit(1);
         });
 
@@ -375,7 +375,7 @@ Note: The example below uses the `memorystream` module from NPM.
     });
 
     process.nextTick(function () {
-        stream.end(message));
+        stream.end(message);
     });
 
 ### Inputs
