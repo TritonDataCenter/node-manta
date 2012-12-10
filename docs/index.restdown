@@ -1,10 +1,10 @@
 ---
-title: Node SDK for Joyent Manta
+title: Node.js SDK for Joyent Manta
 markdown2extras: wiki-tables, code-friendly
 apisections: Directories, Objects, Links
 ---
 
-# Manta
+# Node.js SDK for Joyent Manta
 
 This is the reference documentation for the Manta [Node.js](http://nodejs.org/)
 SDK.Manta is Joyent's Object Storage Service, which enables you to store data in
@@ -75,12 +75,12 @@ environment variables you set above.
 The options you can pass into `createClient` are:
 
 ||**Name**||**JS Type**||**Description**||
-||connectTimeout||Number||_optional_: amount of milliseconds to wait for acquiring a socket to Manta; defaults to `0` (infinity)||
-||log||Object||_optional_: `bunyan` logger; default is at level `fatal` and writes to `stderr`||
-||headers||Object||_optional_: HTTP headers to send on *all* requests||
-||sign||Function||*required*: see `authenticating requests` below||
-||url||String||*required*: URL to interact with Manta on||
-||user||String||_optional_: `login` name to use when interacting with the `jobs` API||
+||connectTimeout||Number||*(optional)*: amount of milliseconds to wait for acquiring a socket to Manta; defaults to `0` (infinity)||
+||log||Object||*(optional)*: `bunyan` logger; default is at level `fatal` and writes to `stderr`||
+||headers||Object||*(optional)*: HTTP headers to send on *all* requests||
+||sign||Function||*(required)*: see `authenticating requests` below||
+||url||String||*(required)*: URL to interact with Manta on||
+||user||String||*(optional)*: `login` name to use when interacting with the `jobs` API||
 
 ## Authenticating Requests
 
@@ -230,7 +230,8 @@ complete list of `manta` error names is:
 - UploadTimeoutError
 - UserDoesNotExistError
 
-# API
+
+# Directories
 
 ## client.mkdir(path, [options], callback)
 
@@ -248,7 +249,7 @@ potentinal error.
 
 ||**Name**||**JS Type**||**Description**||
 ||directory||String||*(required)* A full Manta path to create||
-||options||Object||_(optional)_ optional overrides for this request||
+||options||Object||*(optional)* optional overrides for this request||
 ||callback||Function||*(required)* callback of the form `fn(err, res)`||
 
 
@@ -265,7 +266,7 @@ Same as `mkdir`, except, mkdirp creates intermediate directories as required.
 
 ||**Name**||**JS Type**||**Description**||
 ||directory||String||*(required)* A full Manta path to create||
-||options||Object||_(optional)_ optional overrides for this request||
+||options||Object||*(optional)* optional overrides for this request||
 ||callback||Function||*(required)* callback of the form `fn(err, res)`||
 
 
@@ -311,7 +312,7 @@ also choose to only receive objects of a certain type.
 
 ||**Name**||**JS Type**||**Description**||
 ||directory||String||*(required)* A full Manta path to list||
-||options||Object||_(optional)_ optional overrides for this request||
+||options||Object||*(optional)* optional overrides for this request||
 ||callback||Function||*(required)* callback of the form `fn(err, res)`||
 
 ### Output Objects
@@ -325,6 +326,9 @@ Each output object will be of this schema:
         type: 'object',                         // one of directory || object
         mtime: '2012-11-09T12:34:56Z'           // ISO8601 timestamp of the last update time
     }
+
+
+# Objects
 
 
 ## client.put(path, stream, options, callback)
@@ -406,8 +410,33 @@ not match, the stream will emit an error.
 
 ||**Name**||**JS Type**||**Description**||
 ||directory||String||*(required)* A full Manta path to create an object as||
-||options||Object||_(optional)_ overrides for this request||
+||options||Object||*(optional)* overrides for this request||
 ||callback||Function||*(required)* callback of the form `fn(err, stream)`||
+
+
+# Links
+
+
+## client.ln(source, path, [options], callback)
+
+Creates a new link (key) to the source object.
+
+### Inputs
+
+||**Name**||**JS Type**||**Description**||
+||source||String||*(required)* Full path to the original object. ||
+||path||String||*(required)* Full path to the new link. || 
+||options||Object||*(optional)* overrides for this request||
+||callback||Function||*(required)* callback of the form `fn(err, stream)`||
+
+There is no return value besides a possible error.
+
+    client.ln('/jill/stor/hello_world.txt', '/jill/stor/hola_mundo.txt'  function (err) {
+        assert.ifError(err);
+
+        ...
+    });
+
 
 
 ## client.unlink(path, [options], callback)
@@ -427,9 +456,11 @@ There is no return value besides a possible error.
 
 ||**Name**||**JS Type**||**Description**||
 ||directory||String||*(required)* A full Manta path to delete||
-||options||Object||_(optional)_ overrides for this request||
+||options||Object||*(optional)* overrides for this request||
 ||callback||Function||*(required)* callback of the form `fn(err, stream)`||
 
+
+# Jobs
 
 ## client.createJob(job, [options], callback)
 
@@ -476,25 +507,25 @@ this job, which you can pass into the other job related APIs.
 
 ||**Name**||**JS Type**||**Description**||
 ||job||Obect||*(required)* A job definition object, as described below||
-||options||Object||_(optional)_ optional overrides for this request||
+||options||Object||*(optional)* optional overrides for this request||
 ||callback||Function||*(required)* callback of the form `fn(err, jobId)`||
 
 The full set of allowed options for `job`:
 
 ||**Name**||**JS Type**||**Description**||
 ||name||String||*(optional)* An arbitrary name for this job||
-||input||String||_(optional)_ An arbitrary jobId to pipe from||
+||input||String||*(optional)* An arbitrary jobId to pipe from||
 ||phases||Array||*(required)* tasks to execute as part of this job||
 
 `phases` must be an `Array` of `Object`, where objects have the following
 properties:
 
 ||**Name**||**JS Type**||**Description**||
-||type||String||_(optional)_ one of: `storage-map` or `reduce`||
-||assets||Array[String]||_(optional)_ an array of manta keys to be placed *in* your compute zones||
+||type||String||*(optional)* one of: `storage-map` or `reduce`||
+||assets||Array[String]||*(optional)* an array of manta keys to be placed *in* your compute zones||
 ||exec||String||*(required)* the actual (shell) statement to execute||
-||count||Number||_(optional)_ an optional number of reducers for this phase (reduce-only): default is `1`||
-||memory||Number||_(optional)_ an optional amount of DRAM to give to your compute zone||
+||count||Number||*(optional)* an optional number of reducers for this phase (reduce-only): default is `1`||
+||memory||Number||*(optional)* an optional amount of DRAM to give to your compute zone||
 
 * `count` has a minimum of `1` (default), and a maximum of `1024`.
 * `memory` must be one of the following: 128, 256, 512, 1024, 2048, 4096, 8192, 16384
@@ -528,7 +559,7 @@ of the form `function (err, job)`.  `job` will be the job object you used in
 
 ||**Name**||**JS Type**||**Description**||
 ||jobId||String||*(required)* A job id||
-||options||Object||_(optional)_ optional overrides for this request||
+||options||Object||*(optional)* optional overrides for this request||
 ||callback||Function||*(required)* callback of the form `fn(err, jobId)`||
 
 ### Output
@@ -552,7 +583,7 @@ user.  Currently you can filter on state by passing `state` into `options`.
 ### Inputs
 
 ||**Name**||**JS Type**||**Description**||
-||options||Object||_(optional)_ optional overrides for this request||
+||options||Object||*(optional)* optional overrides for this request||
 ||callback||Function||*(required)* callback of the form `fn(err, jobId)`||
 
 ### Output
@@ -585,7 +616,7 @@ There is no return object besides a possible error.
 ||**Name**||**JS Type**||**Description**||
 ||jobId||String||*(required)* A job id||
 ||keys||Array[String]||*(required)* A list of keys to submit to the job||
-||options||Object||_(optional)_ optional overrides for this request||
+||options||Object||*(optional)* optional overrides for this request||
 ||callback||Function||*(required)* callback of the form `fn(err, jobId)`||
 
 
@@ -604,7 +635,7 @@ There is no return object besides a possible error.
 
 ||**Name**||**JS Type**||**Description**||
 ||jobId||String||*(required)* A job id||
-||options||Object||_(optional)_ optional overrides for this request||
+||options||Object||*(optional)* optional overrides for this request||
 ||callback||Function||*(required)* callback of the form `fn(err, jobId)`||
 
 
@@ -623,7 +654,7 @@ There is no return object besides a possible error.
 
 ||**Name**||**JS Type**||**Description**||
 ||jobId||String||*(required)* A job id||
-||options||Object||_(optional)_ optional overrides for this request||
+||options||Object||*(optional)* optional overrides for this request||
 ||callback||Function||*(required)* callback of the form `fn(err, jobId)`||
 
 
@@ -647,7 +678,7 @@ Retrieves all successfully submitted input keys for a job as a stream.
 
 ||**Name**||**JS Type**||**Description**||
 ||jobId||String||*(required)* A job id||
-||options||Object||_(optional)_ optional overrides for this request||
+||options||Object||*(optional)* optional overrides for this request||
 ||callback||Function||*(required)* callback of the form `fn(err, jobId)`||
 
 ### Output
@@ -675,7 +706,7 @@ Retrieves all successfully written output keys for a job as a stream.
 
 ||**Name**||**JS Type**||**Description**||
 ||jobId||String||*(required)* A job id||
-||options||Object||_(optional)_ optional overrides for this request||
+||options||Object||*(optional)* optional overrides for this request||
 ||callback||Function||*(required)* callback of the form `fn(err, jobId)`||
 
 ### Output
@@ -703,7 +734,7 @@ Retrieves all input keys that had failures, as a stream.
 
 ||**Name**||**JS Type**||**Description**||
 ||jobId||String||*(required)* A job id||
-||options||Object||_(optional)_ optional overrides for this request||
+||options||Object||*(optional)* optional overrides for this request||
 ||callback||Function||*(required)* callback of the form `fn(err, jobId)`||
 
 ### Output
@@ -733,7 +764,7 @@ Retrieves all errors for a job:
 
 ||**Name**||**JS Type**||**Description**||
 ||jobId||String||*(required)* A job id||
-||options||Object||_(optional)_ optional overrides for this request||
+||options||Object||*(optional)* optional overrides for this request||
 ||callback||Function||*(required)* callback of the form `fn(err, jobId)`||
 
 ### Output
