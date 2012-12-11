@@ -117,16 +117,50 @@ var _client = manta.createBinClient(_options);
 process.stdin.setEncoding('utf8');
 var _keys = [];
 var _carry = carrier.carry(process.stdin);
-_carry.on('line', _keys.push.bind(_keys));
+
+var _pending = 0;
+var _total = 0;
+
+_carry.on('line', function (l) {
+        _total++;
+        _keys.push(l);
+        if (_keys.length === 1000) {
+                var batch = _keys.slice(0);
+                _keys.length = 0;
+                _pending++;
+                _client.addJobKey(_options.id, _keys, {}, function (err) {
+                        ifError(err);
+                        _pending--;
+                        console.log('uploaded %d keys...', batch.length);
+                });
+        }
+});
+
 _carry.on('end', function () {
         var opts = {
                 end: _options.end || false
         };
 
+        _pending++;
         _client.addJobKey(_options.id, _keys, opts, function (err) {
                 ifError(err);
 
-                process.exit(0);
+                _pending--;
+                if (_pending === 0) {
+                        function wait() {
+                                if (_pending > 0) {
+                                        setTimeout(wait, 100);
+                                        return;
+                                }
+                                if (_total > _keys.length) {
+                                        console.log('uploaded %s (total) keys',
+                                                    _total);
+                                }
+                        }
+                        setTimeout(wait, 100);
+                } else {
+                        console.log('uploaded %d keys...', _keys.length);
+                }
         });
 });
 
