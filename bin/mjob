@@ -229,6 +229,9 @@ _client.job(_options.id, function (err, job) {
                         ifError(err);
                 });
         } else {
+                if (!job.inputDone)
+                        console.error('warning: job input not done');
+
                 console.log(JSON.stringify(job, null, 2));
         }
 
