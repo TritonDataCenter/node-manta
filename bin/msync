@@ -26,6 +26,19 @@ var LOG = bunyan.createLogger({
         serializers: restify.bunyan.serializers
 });
 
+var optionsMsg= [
+        'OPTIONS:',
+        '  directory   (required) local directory to sync',
+        '  path        (required) Manta destination path',
+        '  -a account  Manta account (specify this or export MANTA_USER)',
+        '  -c copies   number of copies of each object to make (default 2)',
+        '  -H header   add a header',
+        '              repeat option to specify multiple headers',
+        '  -k keyId    SSH fingerprint (specify this or export MANTA_KEY_ID)',
+        '  -p parallel limit on number of concurrent operations (default 5)',
+        '  -u url      Manta URL (specify this or export MANTA_URL)',
+        '  -v          verbose mode'
+].join('\n');
 
 
 ///--- Functions
@@ -73,7 +86,7 @@ function list(opts, cb) {
                                 });
                         },
                         inputs: files
-                }, cb)
+                }, cb);
         });
 }
 
@@ -85,7 +98,6 @@ function parseOptions() {
         };
         var parser = new getopt.BasicParser('hvc:k:u:a:H:p:',
                                             process.argv);
-        var tmp;
 
         while ((option = parser.getopt()) !== undefined && !option.error) {
                 switch (option.option) {
@@ -167,8 +179,9 @@ function usage(msg) {
 
         var str = 'usage: ' + path.basename(process.argv[1]);
         str += ' [-v] [-a account] [-c copies] [-u url] [-k keyId] ';
-        str += 'directory manta_path';
+        str += '[-H header] [-p parallel] directory path';
         console.error(str);
+        console.error(optionsMsg);
         process.exit(msg ? 1 : 0);
 }
 
@@ -236,7 +249,7 @@ list(_options, function (err) {
         if (_options.dirs.length) {
                 dq.once('end', pushFiles);
                 _options.dirs.sort();
-                var _d = _options.dirs.shift()
+                var _d = _options.dirs.shift();
                 dq.push(_d);
         } else {
                 dq.close();

@@ -23,6 +23,15 @@ var LOG = bunyan.createLogger({
         serializers: restify.bunyan.serializers
 });
 
+var optionsMsg= [
+        'OPTIONS:',
+        '  path        (required) Manta object to remove',
+        '  -a account  Manta account (specify this or export MANTA_USER)',
+        '  -k keyId    SSH fingerprint (specify this or export MANTA_KEY_ID)',
+        '  -r          remove directories and their contents recursively',
+        '  -u url      Manta URL (specify this or export MANTA_URL)',
+        '  -v          verbose mode'
+].join('\n');
 
 
 ///--- Functions
@@ -40,7 +49,6 @@ function parseOptions() {
         var opts = {};
         var parser = new getopt.BasicParser('vrhk:u:a:',
                                             process.argv);
-        var tmp;
 
         while ((option = parser.getopt()) !== undefined && !option.error) {
                 switch (option.option) {
@@ -104,6 +112,7 @@ function usage(msg) {
         var str = 'usage: ' + path.basename(process.argv[1]);
         str += ' [-v] [-a account] [-u url] [-k keyId] [-r] path';
         console.error(str);
+        console.error(optionsMsg);
         process.exit(msg ? 1 : 0);
 }
 

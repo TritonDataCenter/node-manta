@@ -25,6 +25,16 @@ var LOG = bunyan.createLogger({
 });
 
 
+var optionsMsg= [
+        'OPTIONS:',
+        '  path        (required) Manta path to sign',
+        '  -a account  Manta account (specify this or export MANTA_USER)',
+        '  -e expire   expiration date (epoch time)',
+        '  -k keyId    SSH fingerprint (specify this or export MANTA_KEY_ID)',
+        '  -m method   method (default GET)',
+        '  -u url      Manta URL (specify this or export MANTA_URL)',
+        '  -v          verbose mode'
+].join('\n');
 
 ///--- Functions
 
@@ -39,9 +49,8 @@ function ifError(err) {
 function parseOptions() {
         var option;
         var opts = {};
-        var parser = new getopt.BasicParser('vhc:f:k:m:u:a:e:',
+        var parser = new getopt.BasicParser('vhk:m:u:a:e:',
                                             process.argv);
-        var tmp;
 
         while ((option = parser.getopt()) !== undefined && !option.error) {
                 switch (option.option) {
@@ -111,8 +120,10 @@ function usage(msg) {
                 console.error(msg);
 
         var str = 'usage: ' + path.basename(process.argv[1]);
-        str += ' [-v] [-a account] [-u url] [-k keyId] [-e expires] path';
+        str += ' [-v] [-a account] [-u url] [-k keyId] [-e expires] ';
+        str += ' [-m method] path';
         console.error(str);
+        console.error(optionsMsg);
         process.exit(msg ? 1 : 0);
 }
 

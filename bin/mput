@@ -24,6 +24,18 @@ var LOG = bunyan.createLogger({
         serializers: restify.bunyan.serializers
 });
 
+var optionsMsg= [
+        'OPTIONS:',
+        '  -f file     (required) local file to upload',
+        '  path        (required) Manta destination path',
+        '  -a account  Manta account (specify this or export MANTA_USER)',
+        '  -c copies   number of copies to make (default 2)',
+        '  -H header   add a header',
+        '              repeat option to specify multiple headers',
+        '  -k keyId    SSH fingerprint (specify this or export MANTA_KEY_ID)',
+        '  -u url      Manta URL (specify this or export MANTA_URL)',
+        '  -v          verbose mode'
+].join('\n');
 
 
 ///--- Functions
@@ -42,7 +54,6 @@ function parseOptions() {
         opts.headers = {};
         var parser = new getopt.BasicParser('hvc:f:k:u:a:H:',
                                             process.argv);
-        var tmp;
 
         while ((option = parser.getopt()) !== undefined && !option.error) {
                 switch (option.option) {
@@ -124,6 +135,7 @@ function usage(msg) {
         str += ' [-v] [-a account] [-c copies] [-u url] [-k keyId]';
         str += ' [-H header] -f file path';
         console.error(str);
+        console.error(optionsMsg);
         process.exit(msg ? 1 : 0);
 }
 

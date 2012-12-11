@@ -23,6 +23,20 @@ var LOG = bunyan.createLogger({
         serializers: restify.bunyan.serializers
 });
 
+var optionsMsg = [
+        'OPTIONS:',
+        '  jobId        (required) job UUID',
+        '  -a account   Manta account (specify this or export MANTA_USER)',
+        '  -c           cancel job',
+        '  -e           end input for job',
+        '  -f           list failed input keys',
+        '  -i           list input keys',
+        '  -k keyId     SSH fingerprint (specify this or export MANTA_KEY_ID)',
+        '  -o           list output',
+        '  -u url       Manta URL (specify this or export MANTA_URL)',
+        '  -v           verbose mode',
+        '  -x           print job errors'
+].join('\n');
 
 
 ///--- Functions
@@ -78,7 +92,6 @@ function parseOptions() {
         };
         var parser = new getopt.BasicParser('vcefiohxk:u:a:',
                                             process.argv);
-        var tmp;
 
         while ((option = parser.getopt()) !== undefined && !option.error) {
                 switch (option.option) {
@@ -170,9 +183,10 @@ function usage(msg) {
                 console.error(msg);
 
         var str = 'usage: ' + path.basename(process.argv[1]);
-        str += ' [-v] [-a account] [-u url] [-k keyId] [-c] [-e] [-o]';
+        str += ' [-v] [-a account] [-u url] [-k keyId] [-c] [-e] [-o] ';
         str += '[-f] [-i] [-x] jobId';
         console.error(str);
+        console.error(optionsMsg);
         process.exit(msg ? 1 : 0);
 }
 

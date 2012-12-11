@@ -24,6 +24,26 @@ var LOG = bunyan.createLogger({
         serializers: restify.bunyan.serializers
 });
 
+var optionsMsg= [
+        'OPTIONS:',
+        '  -a account  Manta account (specify this or export MANTA_USER)',
+        '  -c count    the number of reducers for each phase (default 1)',
+        '              repeat option for multiple reduce phases',
+        '              affects respective reduce phases in the order specified',
+        '  -d memory   amount of memory available for all reduce phases',
+        '  -f manifest create job from file <manifest> instead of arguments',
+        '  -i jobId    pipe input from job <jobId>',
+        '  -k keyId    SSH fingerprint (specify this or export MANTA_KEY_ID)',
+        '  -m map      map phase',
+        '              repeat option to specify multiple map phases',
+        '  -n name     job name',
+        '  -s asset    make <asset> available as an asset for all phases',
+        '              repeat option to specify multiple assets',
+        '  -r reduce   reduce phase',
+        '              repeat option to specify multiple reduce phases',
+        '  -u url      Manta URL (specify this or export MANTA_URL)',
+        '  -v          verbose mode'
+].join('\n');
 
 
 ///--- Functions
@@ -46,7 +66,6 @@ function parseOptions() {
         };
         var parser = new getopt.BasicParser('vha:c:d:f:i:k:m:n:r:s:u:',
                                             process.argv);
-        var tmp;
 
         while ((option = parser.getopt()) !== undefined && !option.error) {
                 switch (option.option) {
@@ -148,8 +167,9 @@ function usage(msg) {
         var str = 'usage: ' + path.basename(process.argv[1]);
         str += ' [-v] [-a account] [-u url] [-k keyId] [-i jobid]';
         str += '[-m map] [-r reduce] [-s assets] [-d memory] [-n name] ';
-        str += '[-c num_reducers] [-f job_manifest]';
+        str += '[-c count] [-f job_manifest]';
         console.error(str);
+        console.error(optionsMsg);
         process.exit(msg ? 1 : 0);
 }
 
