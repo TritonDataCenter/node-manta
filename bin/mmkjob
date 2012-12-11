@@ -130,7 +130,8 @@ function parseOptions() {
         if (opts.input) {
                 opts.input = /\/\w+\/jobs\/\w+/.test(opts.input) ?
                         opts.input :
-                        '/' + opts.user + '/jobs/' + opts.input
+                        '/' + (opts.user || process.env.MANTA_USER) +
+                        '/jobs/' + opts.input
         }
 
         if (!opts.map.length && !opts.reduce.length && !opts.manifest)
