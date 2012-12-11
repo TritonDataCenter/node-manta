@@ -2,6 +2,7 @@
 // -*- mode: js -*-
 // Copyright (c) 2012, Joyent, Inc. All rights reserved.
 
+var fs = require('fs');
 var path = require('path');
 var url = require('url');
 
@@ -43,7 +44,7 @@ function parseOptions() {
                 count: [],
                 assets: []
         };
-        var parser = new getopt.BasicParser('vhi:k:d:m:n:r:s:u:a:c:',
+        var parser = new getopt.BasicParser('vha:c:d:f:i:k:m:n:r:s:u:',
                                             process.argv);
         var tmp;
 
@@ -63,6 +64,10 @@ function parseOptions() {
 
                 case 'h':
                         usage();
+                        break;
+
+                case 'f':
+                        opts.manifest = option.optarg
                         break;
 
                 case 'i':
@@ -119,8 +124,6 @@ function parseOptions() {
                 usage(err.message);
         }
 
-        if (!opts.map.length && !opts.reduce.length)
-                usage('at least one map or reduce task must be specified');
 
         opts.name = opts.name || uuid.v4().substr(0, 7);
 
@@ -129,6 +132,9 @@ function parseOptions() {
                         opts.input :
                         '/' + opts.user + '/jobs/' + opts.input
         }
+
+        if (!opts.map.length && !opts.reduce.length && !opts.manifest)
+                usage('at least one map or reduce task must be specified');
 
         return (opts);
 }
@@ -141,7 +147,7 @@ function usage(msg) {
         var str = 'usage: ' + path.basename(process.argv[1]);
         str += ' [-v] [-a account] [-u url] [-k keyId] [-i jobid]';
         str += '[-m map] [-r reduce] [-s assets] [-d memory] [-n name] ';
-        str += '[-c num_reducers]';
+        str += '[-c num_reducers] [-f job_manifest]';
         console.error(str);
         process.exit(msg ? 1 : 0);
 }
@@ -154,30 +160,38 @@ function usage(msg) {
 var _options = parseOptions();
 _options.log = LOG;
 var _client = manta.createBinClient(_options);
-var _job = {
-        name: _options.name,
-        input: _options.input,
-        phases: [],
-};
-_options.map.forEach(function (e) {
-        if (_options.assets)
-                e.assets = _options.assets;
-        _job.phases.push(e);
-});
-_options.reduce.forEach(function (e) {
-        if (_options.assets)
-                e.assets = _options.assets;
-        if (_options.count && _options.count.length > 0)
-                e.count = _options.count.shift();
-        if (_options.memory)
-                e.memory = _options.memory;
+var _job;
 
-        _job.phases.push(e);
-});
-
-_client.createJob(_job, function (err, jobId) {
+function _cb(err, jobId) {
         ifError(err);
 
         console.log(jobId);
         process.exit(0);
-});
+}
+
+if (_options.manifest) {
+        var _tmp = fs.readFileSync(path.normalize(_options.manifest), 'utf8');
+        _client.createJob(JSON.parse(_tmp), _cb);
+} else {
+        var _job = {
+                name: _options.name,
+                input: _options.input,
+                phases: [],
+        };
+        _options.map.forEach(function (e) {
+                if (_options.assets)
+                        e.assets = _options.assets;
+                _job.phases.push(e);
+        });
+        _options.reduce.forEach(function (e) {
+                if (_options.assets)
+                        e.assets = _options.assets;
+                if (_options.count && _options.count.length > 0)
+                        e.count = _options.count.shift();
+                if (_options.memory)
+                        e.memory = _options.memory;
+
+                _job.phases.push(e);
+        });
+        _client.createJob(_job, _cb);
+}
