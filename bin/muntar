@@ -1,0 +1,241 @@
+#!/usr/bin/env node
+
+// Copyright (c) 2012, Joyent, Inc. All rights reserved.
+
+var fs = require('fs');
+var path = require('path');
+var url = require('url');
+
+var bunyan = require('bunyan');
+var getopt = require('posix-getopt');
+var restify = require('restify');
+var uuid = require('node-uuid');
+
+var manta = require('../lib');
+
+var http = require('http');
+var https = require('https');
+var tar = require('tar');
+
+///--- Globals
+
+var LOG = bunyan.createLogger({
+        name: path.basename(process.argv[1]),
+        level: (process.env.LOG_LEVEL || 'info'),
+        stream: process.stderr,
+        serializers: restify.bunyan.serializers
+});
+
+var optionsMsg= [
+        'OPTIONS:',
+        '  -f file     (required) local tar file to upload',
+        '  path        (required) Manta destination path',
+        '  -a account  Manta account (specify this or export MANTA_USER)',
+        '  -c copies   number of copies to make (default 2)',
+        '  -H header   add a header',
+        '              repeat option to specify multiple headers',
+        '  -k keyId    SSH fingerprint (specify this or export MANTA_KEY_ID)',
+        '  -p paral    level of parallelism (default 10)',
+        '  -u url      Manta URL (specify this or export MANTA_URL)',
+        '  -v          verbose mode'
+].join('\n');
+
+///--- Functions
+
+function ifError(err) {
+        if (err) {
+                console.error(err.toString());
+                process.exit(1);
+        }
+}
+
+function parseOptions() {
+        var option;
+        var opts = { parallelism: 10 };
+        opts.headers = {};
+        var parser = new getopt.BasicParser('hvc:f:k:u:a:H:p:',
+                                            process.argv);
+        var tmp;
+
+        while ((option = parser.getopt()) !== undefined && !option.error) {
+                switch (option.option) {
+                case 'a':
+                        opts.user = option.optarg;
+                        break;
+
+                case 'c':
+                        opts.copies = parseInt(option.optarg, 10);
+                        break;
+
+                case 'f':
+                        opts.file = option.optarg;
+                        break;
+
+                case 'h':
+                        usage();
+                        break;
+
+                case 'H':
+                        if (option.optarg.indexOf(': ') === -1) {
+                                usage('headers must be in the format of: ' +
+                                      '[header] + ": " + [value]');
+                        }
+                        var p = option.optarg.split(': ');
+                        opts.headers[p[0]] = p.slice(1).join(': ');
+                        break;
+
+                case 'k':
+                        opts.keyId = option.optarg;
+                        break;
+
+                case 'u':
+                        opts.url = url.parse(option.optarg).href;
+                        break;
+
+                case 'p':
+                        opts.parallelism = parseInt(option.optarg, 10);
+                        break;
+
+                case 'v':
+                        // Allows us to set -vvv -> this little hackery
+                        // just ensures that we're never < TRACE
+                        LOG.level(Math.max(bunyan.TRACE, (LOG.level() - 10)));
+                        if (LOG.level() <= bunyan.DEBUG)
+                                LOG = LOG.child({src: true});
+                        break;
+
+                default:
+                        process.exit(1);
+                        break;
+                }
+
+        }
+
+        try {
+                manta.checkBinEnv(opts);
+        } catch (err) {
+                usage(err.message);
+        }
+
+        if (!opts.file)
+                usage('file is a required argument');
+
+        if (parser.optind() >= process.argv.length)
+                usage('missing required argument: "path"');
+
+        opts.path = path.normalize(process.argv[parser.optind()]);
+        return (opts);
+}
+
+function usage(msg)
+{
+        if (msg)
+                console.error(msg);
+
+        var str = 'usage: ' + path.basename(process.argv[1]);
+        str += ' [-v] [-a account] [-c copies] [-u url] [-k keyId]';
+        str += ' [-H header] -f file path';
+        console.error(str);
+        console.error(optionsMsg);
+        process.exit(msg ? 1 : 0);
+}
+
+var _inprogress = {}; 
+
+function put(client, path, stream, opts, cb)
+{
+        client.put(path, stream, opts, function (err) {
+                if (!err || !err.body ||
+                    (err.body.code != 'ParentNotDirectory' &&
+                    err.body.code != 'DirectoryDoesNotExist')) {
+                        cb(err);
+                        return;
+                }
+
+                /*
+                 * Our put failed.  If the put failed because we were missing
+                 * a parent directory, we'll try to make the directory --
+                 * assuring that we don't have two outstanding requests to
+                 * make the same directory.
+                 */
+                var dir = path.match(/.*\//)[0];
+
+                function postmkdir (err) {
+                        if (err) {
+                                cb(err);
+                                return;
+                        }
+
+                        client.put(path, stream, opts, cb);
+                }
+
+                if (_inprogress[dir]) {
+                        _inprogress[dir].push(postmkdir);
+                        return;
+                }
+
+                _inprogress[dir] = [ postmkdir ];
+
+                client.mkdirp(dir, function (err) {
+                        _inprogress[dir].forEach(function (post) {
+                                post.call(this, err);
+                        });
+
+                        delete _inprogress[dir];
+                });
+        });
+}
+
+/*
+ * Absent intermediate streams for each entry that could be paused without
+ * pausing the tar parsing, each worker needs to take its own pass through
+ * the tarball.
+ */
+function worker(client, tarball)
+{
+        var entry = 0;
+        var stream = fs.createReadStream(tarball.file);
+        var pipe = stream.pipe(tar.Parse());
+        var options = tarball.options;
+
+        pipe.on('entry', function (e) {
+                if (e.props.size == 0)
+                        return;
+
+                if (entry++ < tarball.next)
+                        return;
+
+                tarball.next = entry;
+                e.pause();
+
+                put(client, options.path + '/' + e.props.path,
+                    e, { copies: options.copies, size: e.props.size },
+                    function (err) {
+                        if (err)
+                                console.error(err);
+
+                        ifError(err);
+                        console.log(options.path + '/' + e.props.path);
+                });
+        });
+}
+
+var _options = parseOptions();
+_options.log = LOG;
+
+ifError(manta.assertPath(_options.path, true));
+
+/*
+ * Set our maxSockets to match the desired level of parallelism.
+ */
+http.globalAgent.maxSockets = _options.parallelism;
+https.globalAgent.maxSockets = _options.parallelism;
+
+var _client = manta.createBinClient(_options);
+
+var _tarball = { file: _options.file, options: _options, next: 0 };
+
+for (_i = 0; _i < _options.parallelism; _i++)
+        worker(_client, _tarball);
+
+/* vim: set expandtab: */
