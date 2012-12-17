@@ -28,6 +28,7 @@ var optionsMsg= [
         '  path        (required) Manta object to remove',
         '  -a account  Manta account (specify this or export MANTA_USER)',
         '  -k keyId    SSH fingerprint (specify this or export MANTA_KEY_ID)',
+        '  -p paral    level of parallelism for recursive rm (default 100)',
         '  -r          remove directories and their contents recursively',
         '  -u url      Manta URL (specify this or export MANTA_URL)',
         '  -v          verbose mode'
@@ -46,8 +47,8 @@ function ifError(err) {
 
 function parseOptions() {
         var option;
-        var opts = {};
-        var parser = new getopt.BasicParser('vrhk:u:a:',
+        var opts = { parallelism: 100 };
+        var parser = new getopt.BasicParser('vrhk:p:u:a:',
                                             process.argv);
 
         while ((option = parser.getopt()) !== undefined && !option.error) {
@@ -61,6 +62,10 @@ function parseOptions() {
                         break;
                 case 'k':
                         opts.keyId = option.optarg;
+                        break;
+
+                case 'p':
+                        opts.parallelism = parseInt(option.optarg, 10);
                         break;
 
                 case 'r':
@@ -128,7 +133,7 @@ var _client = manta.createBinClient(_options);
 ifError(manta.assertPath(_options.path, true));
 
 if (_options.recurse) {
-        _client.rmr(_options.path, function (err) {
+        _client.rmr(_options.path, _options, function (err) {
                 ifError(err);
                 process.exit(0);
         });
@@ -154,3 +159,5 @@ if (_options.recurse) {
                 });
         });
 }
+
+/* vim: set expandtab: */
