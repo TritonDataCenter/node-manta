@@ -27,6 +27,8 @@ var optionsMsg = [
         'OPTIONS:',
         '  -a account  Manta account (specify this or export MANTA_USER)',
         '  -k keyId    SSH fingerprint (specify this or export MANTA_KEY_ID)',
+        '  -l limit    maximum number of jobs to return',
+        '  -m marker   start job listing with this jobId',
         '  -s state    only list jobs in state <state>',
         '  -u url      Manta URL (specify this or export MANTA_URL)',
         '  -v          verbose mode'
@@ -43,11 +45,55 @@ function ifError(err) {
 }
 
 
+function jobs(client, options, cb) {
+        var last;
+        var opts = {
+                query: {}
+        };
+        var seen = 0;
+
+        if (options.limit)
+                opts.query.limit = options.limit;
+        if (options.marker)
+                opts.query.marker = options.marker;
+        if (options.state)
+                opts.query.state = options.state;
+
+        client.listJobs(opts, function (err, res) {
+                ifError(err);
+
+                res.on('job', function (j) {
+                        last = j.id;
+                        seen++;
+                        if (j.id !== options.marker)
+                                console.log('%j', j);
+                });
+
+                res.once('error', cb);
+                res.once('end', function (http_res) {
+                        var rss = parseInt(http_res.headers['result-set-size'],
+                                           10);
+                        if (options.limit !== undefined ||
+                            seen >= rss || !last) {
+                                cb(null);
+                                return;
+                        }
+
+                        var o = {
+                                limit: options.limit,
+                                marker: last
+                        };
+                        jobs(client, o, cb);
+                });
+        });
+}
+
+
 function parseOptions() {
         var option;
         var opts = {
         };
-        var parser = new getopt.BasicParser('vhk:u:a:s:',
+        var parser = new getopt.BasicParser('vhk:m:u:a:s:',
                                             process.argv);
 
         while ((option = parser.getopt()) !== undefined && !option.error) {
@@ -62,6 +108,10 @@ function parseOptions() {
 
                 case 'k':
                         opts.keyId = option.optarg;
+                        break;
+
+                case 'm':
+                        opts.marker = option.optarg;
                         break;
 
                 case 's':
@@ -102,7 +152,7 @@ function usage(msg) {
                 console.error(msg);
 
         var str = 'usage: ' + path.basename(process.argv[1]);
-        str += ' [-v] [-a account] [-u url] [-k keyId] [-s state]';
+        str += ' [-v] [-a account] [-u url] [-k keyId] [-m marker] [-s state]';
         console.error(str);
         console.error(optionsMsg);
         process.exit(msg ? 1 : 0);
@@ -117,11 +167,9 @@ var _options = parseOptions();
 _options.log = LOG;
 var _client = manta.createBinClient(_options);
 var _listOpts = {
+        marker: _options.marker,
         state: _options.state
 };
-
-_client.listJobs(_listOpts, function (err, res) {
+jobs(_client, _listOpts, function (err) {
         ifError(err);
-
-        res.on('job', console.log.bind(console, '%j'));
 });
