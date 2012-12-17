@@ -143,7 +143,7 @@ function printEntry(opts, obj) {
         if (opts.type && opts.type === 'd' && obj.type !== 'directory')
                 return;
 
-        console.log(opts.path + '/' + obj.name);
+        console.log(opts.path + (obj.name ? ('/' + obj.name) : ''));
 }
 
 
@@ -243,7 +243,7 @@ CLIENT.info(_options.path, function (err, info) {
         if (info.extension === 'directory') {
                 Q.push(_options);
         } else {
-                printEntry(_options, info);
+                printEntry(_options, {});
                 process.exit(1);
         }
 });
