@@ -43,7 +43,6 @@ function parseOptions() {
         var opts = {};
         var parser = new getopt.BasicParser('vhk:u:a:',
                                             process.argv);
-        var tmp;
 
         while ((option = parser.getopt()) !== undefined && !option.error) {
                 switch (option.option) {

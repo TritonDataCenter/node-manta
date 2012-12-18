@@ -235,12 +235,12 @@ _client.job(_options.id, function (err, job) {
         } else if (_options.errors) {
                 _client.jobErrors(_options.id, streamOut);
         } else if (_options.end) {
-                _client.endJob(_options.id, function (err) {
-                        ifError(err);
+                _client.endJob(_options.id, function (_err) {
+                        ifError(_err);
                 });
         } else if (_options.cancel) {
-                _client.cancelJob(_options.id, function (err) {
-                        ifError(err);
+                _client.cancelJob(_options.id, function (_err) {
+                        ifError(_err);
                 });
         } else {
                 if (!job.inputDone)

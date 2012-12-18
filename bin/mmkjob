@@ -86,7 +86,7 @@ function parseOptions() {
                         break;
 
                 case 'f':
-                        opts.manifest = option.optarg
+                        opts.manifest = option.optarg;
                         break;
 
                 case 'i':
@@ -150,7 +150,7 @@ function parseOptions() {
                 opts.input = /\/\w+\/jobs\/\w+/.test(opts.input) ?
                         opts.input :
                         '/' + (opts.user || process.env.MANTA_USER) +
-                        '/jobs/' + opts.input
+                        '/jobs/' + opts.input;
         }
 
         if (!opts.map.length && !opts.reduce.length && !opts.manifest)
@@ -194,10 +194,10 @@ if (_options.manifest) {
         var _tmp = fs.readFileSync(path.normalize(_options.manifest), 'utf8');
         _client.createJob(JSON.parse(_tmp), _cb);
 } else {
-        var _job = {
+        _job = {
                 name: _options.name,
                 input: _options.input,
-                phases: [],
+                phases: []
         };
         _options.map.forEach(function (e) {
                 if (_options.assets)

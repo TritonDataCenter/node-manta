@@ -166,8 +166,8 @@ fs.stat(_options.file, function (err, stats) {
         var stream = fs.createReadStream(_options.file);
         stream.pause();
         stream.on('open', function () {
-                _client.put(_options.path, stream, opts, function (err) {
-                        ifError(err);
+                _client.put(_options.path, stream, opts, function (_err) {
+                        ifError(_err);
                         process.exit(0);
                 });
         });

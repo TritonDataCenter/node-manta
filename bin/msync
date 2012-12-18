@@ -205,9 +205,9 @@ list(_options, function (err) {
                 limit: 1,
                 worker: function (d, cb) {
                         var p = _options.path + '/' + d;
-                        _client.mkdir(p, function (err) {
-                                if (err) {
-                                        cb(err);
+                        _client.mkdir(p, function (_err) {
+                                if (_err) {
+                                        cb(_err);
                                         return;
                                 }
                                 var next = _options.dirs.shift();

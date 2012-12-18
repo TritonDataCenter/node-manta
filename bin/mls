@@ -200,8 +200,8 @@ _client.info(_options.path, function (err, info) {
         }
 
         if (info.extension === 'directory') {
-                ls(_client, _options, function (err) {
-                        ifError(err);
+                ls(_client, _options, function (_err) {
+                        ifError(_err);
                         process.exit(0);
                 });
         } else {
