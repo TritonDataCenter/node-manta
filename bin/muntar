@@ -3,8 +3,9 @@
 // Copyright (c) 2012, Joyent, Inc. All rights reserved.
 
 var fs = require('fs');
-var path = require('path');
 var url = require('url');
+
+var mod_path = require('path');
 
 var bunyan = require('bunyan');
 var getopt = require('posix-getopt');
@@ -20,13 +21,13 @@ var tar = require('tar');
 ///--- Globals
 
 var LOG = bunyan.createLogger({
-        name: path.basename(process.argv[1]),
+        name: mod_path.basename(process.argv[1]),
         level: (process.env.LOG_LEVEL || 'info'),
         stream: process.stderr,
         serializers: restify.bunyan.serializers
 });
 
-var optionsMsg= [
+var optionsMsg = [
         'OPTIONS:',
         '  -f file     (required) local tar file to upload',
         '  path        (required) Manta destination path',
@@ -55,7 +56,6 @@ function parseOptions() {
         opts.headers = {};
         var parser = new getopt.BasicParser('hvc:f:k:u:a:H:p:',
                                             process.argv);
-        var tmp;
 
         while ((option = parser.getopt()) !== undefined && !option.error) {
                 switch (option.option) {
@@ -123,7 +123,7 @@ function parseOptions() {
         if (parser.optind() >= process.argv.length)
                 usage('missing required argument: "path"');
 
-        opts.path = path.normalize(process.argv[parser.optind()]);
+        opts.path = mod_path.normalize(process.argv[parser.optind()]);
         return (opts);
 }
 
@@ -132,7 +132,7 @@ function usage(msg)
         if (msg)
                 console.error(msg);
 
-        var str = 'usage: ' + path.basename(process.argv[1]);
+        var str = 'usage: ' + mod_path.basename(process.argv[1]);
         str += ' [-v] [-a account] [-c copies] [-u url] [-k keyId]';
         str += ' [-H header] -f file path';
         console.error(str);
@@ -140,7 +140,7 @@ function usage(msg)
         process.exit(msg ? 1 : 0);
 }
 
-var _inprogress = {}; 
+var _inprogress = {};
 
 function put(client, path, stream, opts, cb)
 {
@@ -160,9 +160,9 @@ function put(client, path, stream, opts, cb)
                  */
                 var dir = path.match(/.*\//)[0];
 
-                function postmkdir (err) {
-                        if (err) {
-                                cb(err);
+                function postmkdir(_err) {
+                        if (_err) {
+                                cb(_err);
                                 return;
                         }
 
@@ -176,9 +176,9 @@ function put(client, path, stream, opts, cb)
 
                 _inprogress[dir] = [ postmkdir ];
 
-                client.mkdirp(dir, function (err) {
+                client.mkdirp(dir, function (_err) {
                         _inprogress[dir].forEach(function (post) {
-                                post.call(this, err);
+                                post.call(this, _err);
                         });
 
                         delete _inprogress[dir];
@@ -199,7 +199,7 @@ function worker(client, tarball)
         var options = tarball.options;
 
         pipe.on('entry', function (e) {
-                if (e.props.size == 0)
+                if (e.props.size === 0)
                         return;
 
                 if (entry++ < tarball.next)
@@ -234,6 +234,8 @@ https.globalAgent.maxSockets = _options.parallelism;
 var _client = manta.createBinClient(_options);
 
 var _tarball = { file: _options.file, options: _options, next: 0 };
+
+var _i;
 
 for (_i = 0; _i < _options.parallelism; _i++)
         worker(_client, _tarball);
