@@ -129,7 +129,7 @@ _get_md5s();
 function _get_md5s() {
         var errors = 0;
         var idx;
-        var path;
+        var get_path;
         var queue;
 
         _out.on('end', process.exit.bind(null, 0));
@@ -142,27 +142,27 @@ function _get_md5s() {
                 }
         }
 
-        function _err(path, message) {
-                console.error('mmd5: ' + path + ': ' + message);
+        function _err(p, message) {
+                console.error('mmd5: ' + p + ': ' + message);
                 errors++;
         }
 
-        function _get_md5(path, callback) {
-                var error = manta.assertPath(path, true);
+        function _get_md5(p, callback) {
+                var error = manta.assertPath(p, true);
 
                 if (error) {
-                        _err(path, error.message);
+                        _err(p, error.message);
                         callback();
                         return;
                 }
 
-                _client.info(path, function (err, info) {
+                _client.info(p, function (err, info) {
                         var md5;
                         if (err) {
                                 if (err.message.length === 0) {
                                         err.message = err.code;
                                 }
-                                _err(path, err.message);
+                                _err(p, err.message);
                                 callback();
                                 return;
                         }
@@ -170,26 +170,26 @@ function _get_md5s() {
                         if (info.hasOwnProperty('md5')) {
                                 md5 = (new Buffer(info.md5, 'base64'));
                                 _out.write(md5.toString('hex') + '  '
-                                        + path + '\n');
+                                        + p + '\n');
                                 callback();
                         } else if (info.type === 'application/x-json-stream; '
                                 + 'type=directory') {
 
-                                _err(path, 'is a directory');
+                                _err(p, 'is a directory');
                                 callback();
                         } else {
-                                _err(path, 'is missing md5');
+                                _err(p, 'is missing md5');
                                 callback();
                         }
                 });
         }
 
         for (idx in _options.paths) {
-                path = _options.paths[idx];
+                get_path = _options.paths[idx];
                 if (idx == (_options.paths.length - 1)) {
-                        queue.push(path, _on_done);
+                        queue.push(get_path, _on_done);
                 } else {
-                        queue.push(path);
+                        queue.push(get_path);
                 }
         }
 }
