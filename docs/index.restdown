@@ -61,7 +61,7 @@ environment variables you set above.
 
     var client = manta.createClient({
         sign: manta.privateKeySigner({
-            key: process.env.HOME + '/.ssh/id_rsa',
+            key: fs.readFileSync(process.env.HOME + '/.ssh/id_rsa', 'utf8'),
             keyId: process.env.MANTA_KEY_ID,
             user: process.env.MANTA_USER
         }),
