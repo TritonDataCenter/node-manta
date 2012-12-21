@@ -27,7 +27,7 @@ var LOG = bunyan.createLogger({
 });
 var MAX_SOCKETS = parseInt(process.env.MANTA_MAX_SOCKETS || 1000, 10);
 
-var optionsMsg= [
+var optionsMsg = [
         'OPTIONS:',
         '  path         (required) Manta path to search under',
         '  -a account   Manta account (specify this or export MANTA_USER)',

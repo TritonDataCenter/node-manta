@@ -200,7 +200,7 @@ function xor() {
                         return (false);
                 }
         }
-        return b;
+        return (b);
 }
 
 

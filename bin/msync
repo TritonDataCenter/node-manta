@@ -26,7 +26,7 @@ var LOG = bunyan.createLogger({
         serializers: restify.bunyan.serializers
 });
 
-var optionsMsg= [
+var optionsMsg = [
         'OPTIONS:',
         '  directory   (required) local directory to sync',
         '  path        (required) Manta destination path',

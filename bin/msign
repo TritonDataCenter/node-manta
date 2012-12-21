@@ -25,7 +25,7 @@ var LOG = bunyan.createLogger({
 });
 
 
-var optionsMsg= [
+var optionsMsg = [
         'OPTIONS:',
         '  path        (required) Manta path to sign',
         '  -a account  Manta account (specify this or export MANTA_USER)',

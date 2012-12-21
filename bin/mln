@@ -24,7 +24,7 @@ var LOG = bunyan.createLogger({
         serializers: restify.bunyan.serializers
 });
 
-var optionsMsg= [
+var optionsMsg = [
         'OPTIONS:',
         '  source      (required) Manta path to source object',
         '  path        (required) destination Manta path',

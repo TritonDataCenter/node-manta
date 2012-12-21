@@ -23,7 +23,7 @@ var LOG = bunyan.createLogger({
         serializers: restify.bunyan.serializers
 });
 
-var optionsMsg= [
+var optionsMsg = [
         'OPTIONS:',
         '  path        (required) Manta directory to create',
         '  -a account  Manta account (specify this or export MANTA_USER)',

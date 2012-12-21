@@ -337,13 +337,17 @@ Creates or overwrites an (object) key.  You pass it in a ReadableStream (note
 that stream *must* support pause/resume), and upon receiving a 100-continue
 from manta, the bytes get blasted up.
 
-Unlike the other APIs, you also will need to pass in an options object, that
-contains, at minimum, a 'size' attribute. Additionally, you can/should pass
-in an 'md5' attribute, and you can pass a 'type' attribute which is really
-the content-type.  If you don't pass in 'type', this API will try to guess it
-based on the name of the object (using the extension).  Lastly, you can pass
-in a 'copies' attribute, which sets the number of full object copies to make
-server side (default is 2).
+In this API, you can either pass in an actual 'size' attribute in the options
+object. If you set that, that is the content-length header for this request.  If
+you don't set that, the request will be "streaming" (transfer-encoding=chunked),
+in which case your object either needs to fit into the "default" object size
+(5Gb currently), OR you need to pass in a header of `max-content-length`, which
+will be the _maximum_ size of your data. Additionally, you can/should pass in an
+'md5' attribute, and you can pass a 'type' attribute which is really the
+content-type.  If you don't pass in 'type', this API will try to guess it based
+on the name of the object (using the extension).  Lastly, you can pass in a
+'copies' attribute, which sets the number of full object copies to make server
+side (default is 2).
 
 However, like the other APIs, you can additionally pass in extra headers, etc.
 in the options object as well.   In the case of objects this is particularly

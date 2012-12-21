@@ -24,7 +24,7 @@ var LOG = bunyan.createLogger({
         serializers: restify.bunyan.serializers
 });
 
-var optionsMsg= [
+var optionsMsg = [
         'OPTIONS:',
         '  -f file     (required) local file to upload',
         '  path        (required) Manta destination path',
@@ -111,9 +111,6 @@ function parseOptions() {
                 usage(err.message);
         }
 
-        if (!opts.file)
-                usage('file is a required argument');
-
         if (parser.optind() >= process.argv.length)
                 usage('missing required argument: "path"');
 
@@ -142,34 +139,42 @@ function usage(msg) {
 
 
 ///--- Mainline
-// Leading _ to avoid scope conflicts in functions
 
-var _options = parseOptions();
-_options.log = LOG;
-var _client = manta.createBinClient(_options);
+(function main() {
+        var options = parseOptions();
+        options.log = LOG;
+        ifError(manta.assertPath(options.path, true));
 
-ifError(manta.assertPath(_options.path, true));
-
-fs.stat(_options.file, function (err, stats) {
-        ifError(err);
-
-        if (!stats.isFile()) {
-                console.error(_options.file + ' is not a file');
-                process.exit(1);
-        }
-
+        var client = manta.createBinClient(options);
         var opts = {
-                copies: _options.copies,
-                headers: _options.headers,
-                size: stats.size
+                copies: options.copies,
+                headers: options.headers
         };
 
-        var stream = fs.createReadStream(_options.file);
-        stream.pause();
-        stream.on('open', function () {
-                _client.put(_options.path, stream, opts, function (_err) {
-                        ifError(_err);
+        function put(stream) {
+                client.put(options.path, stream, opts, function (err) {
+                        ifError(err);
                         process.exit(0);
                 });
-        });
-});
+        }
+
+        if (options.file) {
+                fs.stat(options.file, function (err, stats) {
+                        ifError(err);
+
+                        if (!stats.isFile()) {
+                                console.error(options.file + ' is not a file');
+                                process.exit(1);
+                        }
+
+                        opts.size = stats.size;
+                        var fstream = fs.createReadStream(options.file);
+                        fstream.pause();
+                        fstream.on('open', function () {
+                                put(fstream);
+                        });
+                });
+        } else {
+                put(process.stdin);
+        }
+})();

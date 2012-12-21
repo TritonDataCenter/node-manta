@@ -24,7 +24,7 @@ var LOG = bunyan.createLogger({
         serializers: restify.bunyan.serializers
 });
 
-var optionsMsg= [
+var optionsMsg = [
         'OPTIONS:',
         '  -a account  Manta account (specify this or export MANTA_USER)',
         '  -c count    the number of reducers for each phase (default 1)',

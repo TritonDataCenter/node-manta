@@ -24,7 +24,7 @@ var LOG = bunyan.createLogger({
         serializers: restify.bunyan.serializers
 });
 
-var optionsMsg= [
+var optionsMsg = [
         'OPTIONS:',
         '  jobId       (required) UUID of job to add keys to',
         '  -a account  Manta account (specify this or export MANTA_USER)',
