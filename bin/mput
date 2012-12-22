@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 // -*- mode: js -*-
+// vim: set expandtab sw=8
 // Copyright (c) 2012, Joyent, Inc. All rights reserved.
 
 var fs = require('fs');
@@ -33,6 +34,7 @@ var optionsMsg = [
         '  -H header   add a header',
         '              repeat option to specify multiple headers',
         '  -k keyId    SSH fingerprint (specify this or export MANTA_KEY_ID)',
+        '  -q          quiet mode (no progress bar)',
         '  -u url      Manta URL (specify this or export MANTA_URL)',
         '  -v          verbose mode'
 ].join('\n');
@@ -52,7 +54,7 @@ function parseOptions() {
         var option;
         var opts = {};
         opts.headers = {};
-        var parser = new getopt.BasicParser('hvc:f:k:u:a:H:',
+        var parser = new getopt.BasicParser('hvqc:f:k:u:a:H:',
                                             process.argv);
 
         while ((option = parser.getopt()) !== undefined && !option.error) {
@@ -84,6 +86,10 @@ function parseOptions() {
 
                 case 'k':
                         opts.keyId = option.optarg;
+                        break;
+
+                case 'q':
+                        opts.quiet = true;
                         break;
 
                 case 'u':
@@ -141,6 +147,7 @@ function usage(msg) {
 ///--- Mainline
 
 (function main() {
+        var bar = null;
         var options = parseOptions();
         options.log = LOG;
         ifError(manta.assertPath(options.path, true));
@@ -173,8 +180,32 @@ function usage(msg) {
                         fstream.on('open', function () {
                                 put(fstream);
                         });
+                        if (!options.quiet && Boolean(process.stderr.isTTY)) {
+                                bar = new manta.ProgressBar({
+                                        filename: options.path,
+                                        size: stats.size
+                                });
+                                fstream.on('data', function (data) {
+                                        bar.advance(data.length);
+                                });
+                                fstream.on('end', function () {
+                                        bar.end();
+                                });
+                        }
                 });
         } else {
+                if (!options.quiet && Boolean(process.stderr.isTTY)) {
+                        bar = new manta.ProgressBar({
+                                filename: options.path,
+                                nosize: true
+                        });
+                        process.stdin.on('data', function (data) {
+                                bar.advance(data.length);
+                        });
+                        process.stdin.on('end', function () {
+                                bar.end();
+                        });
+                }
                 put(process.stdin);
         }
 })();

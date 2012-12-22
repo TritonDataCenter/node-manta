@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 // -*- mode: js -*-
+// vim: set expandtab sw=8:
 // Copyright (c) 2012, Joyent, Inc. All rights reserved.
 
 var fs = require('fs');
@@ -30,6 +31,7 @@ var optionsMsg = [
         '  -a account   Manta account (specify this or export MANTA_USER)',
         '  -f file      write to <file> instead of stdout',
         '  -k keyId     SSH fingerprint (specify this or export MANTA_KEY_ID)',
+        '  -q           quiet mode (no progress bar)',
         '  -u url       Manta URL (specify this or export MANTA_URL)',
         '  -v           verbose mode'
 ].join('\n');
@@ -48,7 +50,7 @@ function ifError(err) {
 function parseOptions() {
         var option;
         var opts = {};
-        var parser = new getopt.BasicParser('vhf:k:u:a:',
+        var parser = new getopt.BasicParser('vqhf:k:u:a:',
                                             process.argv);
 
         while ((option = parser.getopt()) !== undefined && !option.error) {
@@ -67,6 +69,10 @@ function parseOptions() {
 
                 case 'k':
                         opts.keyId = option.optarg;
+                        break;
+
+                case 'q':
+                        opts.quiet = true;
                         break;
 
                 case 'u':
@@ -136,8 +142,21 @@ if (_options.file) {
 }
 
 function _get() {
-        _client.get(_options.path, function (err, stream) {
+        _client.get(_options.path, function (err, stream, res) {
                 ifError(err);
+
+                if (!_options.quiet && Boolean(process.stderr.isTTY)) {
+                        var _bar = new manta.ProgressBar({
+                                filename: _options.path,
+                                size: Number(res.headers['content-length'])
+                        });
+                        stream.on('data', function (data) {
+                                _bar.advance(data.length);
+                        });
+                        stream.on('end', function () {
+                                _bar.end();
+                        });
+                }
 
                 stream.pipe(_out);
                 _out.on('end', process.exit.bind(null, 0));
