@@ -6,6 +6,7 @@ var http = require('http');
 var https = require('https');
 var url = require('url');
 
+var assert = require('assert-plus');
 var bunyan = require('bunyan');
 var clone = require('clone');
 var getopt = require('posix-getopt');
@@ -32,7 +33,7 @@ var optionsMsg = [
         '  path         (required) Manta path to search under',
         '  -a account   Manta account (specify this or export MANTA_USER)',
         '  -k keyId     SSH fingerprint (specify this or export MANTA_KEY_ID)',
-        '  -l limit     limit the number of results (default 1000)',
+        '  -l limit     limit the number of results returned in a batch',
         '  -n name      only list objects that match /name/',
         '  -p parallel  limit on number of concurrent operations (default 10)',
         '  -s size      only list objects greater than <size> bytes',
@@ -78,7 +79,7 @@ function parseOptions() {
                         break;
 
                 case 'n':
-                        opts.name = new RegExp(option.optarg);
+                         opts.name = new RegExp(option.optarg);
                         break;
 
                 case 'p':
@@ -162,88 +163,87 @@ function usage(msg) {
 
 
 ///--- Mainline
-// Leading _ to avoid scope conflicts in functions
 
 http.globalAgent.maxSockets = MAX_SOCKETS;
 https.globalAgent.maxSockets = MAX_SOCKETS;
 
-var _options = parseOptions();
-_options.log = LOG;
-ifError(manta.assertPath(_options.path, true));
+(function main() {
+        var options = parseOptions();
+        options.log = LOG;
+        ifError(manta.assertPath(options.path, true));
 
-CLIENT = manta.createBinClient(_options);
+        var client = manta.createBinClient(options);
 
-var Q = new manta.Queue({
-        limit: _options.parallel || 10,
-        worker: function ls(options, cb) {
-                var last;
-                var opts = {
-                        query: {}
-                };
-                var seen = 0;
+        var queue = new manta.Queue({
+                limit: options.parallel || 10,
+                worker: function ls(opts, cb) {
+                        var last;
+                        var _opts = {
+                                query: {}
+                        };
 
-                if (options.limit)
-                        opts.query.limit = options.limit;
-                if (options.marker)
-                        opts.query.marker = options.marker;
+                        if (options.limit)
+                                _opts.query.limit = options.limit;
+                        if (opts.marker)
+                                _opts.query.marker = opts.marker;
 
-                CLIENT.ls(options.path, opts, function (err, res) {
-                        ifError(err);
+                        client.ls(opts.path, _opts, function onLs(err, res) {
+                                ifError(err);
 
-                        res.on('directory', function onDirectory(dir) {
-                                last = dir.name;
-                                seen++;
+                                res.on('directory', function onDirectory(dir) {
+                                        if (dir.name === opts.marker)
+                                                return;
 
-                                var _opts = clone(options);
-                                _opts.client = options.client;
-                                _opts.path = options.path + '/' + dir.name;
-                                if (_opts.type === 'd')
                                         printEntry(options, dir);
 
-                                Q.push(_opts);
-                        });
-                        res.on('object', function onObject(obj) {
-                                last = obj.name;
-                                seen++;
-                                if (obj.name !== options.marker)
-                                        printEntry(options, obj);
-                        });
-                        res.once('error', ifError);
-                        res.once('end', function (http_res) {
-                                var l = options.limit;
-                                var rss = http_res.headers['result-set-size'];
-                                rss = parseInt(rss, 10);
-
-                                if (l !== undefined || seen >= rss || !last) {
-                                        cb();
-                                } else {
-                                        var o = {
-                                                marker: last,
-                                                path: options.path,
+                                        last = dir.name;
+                                        queue.push({
+                                                client: client,
+                                                path: opts.path + '/' +
+                                                        dir.name,
                                                 type: options.type
-                                        };
-                                        Q.push(o);
-                                }
+                                        });
+                                });
+
+                                res.on('object', function onObject(obj) {
+                                        if (obj.name === opts.marker)
+                                                return;
+
+                                        last = obj.name;
+                                        printEntry(options, obj);
+                                });
+
+                                res.once('error', ifError);
+
+                                res.once('end', function onEnd(http_res) {
+                                        if (last) {
+                                                queue.push({
+                                                        marker: last,
+                                                        path: opts.path,
+                                                        type: opts.type
+                                                });
+                                        }
+                                        cb();
+                                });
                         });
-                });
-        }
-});
+                }
+        });
 
+        client.info(options.path, function (err, info) {
+                if (err) {
+                        client.get(options.path, function (err2) {
+                                ifError(err2);
+                                // We *shouldn't* ever hit this...
+                                ifError(err);
+                        });
+                        return;
+                }
 
-CLIENT.info(_options.path, function (err, info) {
-        if (err) {
-                CLIENT.get(_options.path, function (err2) {
-                        ifError(err2);
-                        // We *shouldn't* ever hit this...
-                        ifError(err);
-                });
-                return;
-        }
-
-        if (info.extension === 'directory') {
-                Q.push(_options);
-        } else {
-                printEntry(_options, {});
-                process.exit(1);
-        }
-});
+                if (info.extension === 'directory') {
+                        queue.push(options);
+                } else {
+                        printEntry(options, {});
+                        process.exit(1);
+                }
+        });
+})();
