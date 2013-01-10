@@ -194,20 +194,18 @@ function usage(msg) {
                         }
                 });
         } else {
-                // Temporarily disabled as "undefinedB" gets printed
-                // if (!options.quiet && Boolean(process.stderr.isTTY)) {
-                //         bar = new manta.ProgressBar({
-                //                 filename: options.path,
-                //                 nosize: true
-                //         });
-                //         process.stdin.on('data', function (data) {
-                //                 bar.advance(data.length);
-                //         });
-                //         process.stdin.on('end', function () {
-                //                 bar.end();
-                //         });
-                // }
-
+                if (!options.quiet && Boolean(process.stderr.isTTY)) {
+                        bar = new manta.ProgressBar({
+                                filename: options.path,
+                                nosize: true
+                        });
+                        process.stdin.on('data', function (data) {
+                                bar.advance(data.length);
+                        });
+                        process.stdin.on('end', function () {
+                                bar.end();
+                        });
+                }
                 put(process.stdin);
         }
 })();
