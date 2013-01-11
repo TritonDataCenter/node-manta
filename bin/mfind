@@ -143,6 +143,8 @@ function printEntry(opts, obj) {
                 return;
         if (opts.type && opts.type === 'd' && obj.type !== 'directory')
                 return;
+        if (opts.type && opts.type === 'o' && obj.type !== 'object')
+                return;
 
         console.log(opts.path + (obj.name ? ('/' + obj.name) : ''));
 }
@@ -194,7 +196,7 @@ https.globalAgent.maxSockets = MAX_SOCKETS;
                                         if (dir.name === opts.marker)
                                                 return;
 
-                                        printEntry(options, dir);
+                                        printEntry(opts, dir);
 
                                         last = dir.name;
                                         queue.push({
@@ -210,7 +212,7 @@ https.globalAgent.maxSockets = MAX_SOCKETS;
                                                 return;
 
                                         last = obj.name;
-                                        printEntry(options, obj);
+                                        printEntry(opts, obj);
                                 });
 
                                 res.once('error', ifError);
