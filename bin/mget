@@ -103,7 +103,11 @@ function parseOptions() {
         if (parser.optind() >= process.argv.length)
                 usage('missing required argument: "path"');
 
-        opts.path = path.normalize(process.argv[parser.optind()]);
+        opts.paths = process.argv.slice(parser.optind()).map(function (p) {
+                var _p = path.normalize(p);
+                ifError(manta.assertPath(_p, true));
+                return (_p);
+        });
         return (opts);
 }
 
@@ -129,45 +133,55 @@ function usage(msg) {
 ///--- Mainline
 // Leading _ to avoid scope conflicts in functions
 
-var _options = parseOptions();
-_options.log = LOG;
-var _client = manta.createBinClient(_options);
-ifError(manta.assertPath(_options.path, true));
-var _out = process.stdout;
-if (_options.file) {
-        _out = fs.createWriteStream(_options.file);
-        _out.on('open', _get.bind(null));
-} else {
-        _get();
-}
+(function main() {
+        var opts = parseOptions();
+        opts.log = LOG;
+        var client = manta.createBinClient(opts);
+        var i = -1;
+        var out = process.stdout;
 
-function _get() {
-        _client.get(_options.path, function (err, stream, res) {
-                ifError(err);
-
-                if (!_options.quiet && Boolean(process.stderr.isTTY)) {
-                        var _baropts = {
-                                filename: _options.path
-                        };
-                        var _clen = Number(res.headers['content-length']);
-                        /*
-                         * If we don't get a Content-Length header, then
-                         * fall back to displaying just the rate and runtime.
-                         */
-                        if (_clen >= 0)
-                                _baropts.size = _clen;
-                        else
-                                _baropts.nosize = true;
-                        var _bar = new manta.ProgressBar(_baropts);
-                        stream.on('data', function (data) {
-                                _bar.advance(data.length);
-                        });
-                        stream.on('end', function () {
-                                _bar.end();
-                        });
+        function get() {
+                var p = opts.paths[++i];
+                if (!p) {
+                        return;
                 }
 
-                stream.pipe(_out);
-                _out.on('end', process.exit.bind(null, 0));
-        });
-}
+                client.get(p, function (err, stream, res) {
+                        ifError(err);
+
+                        var bar;
+                        if (!opts.quiet && Boolean(process.stderr.isTTY)) {
+                                var baropts = {
+                                        filename: p
+                                };
+                                var clen =
+                                        parseInt(res.headers['content-length'],
+                                                 10);
+                                if (clen >= 0) {
+                                        baropts.size = clen;
+                                } else {
+                                        baropts.nosize = true;
+                                }
+                                bar = new manta.ProgressBar(baropts);
+                        }
+
+                        stream.on('data', function (data) {
+                                if (bar)
+                                        bar.advance(data.length);
+                                out.write(data);
+                        });
+                        stream.on('end', function () {
+                                if (bar)
+                                        bar.end();
+                                get();
+                        });
+                });
+        }
+
+        if (opts.file) {
+                out = fs.createWriteStream(opts.file);
+                out.on('open', get.bind(this));
+        } else {
+                get();
+        }
+})();
