@@ -146,10 +146,19 @@ function _get() {
                 ifError(err);
 
                 if (!_options.quiet && Boolean(process.stderr.isTTY)) {
-                        var _bar = new manta.ProgressBar({
-                                filename: _options.path,
-                                size: Number(res.headers['content-length'])
-                        });
+                        var _baropts = {
+                                filename: _options.path
+                        };
+                        var _clen = Number(res.headers['content-length']);
+                        /*
+                         * If we don't get a Content-Length header, then
+                         * fall back to displaying just the rate and runtime.
+                         */
+                        if (_clen >= 0)
+                                _baropts.size = _clen;
+                        else
+                                _baropts.nosize = true;
+                        var _bar = new manta.ProgressBar(_baropts);
                         stream.on('data', function (data) {
                                 _bar.advance(data.length);
                         });
