@@ -139,6 +139,7 @@ function usage(msg) {
         var client = manta.createBinClient(opts);
         var i = -1;
         var out = process.stdout;
+        var drawProgressBar = true;
 
         function get() {
                 var p = opts.paths[++i];
@@ -150,7 +151,7 @@ function usage(msg) {
                         ifError(err);
 
                         var bar;
-                        if (!opts.quiet && Boolean(process.stderr.isTTY)) {
+                        if (drawProgressBar) {
                                 var baropts = {
                                         filename: p
                                 };
@@ -178,10 +179,21 @@ function usage(msg) {
                 });
         }
 
+        if (opts.quiet || !Boolean(process.stderr.isTTY))
+                drawProgressBar = false;
+
         if (opts.file) {
                 out = fs.createWriteStream(opts.file);
                 out.on('open', get.bind(this));
         } else {
+                if (out.isTTY) {
+                        /*
+                         * If we're outputting to a TTY, then we don't
+                         * want to draw the progress bar as it will likely
+                         * clobber the output.
+                         */
+                        drawProgressBar = false;
+                }
                 get();
         }
 })();
