@@ -32,6 +32,7 @@ var optionsMsg = [
         '  path        (required) Manta destination path',
         '  -a account  Manta account (specify this or export MANTA_USER)',
         '  -c copies   number of copies of each object to make (default 2)',
+        '  -d depth    how deep to recurse on local sync',
         '  -H header   add a header',
         '              repeat option to specify multiple headers',
         '  -k keyId    SSH fingerprint (specify this or export MANTA_KEY_ID)',
@@ -51,42 +52,58 @@ function ifError(err) {
 }
 
 
-function list(opts, cb) {
-        cb = once(cb);
-        fs.readdir(opts.source, function (err, files) {
-                if (err) {
-                        cb(err);
+function list(opts, callback) {
+        callback = once(callback);
+
+        fs.readdir(opts.source, function (read_err, files) {
+                if (read_err) {
+                        callback(read_err);
                         return;
                 }
 
                 vasync.forEachParallel({
-                        func: function stat(f, _cb) {
-                                _cb = once(_cb);
-                                var f2 = opts.source + '/' + f;
-                                fs.stat(f2, function (err2, stats) {
-                                        if (err2) {
-                                                _cb(err2);
+                        func: function stat(f, cb) {
+                                cb = once(cb);
+                                f = opts.source + '/' + f;
+                                var f2 = path.resolve(f);
+                                fs.stat(f2, function (err, stats) {
+                                        if (err) {
+                                                cb(err);
                                                 return;
+                                        }
+
+                                        if (opts.depth >= 1) {
+                                                var r = opts.root;
+                                                var tmp = path.relative(r, f2);
+                                                tmp = tmp.split('/');
+                                                if (tmp.length > opts.depth) {
+                                                        cb();
+                                                        return;
+                                                }
                                         }
 
                                         if (stats.isFile()) {
                                                 opts.files.push({
-                                                        file: f2,
+                                                        file: f,
                                                         size: stats.size
                                                 });
-                                                _cb();
+                                                cb();
                                         } else if (stats.isDirectory()) {
-                                                opts.dirs.push(f2);
+                                                opts.dirs.push(f);
                                                 list({
-                                                        files: opts.files,
+                                                        depth: opts.depth,
                                                         dirs: opts.dirs,
-                                                        source: f2
-                                                }, _cb);
+                                                        files: opts.files,
+                                                        root: opts.root,
+                                                        source: f
+                                                }, cb);
+                                        } else {
+                                                cb();
                                         }
                                 });
                         },
                         inputs: files
-                }, cb);
+                }, callback);
         });
 }
 
@@ -94,9 +111,10 @@ function list(opts, cb) {
 function parseOptions() {
         var option;
         var opts = {
+                depth: 0,
                 headers: {}
         };
-        var parser = new getopt.BasicParser('hvc:k:u:a:H:p:',
+        var parser = new getopt.BasicParser('hvc:d:k:u:a:H:p:',
                                             process.argv);
 
         while ((option = parser.getopt()) !== undefined && !option.error) {
@@ -107,6 +125,10 @@ function parseOptions() {
 
                 case 'c':
                         opts.copies = parseInt(option.optarg, 10);
+                        break;
+
+                case 'd':
+                        opts.depth = parseInt(option.optarg, 10);
                         break;
 
                 case 'h':
@@ -178,7 +200,7 @@ function usage(msg) {
                 console.error(msg);
 
         var str = 'usage: ' + path.basename(process.argv[1]);
-        str += ' [-v] [-a account] [-c copies] [-u url] [-k keyId] ';
+        str += ' [-v] [-a account] [-c copies] [-d depth] [-u url] [-k keyId] ';
         str += '[-H header] [-p parallel] directory path';
         console.error(str);
         console.error(optionsMsg);
@@ -188,71 +210,72 @@ function usage(msg) {
 
 
 ///--- Mainline
-// Leading _ to avoid scope conflicts in functions
 
-var _options = parseOptions();
-_options.log = LOG;
-var _client = manta.createBinClient(_options);
+(function main() {
+        var options = parseOptions();
+        options.log = LOG;
+        var client = manta.createBinClient(options);
 
-ifError(manta.assertPath(_options.path, true));
+        ifError(manta.assertPath(options.path, true));
 
-_options.dirs = [_options.source];
-_options.files = [];
-list(_options, function (err) {
-        ifError(err);
-
-        var dq = new manta.Queue({
+        var dirQ = new manta.Queue({
                 limit: 1,
                 worker: function (d, cb) {
-                        var p = _options.path + '/' + d;
-                        _client.mkdir(p, function (_err) {
-                                if (_err) {
-                                        cb(_err);
+                        var p = options.path + '/' + d;
+                        client.mkdir(p, function (err) {
+                                if (err) {
+                                        cb(err);
                                         return;
                                 }
-                                var next = _options.dirs.shift();
+                                var next = options.dirs.shift();
                                 if (next) {
-                                        dq.push(next);
+                                        dirQ.push(next);
                                 } else {
-                                        dq.close();
+                                        dirQ.close();
                                 }
                                 cb();
                         });
                 }
         });
 
-        function pushFiles() {
-                var fq = new manta.Queue({
-                        limit: _options.parallel || 5,
-                        worker: function put(opts, cb) {
-                                cb = once(cb);
+        var fileQ = new manta.Queue({
+                limit: options.parallel || 5,
+                worker: function put(opts, cb) {
+                        cb = once(cb);
 
-                                var p = _options.path + '/' + opts.file;
-                                var _opts = {
-                                        copies: _options.copies,
-                                        size: opts.size
-                                };
-                                var stream = fs.createReadStream(opts.file);
-                                stream.pause();
-                                stream.once('open', function () {
-                                        _client.put(p, stream, _opts, cb);
+                        var p = options.path + '/' + opts.file;
+                        var _opts = {
+                                copies: options.copies,
+                                size: opts.size
+                        };
+                        var stream = fs.createReadStream(opts.file);
+                        stream.pause();
+                        stream.once('open', function () {
+                                client.put(p, stream, _opts, cb);
+                        });
+                }
+        });
+        fileQ.once('end', process.exit.bind(process, 0));
+
+        options.dirs = [options.source];
+        options.files = [];
+        options.root = path.resolve(options.source);
+
+        list(options, function (err) {
+                ifError(err);
+
+                if (options.dirs.length) {
+                        dirQ.once('end', function pushFiles() {
+                                options.files.forEach(function (f) {
+                                        fileQ.push(f);
                                 });
-                        }
-                });
-                fq.once('end', process.exit.bind(process, 0));
+                        });
 
-                _options.files.forEach(function (f) {
-                        fq.push(f);
-                });
-        }
-
-        if (_options.dirs.length) {
-                dq.once('end', pushFiles);
-                _options.dirs.sort();
-                var _d = _options.dirs.shift();
-                dq.push(_d);
-        } else {
-                dq.close();
-                pushFiles();
-        }
-});
+                        options.dirs.sort();
+                        dirQ.push(options.dirs.shift());
+                } else {
+                        dirQ.close();
+                        pushFiles();
+                }
+        });
+})();
