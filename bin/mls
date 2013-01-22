@@ -206,6 +206,6 @@ _client.info(_options.path, function (err, info) {
                 });
         } else {
                 printEntry(info);
-                process.exit(1);
+                process.exit(0);
         }
 });
