@@ -7,20 +7,20 @@
         "main": "./lib/index.js",
         "dependencies": {
                 "assert-plus": "0.1.2",
-                "bunyan": "0.16.8",
-                "carrier": "0.1.7",
-                "clone": "0.1.1",
+                "bunyan": "0.17.0",
+                "carrier": "0.1.8",
+                "clone": "0.1.5",
                 "http-signature": "git://github.com/joyent/node-http-signature#ba72d40",
                 "memorystream": "git://github.com/mcavage/node-memorystream.git#5b914d6",
-                "mime": "1.2.7",
+                "mime": "1.2.9",
                 "node-uuid": "1.4.0",
                 "once": "1.1.1",
                 "posix-getopt": "1.0.0",
-                "restify": "git://github.com/mcavage/node-restify.git#c323034",
+                "restify": "2.0.4",
                 "ssh-agent": "0.2.1",
                 "sprintf": "0.1.1",
                 "tar": "0.1.14",
-                "vasync": "1.3.2"
+                "vasync": "1.3.3"
         },
         "devDependencies": {
                 "nodeunit": "0.7.4"
