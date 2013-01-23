@@ -49,7 +49,9 @@ function ifError(err) {
 
 function parseOptions() {
         var option;
-        var opts = {};
+        var opts = {
+                log: LOG
+        };
         var parser = new getopt.BasicParser('vqhf:k:u:a:',
                                             process.argv);
 
@@ -135,7 +137,6 @@ function usage(msg) {
 
 (function main() {
         var opts = parseOptions();
-        opts.log = LOG;
         var client = manta.createBinClient(opts);
         var i = -1;
         var out = process.stdout;
@@ -144,6 +145,7 @@ function usage(msg) {
         function get() {
                 var p = opts.paths[++i];
                 if (!p) {
+                        client.close();
                         return;
                 }
 

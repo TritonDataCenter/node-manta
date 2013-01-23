@@ -112,7 +112,9 @@ function parseOptions() {
         var option;
         var opts = {
                 depth: 0,
-                headers: {}
+                headers: {},
+                log: LOG,
+                parallel: 100
         };
         var parser = new getopt.BasicParser('hvc:d:k:u:a:H:p:',
                                             process.argv);
@@ -185,6 +187,7 @@ function parseOptions() {
         var tmp = process.argv.slice(parser.optind());
         opts.source = path.normalize(tmp[0]);
         opts.path = path.normalize(tmp[1]);
+        ifError(manta.assertPath(opts.path, true));
 
         return (opts);
 }
@@ -213,10 +216,7 @@ function usage(msg) {
 
 (function main() {
         var options = parseOptions();
-        options.log = LOG;
         var client = manta.createBinClient(options);
-
-        ifError(manta.assertPath(options.path, true));
 
         var dirQ = new manta.Queue({
                 limit: 1,
@@ -239,7 +239,7 @@ function usage(msg) {
         });
 
         var fileQ = new manta.Queue({
-                limit: options.parallel || 5,
+                limit: options.parallel,
                 worker: function put(opts, cb) {
                         cb = once(cb);
 
@@ -255,21 +255,25 @@ function usage(msg) {
                         });
                 }
         });
-        fileQ.once('end', process.exit.bind(process, 0));
 
-        options.dirs = [options.source];
-        options.files = [];
+        function pushFiles() {
+                options.files.forEach(function (f) {
+                        fileQ.push(f);
+                });
+                fileQ.once('end', process.exit.bind(process, 0));
+                fileQ.close();
+        }
+
+
         options.root = path.resolve(options.source);
+        options.dirs = [path.basename(options.root)];
+        options.files = [];
 
         list(options, function (err) {
                 ifError(err);
 
                 if (options.dirs.length) {
-                        dirQ.once('end', function pushFiles() {
-                                options.files.forEach(function (f) {
-                                        fileQ.push(f);
-                                });
-                        });
+                        dirQ.once('end', pushFiles);
 
                         options.dirs.sort();
                         dirQ.push(options.dirs.shift());

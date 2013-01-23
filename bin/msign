@@ -108,9 +108,15 @@ function parseOptions() {
                 usage('missing required argument: "path"');
 
         opts.keyId = opts.keyId || process.env.MANTA_KEY_ID;
-        opts.path = path.normalize(process.argv[parser.optind()]);
         opts.url = opts.url || process.env.MANTA_URL;
         opts.user = opts.user || process.env.MANTA_USER;
+
+        opts.paths = process.argv.slice(parser.optind()).map(function (p) {
+                var _p = path.normalize(p);
+                ifError(manta.assertPath(_p, true));
+                return (_p);
+        });
+
         return (opts);
 }
 
@@ -130,32 +136,38 @@ function usage(msg) {
 
 
 ///--- Mainline
-// Leading _ to avoid scope conflicts in functions
 
-var _options = parseOptions();
+(function main() {
+        var options = parseOptions();
 
-manta.loadSSHKey(_options.keyId, function (load_err, key) {
-        ifError(load_err);
+        manta.loadSSHKey(options.keyId, function (load_err, key) {
+                ifError(load_err);
 
-        var opts = {
-                algorithm: / DSA /.test(key) ? 'DSA-SHA1' : 'RSA-SHA256',
-                expires: _options.expires,
-                host: url.parse(_options.url).host,
-                keyId: _options.keyId,
-                log: LOG,
-                method: _options.method || 'GET',
-                path: _options.path,
-                sign: manta.privateKeySigner({
+                var alg = / DSA /.test(key) ? 'DSA-SHA1' : 'RSA-SHA256';
+                var signer = manta.privateKeySigner({
                         key: key,
-                        keyId: _options.keyId,
+                        keyId: options.keyId,
                         log: LOG,
-                        user: _options.user
-                }),
-                user: _options.user
-        };
+                        user: options.user
+                });
 
-        manta.signUrl(opts, function (err, resource) {
-                ifError(err);
-                console.log(_options.url + resource);
+                options.paths.forEach(function (p) {
+                        var opts = {
+                                algorithm: alg,
+                                expires: options.expires,
+                                host: url.parse(options.url).host,
+                                keyId: options.keyId,
+                                log: LOG,
+                                method: options.method || 'GET',
+                                path: p,
+                                sign: signer,
+                                user: options.user
+                        };
+                        manta.signUrl(opts, function (err, resource) {
+                                ifError(err);
+                                console.log(options.url + resource);
+                        });
+                });
+
         });
-});
+})();

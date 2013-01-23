@@ -59,10 +59,11 @@ function ifError(err) {
 function parseOptions() {
         var option;
         var opts = {
-                map: [],
-                reduce: [],
+                assets: [],
                 count: [],
-                assets: []
+                log: LOG,
+                map: [],
+                reduce: []
         };
         var parser = new getopt.BasicParser('vha:c:d:f:i:k:m:n:r:s:u:',
                                             process.argv);
@@ -176,43 +177,43 @@ function usage(msg) {
 
 
 ///--- Mainline
-// Leading _ to avoid scope conflicts in functions
 
-var _options = parseOptions();
-_options.log = LOG;
-var _client = manta.createBinClient(_options);
-var _job;
+(function main() {
+        var options = parseOptions();
+        var client = manta.createBinClient(options);
 
-function _cb(err, jobId) {
-        ifError(err);
+        function cb(err, id) {
+                ifError(err);
 
-        console.log(jobId);
-        process.exit(0);
-}
+                console.log(id);
+                process.exit(0);
+        }
 
-if (_options.manifest) {
-        var _tmp = fs.readFileSync(path.normalize(_options.manifest), 'utf8');
-        _client.createJob(JSON.parse(_tmp), _cb);
-} else {
-        _job = {
-                name: _options.name,
-                input: _options.input,
-                phases: []
-        };
-        _options.map.forEach(function (e) {
-                if (_options.assets)
-                        e.assets = _options.assets;
-                _job.phases.push(e);
-        });
-        _options.reduce.forEach(function (e) {
-                if (_options.assets)
-                        e.assets = _options.assets;
-                if (_options.count && _options.count.length > 0)
-                        e.count = _options.count.shift();
-                if (_options.memory)
-                        e.memory = _options.memory;
+        if (options.manifest) {
+                var tmp = path.normalize(options.manifest)
+                tmp = fs.readFileSync(tmp, 'utf8');
+                client.createJob(JSON.parse(tmp), cb);
+        } else {
+                var job = {
+                        name: options.name,
+                        input: options.input,
+                        phases: []
+                };
+                options.map.forEach(function (m) {
+                        if (options.assets)
+                                m.assets = options.assets;
+                        job.phases.push(m);
+                });
+                options.reduce.forEach(function (r) {
+                        if (options.assets)
+                                r.assets = options.assets;
+                        if (options.count && options.count.length > 0)
+                                r.count = options.count.shift();
+                        if (options.memory)
+                                r.memory = options.memory;
 
-                _job.phases.push(e);
-        });
-        _client.createJob(_job, _cb);
-}
+                        job.phases.push(r);
+                });
+                client.createJob(job, cb);
+        }
+})();

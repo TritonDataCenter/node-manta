@@ -18,6 +18,8 @@ var manta = require('../lib');
 
 ///--- Globals
 
+var DIR_CT = 'application/x-json-stream; type=directory';
+var HAD_ERR = false;
 var LOG = bunyan.createLogger({
         name: path.basename(process.argv[1]),
         level: (process.env.LOG_LEVEL || 'info'),
@@ -38,10 +40,12 @@ function ifError(err) {
 
 
 function parseOptions() {
-        var idx;
         var option;
-        var opts = {};
-        var parser = new getopt.BasicParser('vhk:u:a:',
+        var opts = {
+                log: LOG,
+                parallel: 10
+        };
+        var parser = new getopt.BasicParser('vhk:u:a:p:',
                                             process.argv);
 
         while ((option = parser.getopt()) !== undefined && !option.error) {
@@ -56,6 +60,10 @@ function parseOptions() {
 
                 case 'k':
                         opts.keyId = option.optarg;
+                        break;
+
+                case 'p':
+                        opts.parallel = parseInt(opts.parallel, 10);
                         break;
 
                 case 'u':
@@ -86,22 +94,25 @@ function parseOptions() {
         if (parser.optind() >= process.argv.length)
                 usage('missing required argument: "path(s)"');
 
-        idx = parser.optind();
-        while (idx < process.argv.length) {
-                if (!opts.hasOwnProperty('paths')) {
-                        opts.paths = [];
-                }
-
-                opts.paths.push(path.normalize(process.argv[idx]));
-                idx++;
-        }
-
+        opts.paths = process.argv.slice(parser.optind()).map(function (p) {
+                var _p = path.normalize(p);
+                ifError(manta.assertPath(_p, true));
+                return (_p);
+        });
         return (opts);
 }
 
 
-function printEntry(obj) {
-        console.log('%j', obj);
+function printEntry(p, md5) {
+        var _md5 = new Buffer(md5, 'base64');
+        console.log(_md5.toString('hex') + '  ' + p);
+}
+
+
+function printError(p, err) {
+        HAD_ERR = true;
+        var msg = err ? (err.message || err) : '';
+        console.error('mmd5: ' + p + ': ' + msg);
 }
 
 
@@ -110,7 +121,8 @@ function usage(msg) {
                 console.error(msg);
 
         var str = 'usage: ' + path.basename(process.argv[1]);
-        str += ' [-v] [-a account] [-u url] [-k keyId] path [path...]';
+        str += ' [-v] [-a account] [-u url] [-k keyId] [-p parallel] ';
+        str += 'path [path...]';
         console.error(str);
         process.exit(msg ? 1 : 0);
 }
@@ -118,78 +130,35 @@ function usage(msg) {
 
 
 ///--- Mainline
-// Leading _ to avoid scope conflicts in functions
 
-var _options = parseOptions();
-_options.log = LOG;
-var _client = manta.createBinClient(_options);
-var _out = process.stdout;
-_get_md5s();
-
-function _get_md5s() {
-        var errors = 0;
-        var idx;
-        var get_path;
-        var queue;
-
-        _out.on('end', process.exit.bind(null, 0));
-
-        queue = vasync.queue(_get_md5, 1);
-
-        function _on_done() {
-                if (errors > 0) {
-                        process.exit(1);
-                }
-        }
-
-        function _err(p, message) {
-                console.error('mmd5: ' + p + ': ' + message);
-                errors++;
-        }
-
-        function _get_md5(p, callback) {
-                var error = manta.assertPath(p, true);
-
-                if (error) {
-                        _err(p, error.message);
-                        callback();
-                        return;
-                }
-
-                _client.info(p, function (err, info) {
-                        var md5;
-                        if (err) {
-                                if (err.message.length === 0) {
-                                        err.message = err.code;
+(function main() {
+        var options = parseOptions();
+        var client = manta.createBinClient(options);
+        var queue = new manta.Queue({
+                limit: options.parallel,
+                worker: function getMD5(p, cb) {
+                        client.info(p, function (err, info) {
+                                if (err) {
+                                        printError(p, err);
+                                } else if (info.hasOwnProperty('md5')) {
+                                        printEntry(p, info.md5);
+                                } else if (info.type === DIR_CT) {
+                                        printError(p, p + ' is a directory');
+                                } else {
+                                        printError(p, 'missing MD5');
                                 }
-                                _err(p, err.message);
-                                callback();
-                                return;
-                        }
-
-                        if (info.hasOwnProperty('md5')) {
-                                md5 = (new Buffer(info.md5, 'base64'));
-                                _out.write(md5.toString('hex') + '  '
-                                        + p + '\n');
-                                callback();
-                        } else if (info.type === 'application/x-json-stream; '
-                                + 'type=directory') {
-
-                                _err(p, 'is a directory');
-                                callback();
-                        } else {
-                                _err(p, 'is missing md5');
-                                callback();
-                        }
-                });
-        }
-
-        for (idx in _options.paths) {
-                get_path = _options.paths[idx];
-                if (idx == (_options.paths.length - 1)) {
-                        queue.push(get_path, _on_done);
-                } else {
-                        queue.push(get_path);
+                                cb();
+                        });
                 }
-        }
-}
+        });
+
+        queue.once('end', function () {
+                process.exit(HAD_ERR ? 1 : 0);
+        });
+
+        options.paths.forEach(function (p) {
+                queue.push(p);
+        });
+
+        queue.close();
+})();

@@ -48,8 +48,10 @@ function ifError(err) {
 
 function parseOptions() {
         var option;
-        var opts = {};
-        opts.headers = {};
+        var opts = {
+                headers: {},
+                log: LOG
+        };
         var parser = new getopt.BasicParser('pvhk:u:a:H:',
                                             process.argv);
 
@@ -109,7 +111,12 @@ function parseOptions() {
         if (parser.optind() >= process.argv.length)
                 usage('missing required argument: "path"');
 
-        opts.path = path.normalize(process.argv[parser.optind()]);
+        opts.paths = process.argv.slice(parser.optind()).map(function (p) {
+                var _p = path.normalize(p);
+                ifError(manta.assertPath(_p, true));
+                return (_p);
+        });
+
         return (opts);
 }
 
@@ -128,21 +135,24 @@ function usage(msg) {
 
 
 ///--- Mainline
-// Leading _ to avoid scope conflicts in functions
+(function main() {
+        var done = 0;
+        var options = parseOptions();
+        var client = manta.createBinClient(options);
 
-var _options = parseOptions();
-_options.log = LOG;
-var _client = manta.createBinClient(_options);
+        function cb(err) {
+                ifError(err);
 
-ifError(manta.assertPath(_options.path, true));
+                if (++done === options.paths.length)
+                        client.close();
+        }
 
-function _done(err) {
-        ifError(err);
-        process.exit(0);
-}
+        options.paths.forEach(function (p) {
+                if (options.recurse) {
+                        client.mkdirp(p, cb);
+                } else {
+                        client.mkdir(p, cb);
+                }
+        });
 
-if (_options.recurse) {
-        _client.mkdirp(_options.path, _done);
-} else {
-        _client.mkdir(_options.path, _done);
-}
+})();

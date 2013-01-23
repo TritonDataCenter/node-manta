@@ -52,8 +52,10 @@ function ifError(err) {
 
 function parseOptions() {
         var option;
-        var opts = {};
-        opts.headers = {};
+        var opts = {
+                headers: {},
+                log: LOG
+        };
         var parser = new getopt.BasicParser('hvqc:f:k:u:a:H:',
                                             process.argv);
 
@@ -121,6 +123,7 @@ function parseOptions() {
                 usage('missing required argument: "path"');
 
         opts.path = path.normalize(process.argv[parser.optind()]);
+        ifError(manta.assertPath(opts.path, true));
         return (opts);
 }
 
@@ -149,8 +152,6 @@ function usage(msg) {
 (function main() {
         var bar = null;
         var options = parseOptions();
-        options.log = LOG;
-        ifError(manta.assertPath(options.path, true));
 
         var client = manta.createBinClient(options);
         var opts = {
@@ -161,7 +162,7 @@ function usage(msg) {
         function put(stream) {
                 client.put(options.path, stream, opts, function (err) {
                         ifError(err);
-                        process.exit(0);
+                        client.close();
                 });
         }
 
@@ -188,7 +189,7 @@ function usage(msg) {
                                 fstream.on('data', function (data) {
                                         bar.advance(data.length);
                                 });
-                                fstream.on('end', function () {
+                                fstream.once('end', function () {
                                         bar.end();
                                 });
                         }
@@ -202,7 +203,7 @@ function usage(msg) {
                         process.stdin.on('data', function (data) {
                                 bar.advance(data.length);
                         });
-                        process.stdin.on('end', function () {
+                        process.stdin.once('end', function () {
                                 bar.end();
                         });
                 }

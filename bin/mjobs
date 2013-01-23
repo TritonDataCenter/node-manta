@@ -92,6 +92,7 @@ function jobs(client, options, cb) {
 function parseOptions() {
         var option;
         var opts = {
+                log: LOG
         };
         var parser = new getopt.BasicParser('vhk:m:u:a:s:',
                                             process.argv);
@@ -161,15 +162,18 @@ function usage(msg) {
 
 
 ///--- Mainline
-// Leading _ to avoid scope conflicts in functions
 
-var _options = parseOptions();
-_options.log = LOG;
-var _client = manta.createBinClient(_options);
-var _listOpts = {
-        marker: _options.marker,
-        state: _options.state
-};
-jobs(_client, _listOpts, function (err) {
-        ifError(err);
-});
+(function main() {
+        var options = parseOptions();
+
+        var client = manta.createBinClient(options);
+        var opts = {
+                marker: options.marker,
+                state: options.state
+        };
+
+        jobs(client, opts, function (err) {
+                ifError(err);
+                process.exit(0);
+        });
+})();

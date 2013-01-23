@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-
+// -*- mode: js -*-
 // Copyright (c) 2012, Joyent, Inc. All rights reserved.
 
 var fs = require('fs');
@@ -9,6 +9,7 @@ var mod_path = require('path');
 
 var bunyan = require('bunyan');
 var getopt = require('posix-getopt');
+var once = require('once');
 var restify = require('restify');
 var uuid = require('node-uuid');
 
@@ -20,12 +21,14 @@ var tar = require('tar');
 
 ///--- Globals
 
+var IN_PROGRESS = {};
 var LOG = bunyan.createLogger({
         name: mod_path.basename(process.argv[1]),
         level: (process.env.LOG_LEVEL || 'info'),
         stream: process.stderr,
         serializers: restify.bunyan.serializers
 });
+var MAX_SOCKETS = parseInt(process.env.MANTA_MAX_SOCKETS || 1000, 10);
 
 var optionsMsg = [
         'OPTIONS:',
@@ -41,6 +44,8 @@ var optionsMsg = [
         '  -v          verbose mode'
 ].join('\n');
 
+
+
 ///--- Functions
 
 function ifError(err) {
@@ -50,10 +55,14 @@ function ifError(err) {
         }
 }
 
+
 function parseOptions() {
         var option;
-        var opts = { parallelism: 10 };
-        opts.headers = {};
+        var opts = {
+                headers: {},
+                log: LOG,
+                parallelism: 25
+        };
         var parser = new getopt.BasicParser('hvc:f:k:u:a:H:p:',
                                             process.argv);
 
@@ -124,11 +133,12 @@ function parseOptions() {
                 usage('missing required argument: "path"');
 
         opts.path = mod_path.normalize(process.argv[parser.optind()]);
+        ifError(manta.assertPath(opts.path, true));
         return (opts);
 }
 
-function usage(msg)
-{
+
+function usage(msg) {
         if (msg)
                 console.error(msg);
 
@@ -140,10 +150,8 @@ function usage(msg)
         process.exit(msg ? 1 : 0);
 }
 
-var _inprogress = {};
 
-function put(client, path, stream, opts, cb)
-{
+function put(client, path, stream, opts, cb) {
         client.put(path, stream, opts, function (err) {
                 if (!err || !err.body ||
                     (err.body.code != 'ParentNotDirectory' &&
@@ -169,35 +177,46 @@ function put(client, path, stream, opts, cb)
                         client.put(path, stream, opts, cb);
                 }
 
-                if (_inprogress[dir]) {
-                        _inprogress[dir].push(postmkdir);
+                if (IN_PROGRESS[dir]) {
+                        IN_PROGRESS[dir].push(postmkdir);
                         return;
                 }
 
-                _inprogress[dir] = [ postmkdir ];
+                IN_PROGRESS[dir] = [ postmkdir ];
 
                 client.mkdirp(dir, function (_err) {
-                        _inprogress[dir].forEach(function (post) {
+                        IN_PROGRESS[dir].forEach(function (post) {
                                 post.call(this, _err);
                         });
 
-                        delete _inprogress[dir];
+                        delete IN_PROGRESS[dir];
                 });
         });
 }
+
 
 /*
  * Absent intermediate streams for each entry that could be paused without
  * pausing the tar parsing, each worker needs to take its own pass through
  * the tarball.
  */
-function worker(client, tarball)
-{
+function worker(client, tarball, callback) {
         var entry = 0;
+        var inflight = 0;
         var stream = fs.createReadStream(tarball.file);
         var pipe = stream.pipe(tar.Parse());
         var options = tarball.options;
 
+        callback = once(callback);
+
+        function cb() {
+                if (inflight > 0)
+                        return;
+
+                callback();
+        }
+
+        pipe.once('end', cb);
         pipe.on('entry', function (e) {
                 if (e.props.size === 0)
                         return;
@@ -208,36 +227,45 @@ function worker(client, tarball)
                 tarball.next = entry;
                 e.pause();
 
-                put(client, options.path + '/' + e.props.path,
-                    e, { copies: options.copies, size: e.props.size },
-                    function (err) {
-                        if (err)
-                                console.error(err);
-
+                var p = options.path + '/' + e.props.path;
+                var o = {
+                        copies: options.copies,
+                        size: e.props.size
+                };
+                inflight++;
+                put(client, p, e, o, function (err) {
                         ifError(err);
-                        console.log(options.path + '/' + e.props.path);
+
+                        console.log(p);
+                        inflight--;
+                        cb();
                 });
         });
 }
 
-var _options = parseOptions();
-_options.log = LOG;
 
-ifError(manta.assertPath(_options.path, true));
 
-/*
- * Set our maxSockets to match the desired level of parallelism.
- */
-http.globalAgent.maxSockets = _options.parallelism;
-https.globalAgent.maxSockets = _options.parallelism;
+///--- Mainline
 
-var _client = manta.createBinClient(_options);
+(function main() {
+        var options = parseOptions();
 
-var _tarball = { file: _options.file, options: _options, next: 0 };
+        http.globalAgent.maxSockets = MAX_SOCKETS;
+        https.globalAgent.maxSockets = MAX_SOCKETS;
 
-var _i;
+        var client = manta.createBinClient(options);
+        var done = 0;
+        var tarball = {
+                file: options.file,
+                options: options,
+                next: 0
+        };
 
-for (_i = 0; _i < _options.parallelism; _i++)
-        worker(_client, _tarball);
+        function cb() {
+                if (++done === options.parallelism)
+                        client.close();
+        }
 
-/* vim: set expandtab: */
+        for (var i = 0; i < options.parallelism; i++)
+                worker(client, tarball, cb);
+})();

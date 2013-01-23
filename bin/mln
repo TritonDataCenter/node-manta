@@ -47,7 +47,9 @@ function ifError(err) {
 
 function parseOptions() {
         var option;
-        var opts = {};
+        var opts = {
+                log: LOG
+        };
         var parser = new getopt.BasicParser('vhk:u:a:',
                                             process.argv);
 
@@ -117,16 +119,16 @@ function usage(msg) {
 
 
 ///--- Mainline
-// Leading _ to avoid scope conflicts in functions
 
-var _options = parseOptions();
-_options.log = LOG;
-var _client = manta.createBinClient(_options);
+(function main() {
+        var options = parseOptions();
+        var client = manta.createBinClient(options);
 
-ifError(manta.assertPath(_options.path, true));
+        ifError(manta.assertPath(options.path, true));
 
+        client.ln(options.source, options.path, function (err) {
+                ifError(err);
 
-_client.ln(_options.source, _options.path, function (err) {
-        ifError(err);
-        process.exit(0);
-});
+                client.close();
+        });
+})();

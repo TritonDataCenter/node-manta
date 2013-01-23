@@ -47,7 +47,10 @@ function ifError(err) {
 
 function parseOptions() {
         var option;
-        var opts = { parallelism: 100 };
+        var opts = {
+                log: LOG,
+                parallelism: 100
+        };
         var parser = new getopt.BasicParser('vrhk:p:u:a:',
                                             process.argv);
 
@@ -101,6 +104,7 @@ function parseOptions() {
                 usage('missing required argument: "path"');
 
         opts.path = path.normalize(process.argv[parser.optind()]);
+        ifError(manta.assertPath(opts.path, true));
         return (opts);
 }
 
@@ -124,40 +128,37 @@ function usage(msg) {
 
 
 ///--- Mainline
-// Leading _ to avoid scope conflicts in functions
 
-var _options = parseOptions();
-_options.log = LOG;
-var _client = manta.createBinClient(_options);
+(function main() {
+        var options = parseOptions();
+        var client = manta.createBinClient(options);
+        var p = options.path;
 
-ifError(manta.assertPath(_options.path, true));
-
-if (_options.recurse) {
-        _client.rmr(_options.path, _options, function (err) {
+        function cb(err) {
                 ifError(err);
-                process.exit(0);
-        });
-} else {
-        _client.info(_options.path, function (err, info) {
-                if (err) {
-                        _client.get(_options.path, function (err2) {
-                                ifError(err2);
-                                // We *shouldn't* ever hit this...
-                                ifError(err);
-                        });
-                        return;
-                }
+                client.close();
+        }
 
-                if (info.extension === 'directory') {
-                        console.error(_options.path + ' is not an object');
-                        process.exit(1);
-                }
+        if (options.recurse) {
+                client.rmr(p, options, cb);
+        } else {
+                client.info(p, function (err, info) {
+                        if (err) {
+                                client.get(p, function (err2) {
+                                        ifError(err2);
+                                        // We *shouldn't* ever hit this...
+                                        ifError(err);
+                                        client.close();
+                                });
+                                return;
+                        }
 
-                _client.unlink(_options.path, function (err2) {
-                        ifError(err2);
-                        process.exit(0);
+                        if (info.extension === 'directory') {
+                                console.error(p + ' is not an object');
+                                process.exit(1);
+                        }
+
+                        client.unlink(p, cb);
                 });
-        });
-}
-
-/* vim: set expandtab: */
+        }
+})();

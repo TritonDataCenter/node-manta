@@ -56,7 +56,11 @@ function ifError(err) {
 
 function parseOptions() {
         var option;
-        var opts = {};
+        var opts = {
+                log: LOG,
+                parallel: 100
+        };
+
         var parser = new getopt.BasicParser('vha:k:l:n:p:u:s:t:',
                                             process.argv);
 
@@ -171,13 +175,12 @@ https.globalAgent.maxSockets = MAX_SOCKETS;
 
 (function main() {
         var options = parseOptions();
-        options.log = LOG;
         ifError(manta.assertPath(options.path, true));
 
         var client = manta.createBinClient(options);
 
         var queue = new manta.Queue({
-                limit: options.parallel || 10,
+                limit: options.parallel,
                 worker: function ls(opts, cb) {
                         var last;
                         var _opts = {
@@ -189,7 +192,7 @@ https.globalAgent.maxSockets = MAX_SOCKETS;
                         if (opts.marker)
                                 _opts.query.marker = opts.marker;
 
-                        client.ls(opts.path, _opts, function onLs(err, res) {
+                        client.ls(opts.path, _opts, function (err, res) {
                                 ifError(err);
 
                                 res.on('directory', function onDirectory(dir) {
@@ -198,11 +201,11 @@ https.globalAgent.maxSockets = MAX_SOCKETS;
 
                                         printEntry(opts, dir);
 
+                                        var p = opts.path + '/' + dir.name;
                                         last = dir.name;
                                         queue.push({
                                                 client: client,
-                                                path: opts.path + '/' +
-                                                        dir.name,
+                                                path: p,
                                                 type: options.type
                                         });
                                 });
@@ -247,5 +250,10 @@ https.globalAgent.maxSockets = MAX_SOCKETS;
                         printEntry(options, {});
                         process.exit(1);
                 }
+        });
+
+        queue.once('drain', function () {
+                queue.once('end', client.close.bind(client));
+                queue.close();
         });
 })();

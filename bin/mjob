@@ -72,8 +72,11 @@ function inputStream(client, id, opts) {
                 });
 
                 out.once('end', function () {
-                        if (seen < total && last)
+                        if (seen < total && last) {
                                 inputStream(client, id, {marker: last});
+                        } else {
+                                process.exit(0);
+                        }
                 });
 
                 out.once('result', function (res) {
@@ -89,6 +92,7 @@ function inputStream(client, id, opts) {
 function parseOptions() {
         var option;
         var opts = {
+                log: LOG
         };
         var parser = new getopt.BasicParser('vcefiohxk:u:a:',
                                             process.argv);
@@ -206,48 +210,50 @@ function xor() {
 
 
 ///--- Mainline
-// Leading _ to avoid scope conflicts in functions
 
-var _options = parseOptions();
-_options.log = LOG;
-var _client = manta.createBinClient(_options);
+(function main() {
+        var options = parseOptions();
+        var client = manta.createBinClient(options);
 
-_client.job(_options.id, function (err, job) {
-        ifError(err);
+        client.job(options.id, function (job_err, job) {
+                ifError(job_err);
 
-        function streamOut(err2, out) {
-                ifError(err2);
+                function cb(err) {
+                        ifError(err);
 
-                out.on('key', function (k) {
-                        console.log(k);
-                });
-                out.on('err', function (e) {
-                        console.log(JSON.stringify(e));
-                });
-        }
+                        process.exit(0);
+                }
 
-        if (_options.output) {
-                _client.jobOutput(_options.id, streamOut);
-        } else if (_options.input) {
-                inputStream(_client, _options.id);
-        } else if (_options.fail) {
-                _client.jobFailures(_options.id, streamOut);
-        } else if (_options.errors) {
-                _client.jobErrors(_options.id, streamOut);
-        } else if (_options.end) {
-                _client.endJob(_options.id, function (_err) {
-                        ifError(_err);
-                });
-        } else if (_options.cancel) {
-                _client.cancelJob(_options.id, function (_err) {
-                        ifError(_err);
-                });
-        } else {
-                if (!job.inputDone)
-                        console.error('warning: job input not done');
+                function streamOut(err, out) {
+                        ifError(err);
 
-                console.log(JSON.stringify(job, null, 2));
-        }
+                        out.once('end', cb.bind(null, null));
+                        out.on('err', function (e) {
+                                console.log(JSON.stringify(e));
+                        });
+                        out.on('key', function (k) {
+                                console.log(k);
+                        });
+                }
 
+                if (options.output) {
+                        client.jobOutput(options.id, streamOut);
+                } else if (options.input) {
+                        inputStream(client, options.id);
+                } else if (options.fail) {
+                        client.jobFailures(options.id, streamOut);
+                } else if (options.errors) {
+                        client.jobErrors(options.id, streamOut);
+                } else if (options.end) {
+                        client.endJob(options.id, cb);
+                } else if (options.cancel) {
+                        client.cancelJob(options.id, cb);
+                } else {
+                        if (!job.inputDone)
+                                console.error('warning: job input not done');
 
-});
+                        console.log(JSON.stringify(job, null, 2));
+                        cb();
+                }
+        });
+})();

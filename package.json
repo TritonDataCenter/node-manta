@@ -16,7 +16,7 @@
                 "node-uuid": "1.4.0",
                 "once": "1.1.1",
                 "posix-getopt": "1.0.0",
-                "restify": "2.0.4",
+                "restify": "git://github.com/mcavage/node-restify#16571d6",
                 "ssh-agent": "0.2.1",
                 "sprintf": "0.1.1",
                 "tar": "0.1.14",

@@ -130,48 +130,52 @@ function usage(msg) {
 
 ///--- Mainline
 
-process.stdin.setEncoding('utf8');
+(function main() {
+        process.stdin.setEncoding('utf8');
 
-var options = parseOptions();
-var carry = carrier.carry(process.stdin);
-var client = manta.createBinClient(options);
-var keys = [];
-var queue = new manta.Queue({
-        limit: options.parallel,
-        worker: function addKeys(batch, cb) {
-                client.addJobKey(options.id, batch, {}, function (err) {
-                        if (err) {
-                                cb(err);
-                                return;
+        var options = parseOptions();
+        var carry = carrier.carry(process.stdin);
+        var client = manta.createBinClient(options);
+        var keys = [];
+        var queue = new manta.Queue({
+                limit: options.parallel,
+                worker: function addKeys(batch, cb) {
+                        client.addJobKey(options.id, batch, {}, function (err) {
+                                if (err) {
+                                        cb(err);
+                                        return;
+                                }
+                                console.error('added %d keys...', batch.length);
+                                cb();
+                        });
+                }
+        });
+
+        carry.on('line', function onLine(l) {
+                keys.push(l);
+                if (keys.length === options.batch) {
+                        queue.push(keys.slice(0));
+                        keys.length = 0;
+                }
+        });
+
+        carry.once('end', function onInputEnd() {
+                if (keys.length > 0)
+                        queue.push(keys);
+
+                queue.close();
+                queue.once('end', function () {
+                        if (!options.end) {
+                                process.exit(0);
                         }
-                        console.error('added %d keys...', batch.length);
-                        cb();
-                });
-        }
-});
 
-carry.on('line', function onLine(l) {
-        keys.push(l);
-        if (keys.length === options.batch) {
-                queue.push(keys.slice(0));
-                keys.length = 0;
-        }
-});
+                        client.endJob(options.id, function (err) {
+                                ifError(err);
 
-carry.once('end', function onInputEnd() {
-        if (keys.length > 0)
-                queue.push(keys);
-
-        queue.close();
-        queue.once('end', function () {
-                if (!options.end)
-                        process.exit(0);
-
-                client.endJob(options.id, function (err) {
-                        ifError(err);
-                        process.exit(0);
+                                process.exit(0);
+                        });
                 });
         });
-});
 
-process.stdin.resume();
+        process.stdin.resume();
+})();
