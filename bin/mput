@@ -147,7 +147,7 @@ function usage(msg) {
 
         var str = 'usage: ' + path.basename(process.argv[1]);
         str += ' [-v] [-a account] [-c copies] [-u url] [-k keyId]';
-        str += ' [-H header] -f file path';
+        str += ' [-H header] -f file absolute_path';
         console.error(str);
         console.error(optionsMsg);
         process.exit(msg ? 1 : 0);
