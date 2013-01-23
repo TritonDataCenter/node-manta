@@ -43,10 +43,18 @@ var optionsMsg = [
 ///--- Functions
 
 function ifError(err) {
-        if (err) {
+        if (!err)
+                return;
+
+        if (err.name === 'OperationNotAllowedOnRootDirectoryError' ||
+            err.name === 'OperationNotAllowedOnDirectoryError') {
+                console.error('Cannot mput to a directory; ' +
+                              'specify full object path');
+        } else {
                 console.error(err.toString());
-                process.exit(1);
         }
+
+        process.exit(1);
 }
 
 
