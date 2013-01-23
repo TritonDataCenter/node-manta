@@ -153,7 +153,11 @@ function parseOptions() {
 
         var paths;
         if (parser.optind() >= process.argv.length) {
-                paths = ['/'];
+                var user = opts.user || process.env.MANTA_USER;
+                if (!user) {
+                        usage('account is a required argument with no path');
+                }
+                paths = ['/' + user + '/stor'];
         } else {
                 paths = process.argv.slice(parser.optind()).map(function (p) {
                         var _p = path.normalize(p);
