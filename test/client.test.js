@@ -69,6 +69,12 @@ before(function (cb) {
 });
 
 
+after(function (cb) {
+        this.client.close();
+        cb();
+});
+
+
 test('mkdir', function (t) {
         this.client.mkdir(SUBDIR1, function (err) {
                 t.ifError(err);
@@ -266,7 +272,7 @@ test('get job output', function (t) {
         var _keys = 0; // treat 'end' as a key
         function cb(err) {
                 t.ifError(err);
-                t.ok(_keys);
+                t.ok(_keys > 0);
                 t.end();
         }
 

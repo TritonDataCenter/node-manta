@@ -190,7 +190,7 @@ function usage(msg) {
         }
 
         if (options.manifest) {
-                var tmp = path.normalize(options.manifest)
+                var tmp = path.normalize(options.manifest);
                 tmp = fs.readFileSync(tmp, 'utf8');
                 client.createJob(JSON.parse(tmp), cb);
         } else {
