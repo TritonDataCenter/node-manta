@@ -17,9 +17,12 @@ First setup your environment to match your Joyent Manta account:
 
 Then a code snippet:
 
+    var assert = require('assert');
+    var fs = require('fs);
+
     var client = manta.createClient({
         sign: manta.privateKeySigner({
-            key: process.env.HOME + '/.ssh/id_rsa',
+            key: fs.readFileSync(process.env.HOME + '/.ssh/id_rsa', 'utf8'),
             keyId: process.env.MANTA_KEY_ID,
             user: process.env.MANTA_USER
         }),
