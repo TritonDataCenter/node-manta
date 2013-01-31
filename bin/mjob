@@ -43,7 +43,7 @@ var optionsMsg = [
 
 function ifError(err) {
         if (err) {
-                console.error(err.stack);
+                console.error(err.toString());
                 process.exit(1);
         }
 }
