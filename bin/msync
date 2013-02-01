@@ -373,7 +373,8 @@ function usage(msg) {
                         if (options.nondestructive === undefined) {
                                 var out = fs.createWriteStream(opts.localName);
 
-                                client.get(opts.remoteName, function (err, stream, res) {
+                                var rn = opts.remoteName;
+                                client.get(rn, function (err, stream, res) {
                                         ifError(err);
 
                                         stream.on('data', function (data) {
