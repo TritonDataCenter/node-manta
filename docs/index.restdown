@@ -367,7 +367,7 @@ Note: The example below uses the `memorystream` module from NPM.
             'access-control-allow-origin': '*',
             'access-control-allow-methods': 'GET'
         },
-        md5: crypto.createHash('md5').update(chunk).digest('base64')
+        md5: crypto.createHash('md5').update(message).digest('base64'),
         size: Buffer.byteLength(message),
         type: 'text/plain'
     };
@@ -378,9 +378,7 @@ Note: The example below uses the `memorystream` module from NPM.
         ...
     });
 
-    process.nextTick(function () {
-        stream.end(message);
-    });
+    stream.end(message);
 
 ### Inputs
 
