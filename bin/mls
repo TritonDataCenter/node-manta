@@ -31,7 +31,8 @@ var optionsMsg = [
         '  -l limit    only list up to <limit> entries',
         '  -m marker   start listing from <marker>',
         '  -u url      Manta URL (specify this or export MANTA_URL)',
-        '  -v          verbose mode'
+        '  -v          verbose mode,',
+        '  -1          output only the file name'
 ].join('\n');
 
 
@@ -68,7 +69,7 @@ function ls(client, p, options, cb) {
                         last = e.name;
                         seen++;
                         if (e.name !== options.marker)
-                                printEntry(e);
+                                printEntry(e, options.human);
                 }
 
                 res.on('directory', onEntry);
@@ -98,10 +99,14 @@ function parseOptions() {
         var opts = {
                 log: LOG
         };
-        var parser = new getopt.BasicParser('vha:k:l:m:u:t:', process.argv);
+        var parser = new getopt.BasicParser('1vha:k:l:m:u:t:', process.argv);
 
         while ((option = parser.getopt()) !== undefined && !option.error) {
                 switch (option.option) {
+                case '1':
+                        opts.human = true;
+                        break;
+
                 case 'a':
                         opts.user = option.optarg;
                         break;
@@ -171,8 +176,14 @@ function parseOptions() {
 }
 
 
-function printEntry(obj) {
-        console.log('%j', obj);
+function printEntry(obj, human) {
+        if (human) {
+                console.log('%s%s',
+                            obj.name,
+                            obj.type === 'directory' ? '/' : '');
+        } else {
+                console.log('%j', obj);
+        }
 }
 
 
@@ -211,7 +222,7 @@ function usage(msg) {
                         } else if (info.extension === 'directory') {
                                 ls(client, p, options, cb);
                         } else {
-                                printEntry(info);
+                                printEntry(info, options.human);
                                 cb();
                         }
                 });
