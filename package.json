@@ -11,7 +11,7 @@
                 "carrier": "0.1.8",
                 "clone": "0.1.5",
                 "http-signature": "0.9.10",
-                "memorystream-mcavage": "0.1.1",
+                "memorystream-mcavage": "0.1.0",
                 "mime": "1.2.9",
                 "node-uuid": "1.4.0",
                 "once": "1.1.1",
