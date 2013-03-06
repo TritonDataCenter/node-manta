@@ -7,7 +7,7 @@
         "main": "./lib/index.js",
         "dependencies": {
                 "assert-plus": "0.1.2",
-                "bunyan": "0.18.2",
+                "bunyan": "0.18.3",
                 "carrier": "0.1.8",
                 "clone": "0.1.5",
                 "http-signature": "0.9.10",
@@ -16,7 +16,7 @@
                 "node-uuid": "1.4.0",
                 "once": "1.1.1",
                 "posix-getopt": "1.0.0",
-                "restify": "2.1.1",
+                "restify": "2.3.3",
                 "ssh-agent": "0.2.1",
                 "sprintf": "0.1.1",
                 "tar": "0.1.14",
