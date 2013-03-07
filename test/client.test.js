@@ -3,7 +3,7 @@
 var exec = require('child_process').exec;
 var fs = require('fs');
 
-var MemoryStream = require('memorystream-mcavage');
+var MemoryStream = require('readable-stream/passthrough.js');
 var uuid = require('node-uuid');
 
 var manta = require('../lib');
