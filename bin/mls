@@ -177,6 +177,9 @@ function parseOptions() {
 
 
 function printEntry(obj, human) {
+        if (obj.headers)
+                delete obj.headers;
+
         if (human) {
                 console.log('%s%s',
                             obj.name,
