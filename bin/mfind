@@ -83,7 +83,7 @@ function parseOptions() {
                         break;
 
                 case 'n':
-                         opts.name = new RegExp(option.optarg);
+                        opts.name = new RegExp(option.optarg);
                         break;
 
                 case 'p':
@@ -205,7 +205,9 @@ https.globalAgent.maxSockets = MAX_SOCKETS;
                                         last = dir.name;
                                         queue.push({
                                                 client: client,
+                                                name: options.name,
                                                 path: p,
+                                                size: options.size,
                                                 type: options.type
                                         });
                                 });
@@ -224,8 +226,9 @@ https.globalAgent.maxSockets = MAX_SOCKETS;
                                         if (last) {
                                                 queue.push({
                                                         marker: last,
+                                                        name: options.name,
                                                         path: opts.path,
-                                                        type: opts.type
+                                                        type: options.type
                                                 });
                                         }
                                         cb();
