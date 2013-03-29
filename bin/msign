@@ -23,7 +23,7 @@ var LOG = bunyan.createLogger({
         stream: process.stderr,
         serializers: restify.bunyan.serializers
 });
-
+var METHODS = ['GET', 'HEAD', 'PUT', 'POST', 'DELETE'];
 
 var optionsMsg = [
         'OPTIONS:',
@@ -71,7 +71,7 @@ function parseOptions() {
                         break;
 
                 case 'm':
-                        opts.method = option.optarg;
+                        opts.method = option.optarg.toUpperCase();
                         break;
 
                 case 'u':
@@ -116,6 +116,9 @@ function parseOptions() {
                 ifError(manta.assertPath(_p, true));
                 return (_p);
         });
+
+        if (opts.method && METHODS.indexOf(opts.method) === -1)
+                usage('mehtod invalid: ' + opts.method);
 
         return (opts);
 }
