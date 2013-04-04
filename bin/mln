@@ -47,9 +47,7 @@ function ifError(err) {
 
 function parseOptions() {
         var option;
-        var opts = {
-                log: LOG
-        };
+        var opts = {};
         var parser = new getopt.BasicParser('vhk:u:a:',
                                             process.argv);
 
@@ -85,6 +83,8 @@ function parseOptions() {
                 }
 
         }
+
+        opts.log = LOG;
 
         try {
                 manta.checkBinEnv(opts);

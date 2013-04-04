@@ -91,9 +91,7 @@ function jobs(client, options, cb) {
 
 function parseOptions() {
         var option;
-        var opts = {
-                log: LOG
-        };
+        var opts = {};
         var parser = new getopt.BasicParser('vhk:m:u:a:s:',
                                             process.argv);
 
@@ -137,6 +135,8 @@ function parseOptions() {
                 }
 
         }
+
+        opts.log = LOG;
 
         try {
                 manta.checkBinEnv(opts);

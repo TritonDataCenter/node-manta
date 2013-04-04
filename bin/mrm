@@ -48,7 +48,6 @@ function ifError(err) {
 function parseOptions() {
         var option;
         var opts = {
-                log: LOG,
                 parallelism: 100
         };
         var parser = new getopt.BasicParser('vrhk:p:u:a:',
@@ -93,6 +92,8 @@ function parseOptions() {
                 }
 
         }
+
+        opts.log = LOG;
 
         try {
                 manta.checkBinEnv(opts);

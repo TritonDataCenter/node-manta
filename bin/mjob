@@ -91,9 +91,7 @@ function inputStream(client, id, opts) {
 
 function parseOptions() {
         var option;
-        var opts = {
-                log: LOG
-        };
+        var opts = {};
         var parser = new getopt.BasicParser('vcefiohxk:u:a:',
                                             process.argv);
 
@@ -156,6 +154,8 @@ function parseOptions() {
 
         if (option && option.error)
                 usage('\n');
+
+        opts.log = LOG;
 
         try {
                 manta.checkBinEnv(opts);

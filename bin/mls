@@ -96,9 +96,7 @@ function ls(client, p, options, cb) {
 
 function parseOptions() {
         var option;
-        var opts = {
-                log: LOG
-        };
+        var opts = {};
         var parser = new getopt.BasicParser('1vha:k:l:m:u:t:', process.argv);
 
         while ((option = parser.getopt()) !== undefined && !option.error) {
@@ -149,6 +147,8 @@ function parseOptions() {
                 }
 
         }
+
+        opts.log = LOG;
 
         try {
                 manta.checkBinEnv(opts);

@@ -93,6 +93,8 @@ function parseOptions() {
 
         }
 
+        opts.log = LOG;
+
         // Doesn't use the common checkBinEnv because it doesn't
         // instantiate a manta client.
         if (!opts.url && !process.env.MANTA_URL)

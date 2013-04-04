@@ -61,7 +61,6 @@ function parseOptions() {
         var opts = {
                 assets: [],
                 count: [],
-                log: LOG,
                 map: [],
                 reduce: []
         };
@@ -137,6 +136,8 @@ function parseOptions() {
                 }
 
         }
+
+        opts.log = LOG;
 
         try {
                 manta.checkBinEnv(opts);

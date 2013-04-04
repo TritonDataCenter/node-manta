@@ -50,7 +50,6 @@ function parseOptions() {
         var option;
         var opts = {
                 batch: 1000,
-                log: LOG,
                 parallel: 3
         };
         var parser = new getopt.BasicParser('vehk:u:a:b:p:',
@@ -99,6 +98,8 @@ function parseOptions() {
                         break;
                 }
         }
+
+        opts.log = LOG;
 
         try {
                 manta.checkBinEnv(opts);

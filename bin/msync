@@ -200,7 +200,6 @@ function parseOptions() {
         var opts = {
                 depth: 0,
                 headers: {},
-                log: LOG,
                 parallel: 100
         };
         var parser = new getopt.BasicParser('hvrnc:d:k:u:a:H:p:',
@@ -267,6 +266,8 @@ function parseOptions() {
                 }
 
         }
+
+        opts.log = LOG;
 
         try {
                 manta.checkBinEnv(opts);
