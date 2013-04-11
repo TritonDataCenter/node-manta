@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 // -*- mode: js -*-
-// Copyright (c) 2012, Joyent, Inc. All rights reserved.
+// Copyright (c) 2013, Joyent, Inc. All rights reserved.
 
 var fs = require('fs');
 var path = require('path');
 var url = require('url');
 
 var bunyan = require('bunyan');
-var getopt = require('posix-getopt');
+var dashdash = require('dashdash');
 var restify = require('restify');
 var uuid = require('node-uuid');
 
@@ -18,124 +18,72 @@ var manta = require('../lib');
 ///--- Globals
 
 var LOG = bunyan.createLogger({
-        name: path.basename(process.argv[1]),
-        level: (process.env.LOG_LEVEL || 'info'),
-        stream: process.stderr,
-        serializers: restify.bunyan.serializers
+    name: path.basename(process.argv[1]),
+    level: (process.env.LOG_LEVEL || 'info'),
+    stream: process.stderr,
+    serializers: restify.bunyan.serializers
 });
 var METHODS = ['GET', 'HEAD', 'PUT', 'POST', 'DELETE'];
 
-var optionsMsg = [
-        'OPTIONS:',
-        '  path        (required) Manta path to sign',
-        '  -a account  Manta account (specify this or export MANTA_USER)',
-        '  -e expire   expiration date (epoch time)',
-        '  -k keyId    SSH fingerprint (specify this or export MANTA_KEY_ID)',
-        '  -m method   method (default GET)',
-        '  -u url      Manta URL (specify this or export MANTA_URL)',
-        '  -v          verbose mode'
-].join('\n');
+var OPTIONS_PARSER = dashdash.createParser({
+    options: manta.DEFAULT_CLI_OPTIONS.concat([
+        {
+            names: ['expires', 'e'],
+            type: 'positiveInteger',
+            help: 'expiration time (epoch). Default is 1hr from now.',
+            'default': (new Date().getTime() / 1000) + 3600,
+            helpArg: 'EXPIRATION'
+        },
+        {
+            names: ['method', 'm'],
+            type: 'string',
+            help: 'HTTP method to support',
+            'default': 'GET',
+            helpArg: 'METHOD'
+        }
+    ])
+});
+
+
 
 ///--- Functions
 
 function ifError(err) {
-        if (err) {
-                console.error(err.toString());
-                process.exit(1);
-        }
+    if (err) {
+        console.error(err.toString());
+        process.exit(1);
+    }
 }
 
 
 function parseOptions() {
-        var option;
-        var opts = {};
-        var parser = new getopt.BasicParser('vhk:m:u:a:e:',
-                                            process.argv);
+    var opts;
 
-        while ((option = parser.getopt()) !== undefined && !option.error) {
-                switch (option.option) {
-                case 'a':
-                        opts.user = option.optarg;
-                        break;
+    try {
+        opts = OPTIONS_PARSER.parse(process.argv);
+        manta.checkBinEnv(opts);
+    } catch (e) {
+        manta.cli_usage(OPTIONS_PARSER, e.message, 'path...');
+    }
 
-                case 'e':
-                        opts.expires = parseInt(option.optarg, 10);
-                        break;
+    manta.cli_logger(opts, LOG);
 
-                case 'h':
-                        usage();
-                        break;
+    if (opts.help)
+        manta.cli_usage(OPTIONS_PARSER, false, 'path...');
 
-                case 'k':
-                        opts.keyId = option.optarg;
-                        break;
+    opts.method = opts.method.toUpperCase();
+    if (opts.method && METHODS.indexOf(opts.method) === -1) {
+        manta.cli_usage(OPTIONS_PARSER,
+                        'method invalid: ' + opts.method,
+                        'path...');
+    }
 
-                case 'm':
-                        opts.method = option.optarg.toUpperCase();
-                        break;
+    if (opts._args.length < 1)
+        manta.cli_usage(OPTIONS_PARSER, 'path required', 'path...');
 
-                case 'u':
-                        opts.url = url.parse(option.optarg).href;
-                        break;
+    opts.paths = opts._args;
 
-                case 'v':
-                        // Allows us to set -vvv -> this little hackery
-                        // just ensures that we're never < TRACE
-                        LOG.level(Math.max(bunyan.TRACE, (LOG.level() - 10)));
-                        if (LOG.level() <= bunyan.DEBUG)
-                                LOG = LOG.child({src: true});
-                        break;
-
-                default:
-                        process.exit(1);
-                        break;
-                }
-
-        }
-
-        opts.log = LOG;
-
-        // Doesn't use the common checkBinEnv because it doesn't
-        // instantiate a manta client.
-        if (!opts.url && !process.env.MANTA_URL)
-                usage('url is a required argument');
-
-        if (!opts.user && !process.env.MANTA_USER)
-                usage('account is a required argument');
-
-        if (!opts.keyId && !process.env.MANTA_KEY_ID)
-                usage('keyId is a required argument');
-
-        if (parser.optind() >= process.argv.length)
-                usage('missing required argument: "path"');
-
-        opts.keyId = opts.keyId || process.env.MANTA_KEY_ID;
-        opts.url = opts.url || process.env.MANTA_URL;
-        opts.user = opts.user || process.env.MANTA_USER;
-
-        opts.paths = process.argv.slice(parser.optind()).map(function (p) {
-                var _p = path.normalize(p);
-                ifError(manta.assertPath(_p, true));
-                return (_p);
-        });
-
-        if (opts.method && METHODS.indexOf(opts.method) === -1)
-                usage('mehtod invalid: ' + opts.method);
-
-        return (opts);
-}
-
-
-function usage(msg) {
-        if (msg)
-                console.error(msg);
-
-        var str = 'usage: ' + path.basename(process.argv[1]);
-        str += ' [-v] [-a account] [-u url] [-k keyId] [-e expires] ';
-        str += ' [-m method] path';
-        console.error(str);
-        console.error(optionsMsg);
-        process.exit(msg ? 1 : 0);
+    return (opts);
 }
 
 
@@ -143,36 +91,36 @@ function usage(msg) {
 ///--- Mainline
 
 (function main() {
-        var options = parseOptions();
+    var options = parseOptions();
 
-        manta.loadSSHKey(options.keyId, function (load_err, key) {
-                ifError(load_err);
+    manta.loadSSHKey(options.keyId, function (load_err, key) {
+        ifError(load_err);
 
-                var alg = / DSA /.test(key) ? 'DSA-SHA1' : 'RSA-SHA256';
-                var signer = manta.privateKeySigner({
-                        key: key,
-                        keyId: options.keyId,
-                        log: LOG,
-                        user: options.user
-                });
-
-                options.paths.forEach(function (p) {
-                        var opts = {
-                                algorithm: alg,
-                                expires: options.expires,
-                                host: url.parse(options.url).host,
-                                keyId: options.keyId,
-                                log: LOG,
-                                method: options.method || 'GET',
-                                path: p,
-                                sign: signer,
-                                user: options.user
-                        };
-                        manta.signUrl(opts, function (err, resource) {
-                                ifError(err);
-                                console.log(options.url + resource);
-                        });
-                });
-
+        var alg = / DSA /.test(key) ? 'DSA-SHA1' : 'RSA-SHA256';
+        var signer = manta.privateKeySigner({
+            key: key,
+            keyId: options.keyId,
+            log: options.log,
+            user: options.account
         });
+
+        options.paths.forEach(function (p) {
+            var opts = {
+                algorithm: alg,
+                expires: options.expires,
+                host: url.parse(options.url).host,
+                keyId: options.keyId,
+                log: options.log,
+                method: options.method || 'GET',
+                path: p,
+                sign: signer,
+                user: options.account
+            };
+            manta.signUrl(opts, function (err, resource) {
+                ifError(err);
+                console.log(options.url + resource);
+            });
+        });
+
+    });
 })();

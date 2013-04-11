@@ -8,7 +8,7 @@ var path = require('path');
 var url = require('url');
 
 var bunyan = require('bunyan');
-var getopt = require('posix-getopt');
+var dashdash = require('dashdash');
 var restify = require('restify');
 var uuid = require('node-uuid');
 
@@ -25,19 +25,40 @@ var LOG = bunyan.createLogger({
         serializers: restify.bunyan.serializers
 });
 
-var optionsMsg = [
-        'OPTIONS:',
-        '  -f file     (required) local file to upload',
-        '  path        (required) Manta destination path',
-        '  -a account  Manta account (specify this or export MANTA_USER)',
-        '  -c copies   number of copies to make (default 2)',
-        '  -H header   add a header',
-        '              repeat option to specify multiple headers',
-        '  -k keyId    SSH fingerprint (specify this or export MANTA_KEY_ID)',
-        '  -q          quiet mode (no progress bar)',
-        '  -u url      Manta URL (specify this or export MANTA_URL)',
-        '  -v          verbose mode'
-].join('\n');
+var OPTIONS_PARSER = dashdash.createParser({
+    options: manta.DEFAULT_CLI_OPTIONS.concat([
+        {
+            names: ['copies', 'c'],
+            type: 'positiveInteger',
+            help: 'number of copies to make',
+            helpArg: 'COPIES',
+            'default': 2
+        },
+        {
+            names: ['file', 'f'],
+            type: 'string',
+            help: 'local file to upload',
+            helpArg: 'FILE'
+        },
+        {
+            names: ['header', 'H'],
+            type: 'arrayOfString',
+            help: 'HTTP headers to include',
+            helpArg: 'HEADER'
+        },
+        {
+            names: ['parents', 'p'],
+            type: 'bool',
+            help: 'no error if existing, make parent directories as needed'
+        },
+        {
+            names: ['quiet', 'q'],
+            type: 'bool',
+            help: 'disable the progress bar'
+        }
+    ])
+});
+
 
 
 ///--- Functions
@@ -59,99 +80,42 @@ function ifError(err) {
 
 
 function parseOptions() {
-        var option;
-        var opts = {
-                headers: {}
-        };
-        var parser = new getopt.BasicParser('hvqc:f:k:u:a:H:',
-                                            process.argv);
+    var opts;
 
-        while ((option = parser.getopt()) !== undefined && !option.error) {
-                switch (option.option) {
-                case 'a':
-                        opts.user = option.optarg;
-                        break;
+    try {
+        opts = OPTIONS_PARSER.parse(process.argv);
+        manta.checkBinEnv(opts);
+    } catch (e) {
+        manta.cli_usage(OPTIONS_PARSER, e.message, 'path...');
+    }
 
-                case 'c':
-                        opts.copies = parseInt(option.optarg, 10);
-                        break;
+    manta.cli_logger(opts, LOG);
 
-                case 'f':
-                        opts.file = option.optarg;
-                        break;
+    if (opts.help)
+        manta.cli_usage(OPTIONS_PARSER, false, 'path...');
 
-                case 'h':
-                        usage();
-                        break;
+    if (opts._args.length < 1)
+        manta.cli_usage(OPTIONS_PARSER, 'path required', 'path...');
 
-                case 'H':
-                        if (option.optarg.indexOf(': ') === -1) {
-                                usage('headers must be in the format of: ' +
-                                      '[header] + ": " + [value]');
-                        }
-                        var p = option.optarg.split(': ');
-                        opts.headers[p[0]] = p.slice(1).join(': ');
-                        break;
+    opts.path = opts._args[0];
 
-                case 'k':
-                        opts.keyId = option.optarg;
-                        break;
-
-                case 'q':
-                        opts.quiet = true;
-                        break;
-
-                case 'u':
-                        opts.url = url.parse(option.optarg).href;
-                        break;
-
-                case 'v':
-                        // Allows us to set -vvv -> this little hackery
-                        // just ensures that we're never < TRACE
-                        LOG.level(Math.max(bunyan.TRACE, (LOG.level() - 10)));
-                        if (LOG.level() <= bunyan.DEBUG)
-                                LOG = LOG.child({src: true});
-                        break;
-
-                default:
-                        process.exit(1);
-                        break;
-                }
-
+    opts.headers = {};
+    (opts.header || []).forEach(function (h) {
+        if (h.indexOf(':') === -1) {
+            manta.cli_usage(OPTIONS_PARSER,
+                            'header must be in the form of "[header]: value"',
+                            'path...');
         }
+        var tmp = h.split(':');
+        opts.headers[tmp[0]] = tmp[1].trim();
+    });
 
-        opts.log = LOG;
-
-        try {
-                manta.checkBinEnv(opts);
-        } catch (err) {
-                usage(err.message);
-        }
-
-        if (parser.optind() >= process.argv.length)
-                usage('missing required argument: "path"');
-
-        opts.path = path.normalize(process.argv[parser.optind()]);
-        ifError(manta.assertPath(opts.path, true));
-        return (opts);
+    return (opts);
 }
 
 
 function printEntry(obj) {
         console.log('%j', obj);
-}
-
-
-function usage(msg) {
-        if (msg)
-                console.error(msg);
-
-        var str = 'usage: ' + path.basename(process.argv[1]);
-        str += ' [-v] [-a account] [-c copies] [-u url] [-k keyId]';
-        str += ' [-H header] -f file absolute_path';
-        console.error(str);
-        console.error(optionsMsg);
-        process.exit(msg ? 1 : 0);
 }
 
 

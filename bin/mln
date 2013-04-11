@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 // -*- mode: js -*-
-// Copyright (c) 2012, Joyent, Inc. All rights reserved.
+// Copyright (c) 2013, Joyent, Inc. All rights reserved.
 
 var fs = require('fs');
 var path = require('path');
 var url = require('url');
 
 var bunyan = require('bunyan');
-var getopt = require('posix-getopt');
+var dashdash = require('dashdash');
 var restify = require('restify');
 var uuid = require('node-uuid');
 
@@ -24,15 +24,10 @@ var LOG = bunyan.createLogger({
         serializers: restify.bunyan.serializers
 });
 
-var optionsMsg = [
-        'OPTIONS:',
-        '  source      (required) Manta path to source object',
-        '  path        (required) destination Manta path',
-        '  -a account  Manta account (specify this or export MANTA_USER)',
-        '  -k keyId    SSH fingerprint (specify this or export MANTA_KEY_ID)',
-        '  -u url      Manta URL (specify this or export MANTA_URL)',
-        '  -v          verbose mode'
-].join('\n');
+var OPTIONS_PARSER = dashdash.createParser({
+    options: manta.DEFAULT_CLI_OPTIONS
+});
+
 
 
 ///--- Functions
@@ -46,74 +41,29 @@ function ifError(err) {
 
 
 function parseOptions() {
-        var option;
-        var opts = {};
-        var parser = new getopt.BasicParser('vhk:u:a:',
-                                            process.argv);
+    var opts;
 
-        while ((option = parser.getopt()) !== undefined && !option.error) {
-                switch (option.option) {
-                case 'a':
-                        opts.user = option.optarg;
-                        break;
+    try {
+        opts = OPTIONS_PARSER.parse(process.argv);
+        manta.checkBinEnv(opts);
+    } catch (e) {
+        manta.cli_usage(OPTIONS_PARSER, e.message, 'source dest');
+    }
 
-                case 'h':
-                        usage();
-                        break;
+    manta.cli_logger(opts, LOG);
 
-                case 'k':
-                        opts.keyId = option.optarg;
-                        break;
+    if (opts.help)
+        manta.cli_usage(OPTIONS_PARSER, false, 'source dest');
 
-                case 'u':
-                        opts.url = url.parse(option.optarg).href;
-                        break;
+    if (opts._args.length < 1)
+        manta.cli_usage(OPTIONS_PARSER, 'source required', 'source dest');
+    if (opts._args.length < 2)
+        manta.cli_usage(OPTIONS_PARSER, 'dest required', 'source dest');
 
-                case 'v':
-                        // Allows us to set -vvv -> this little hackery
-                        // just ensures that we're never < TRACE
-                        LOG.level(Math.max(bunyan.TRACE, (LOG.level() - 10)));
-                        if (LOG.level() <= bunyan.DEBUG)
-                                LOG = LOG.child({src: true});
-                        break;
+    opts.source = path.normalize(opts._args[0]);
+    opts.path = path.normalize(opts._args[1]);
 
-                default:
-                        process.exit(1);
-                        break;
-                }
-
-        }
-
-        opts.log = LOG;
-
-        try {
-                manta.checkBinEnv(opts);
-        } catch (err) {
-                usage(err.message);
-        }
-
-        if (parser.optind() >= process.argv.length)
-                usage('missing required arguments: "source"');
-        if ((parser.optind() + 1) >= process.argv.length)
-                usage('missing required arguments: "path"');
-
-        var tmp = process.argv.slice(parser.optind());
-        opts.source = path.normalize(tmp[0]);
-        opts.path = path.normalize(tmp[1]);
-
-        return (opts);
-}
-
-
-function usage(msg) {
-        if (msg)
-                console.error(msg);
-
-        var str = 'usage: ' + path.basename(process.argv[1]);
-        str += ' [-v] [-a account] [-u url] [-k keyId] source path';
-        console.error(str);
-        console.error(optionsMsg);
-        process.exit(msg ? 1 : 0);
+    return (opts);
 }
 
 

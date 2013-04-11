@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 // -*- mode: js -*-
-// Copyright (c) 2012, Joyent, Inc. All rights reserved.
+// Copyright (c) 2013, Joyent, Inc. All rights reserved.
 
 var path = require('path');
 var url = require('url');
 
 var bunyan = require('bunyan');
-var getopt = require('posix-getopt');
+var dashdash = require('dashdash');
 var restify = require('restify');
 var uuid = require('node-uuid');
 
@@ -17,113 +17,67 @@ var manta = require('../lib');
 ///--- Globals
 
 var LOG = bunyan.createLogger({
-        name: path.basename(process.argv[1]),
-        level: (process.env.LOG_LEVEL || 'info'),
-        stream: process.stderr,
-        serializers: restify.bunyan.serializers
+    name: path.basename(process.argv[1]),
+    level: (process.env.LOG_LEVEL || 'info'),
+    stream: process.stderr,
+    serializers: restify.bunyan.serializers
 });
 
-var optionsMsg = [
-        'OPTIONS:',
-        '  path        (required) Manta object to remove',
-        '  -a account  Manta account (specify this or export MANTA_USER)',
-        '  -k keyId    SSH fingerprint (specify this or export MANTA_KEY_ID)',
-        '  -p paral    level of parallelism for recursive rm (default 100)',
-        '  -r          remove directories and their contents recursively',
-        '  -u url      Manta URL (specify this or export MANTA_URL)',
-        '  -v          verbose mode'
-].join('\n');
+var OPTIONS_PARSER = dashdash.createParser({
+    options: manta.DEFAULT_CLI_OPTIONS.concat([
+        {
+            names: ['parallel', 'p'],
+            type: 'positiveInteger',
+            help: 'limit concurrent operations',
+            'default': 100,
+            helpArg: 'CONCURRENCY'
+        },
+        {
+            names: ['recursive', 'r'],
+            type: 'bool',
+            help: 'remove directories and their contents recursively'
+        }
+    ])
+});
+
 
 
 ///--- Functions
 
 function ifError(err) {
-        if (err) {
-                console.error(err.toString());
-                process.exit(1);
-        }
+    if (err) {
+        console.error(err.toString());
+        process.exit(1);
+    }
 }
 
 
 function parseOptions() {
-        var option;
-        var opts = {
-                parallelism: 100
-        };
-        var parser = new getopt.BasicParser('vrhk:p:u:a:',
-                                            process.argv);
+    var opts;
 
-        while ((option = parser.getopt()) !== undefined && !option.error) {
-                switch (option.option) {
-                case 'a':
-                        opts.user = option.optarg;
-                        break;
+    try {
+        opts = OPTIONS_PARSER.parse(process.argv);
+        manta.checkBinEnv(opts);
+    } catch (e) {
+        manta.cli_usage(OPTIONS_PARSER, e.message, 'path...');
+    }
 
-                case 'h':
-                        usage();
-                        break;
-                case 'k':
-                        opts.keyId = option.optarg;
-                        break;
+    manta.cli_logger(opts, LOG);
 
-                case 'p':
-                        opts.parallelism = parseInt(option.optarg, 10);
-                        break;
+    if (opts.help)
+        manta.cli_usage(OPTIONS_PARSER, false, 'path...');
 
-                case 'r':
-                        opts.recurse = true;
-                        break;
+    if (opts._args.length < 1)
+        manta.cli_usage(OPTIONS_PARSER, 'path required', 'path...');
 
-                case 'u':
-                        opts.url = url.parse(option.optarg).href;
-                        break;
+    opts.paths = opts._args;
 
-                case 'v':
-                        // Allows us to set -vvv -> this little hackery
-                        // just ensures that we're never < TRACE
-                        LOG.level(Math.max(bunyan.TRACE, (LOG.level() - 10)));
-                        if (LOG.level() <= bunyan.DEBUG)
-                                LOG = LOG.child({src: true});
-                        break;
-
-                default:
-                        process.exit(1);
-                        break;
-                }
-
-        }
-
-        opts.log = LOG;
-
-        try {
-                manta.checkBinEnv(opts);
-        } catch (err) {
-                usage(err.message);
-        }
-
-        if (parser.optind() >= process.argv.length)
-                usage('missing required argument: "path"');
-
-        opts.path = path.normalize(process.argv[parser.optind()]);
-        ifError(manta.assertPath(opts.path, true));
-        return (opts);
+    return (opts);
 }
 
 
 function printEntry(obj) {
-        console.log('%j', obj);
-}
-
-
-function usage(msg) {
-        if (msg)
-                console.error(msg);
-
-        var str = 'usage: ' + path.basename(process.argv[1]);
-        str += ' [-v] [-a account] [-u url] [-k keyId] [-r] path';
-        console.error(str);
-        console.error(optionsMsg);
-        process.exit(msg ? 1 : 0);
+    console.log('%j', obj);
 }
 
 
@@ -131,35 +85,39 @@ function usage(msg) {
 ///--- Mainline
 
 (function main() {
-        var options = parseOptions();
-        var client = manta.createBinClient(options);
-        var p = options.path;
+    var options = parseOptions();
+    var client = manta.createBinClient(options);
+    var i = -1;
 
-        function cb(err) {
-                ifError(err);
-                client.close();
+    (function rm(cb_err) {
+        ifError(cb_err);
+
+        var p = options.paths[++i];
+        if (!p) {
+            client.close();
+            return;
         }
 
-        if (options.recurse) {
-                client.rmr(p, options, cb);
+        if (options.recursive) {
+            client.rmr(p, options, rm);
         } else {
-                client.info(p, function (err, info) {
-                        if (err) {
-                                client.get(p, function (err2) {
-                                        ifError(err2);
-                                        // We *shouldn't* ever hit this...
-                                        ifError(err);
-                                        client.close();
-                                });
-                                return;
-                        }
+            client.info(p, function (err, info) {
+                if (err) {
+                    client.get(p, function (err2) {
+                        ifError(err2);
+                        // We *shouldn't* ever hit this...
+                        ifError(err);
+                    });
+                    return;
+                }
 
-                        if (info.extension === 'directory') {
-                                console.error(p + ' is not an object');
-                                process.exit(1);
-                        }
+                if (info.extension === 'directory') {
+                    console.error(p + ' is not an object');
+                    process.exit(1);
+                }
 
-                        client.unlink(p, cb);
-                });
+                client.unlink(p, rm);
+            });
         }
+    })();
 })();

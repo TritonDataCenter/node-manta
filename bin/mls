@@ -6,7 +6,7 @@ var path = require('path');
 var url = require('url');
 
 var bunyan = require('bunyan');
-var getopt = require('posix-getopt');
+var dashdash = require('dashdash');
 var restify = require('restify');
 var uuid = require('node-uuid');
 
@@ -23,17 +23,28 @@ var LOG = bunyan.createLogger({
         serializers: restify.bunyan.serializers
 });
 
-var optionsMsg = [
-        'OPTIONS:',
-        '  path        (required) Manta directory to list',
-        '  -a account  Manta account (specify this or export MANTA_USER)',
-        '  -k keyId    SSH fingerprint (specify this or export MANTA_KEY_ID)',
-        '  -l limit    only list up to <limit> entries',
-        '  -m marker   start listing from <marker>',
-        '  -u url      Manta URL (specify this or export MANTA_URL)',
-        '  -v          verbose mode,',
-        '  -1          output only the file name'
-].join('\n');
+var OPTIONS_PARSER = dashdash.createParser({
+    options: manta.DEFAULT_CLI_OPTIONS.concat([
+        {
+            names: ['json', 'j'],
+            type: 'bool',
+            help: 'output in JSON'
+        },
+        {
+            names: ['limit', 'l'],
+            type: 'positiveInteger',
+            help: 'limit the number of results returned',
+            helpArg: 'LIMIT'
+        },
+        {
+            names: ['marker', 'm'],
+            type: 'string',
+            help: 'start listing from MARKER',
+            helpArg: 'MARKER'
+        }
+    ])
+});
+
 
 
 ///--- Functions
@@ -69,7 +80,7 @@ function ls(client, p, options, cb) {
                         last = e.name;
                         seen++;
                         if (e.name !== options.marker)
-                                printEntry(e, options.human);
+                                printEntry(e, options.json);
                 }
 
                 res.on('directory', onEntry);
@@ -95,111 +106,48 @@ function ls(client, p, options, cb) {
 
 
 function parseOptions() {
-        var option;
-        var opts = {};
-        var parser = new getopt.BasicParser('1vha:k:l:m:u:t:', process.argv);
+    var opts;
 
-        while ((option = parser.getopt()) !== undefined && !option.error) {
-                switch (option.option) {
-                case '1':
-                        opts.human = true;
-                        break;
+    try {
+        opts = OPTIONS_PARSER.parse(process.argv);
+        manta.checkBinEnv(opts);
+    } catch (e) {
+        manta.cli_usage(OPTIONS_PARSER, e.message, '[PATH]...');
+    }
 
-                case 'a':
-                        opts.user = option.optarg;
-                        break;
+    manta.cli_logger(opts, LOG);
 
-                case 'h':
-                        usage();
-                        break;
+    if (opts.help)
+        manta.cli_usage(OPTIONS_PARSER, false, '[PATH]...');
 
-                case 'k':
-                        opts.keyId = option.optarg;
-                        break;
+    var paths;
+    if (opts._args.length < 1) {
+        paths = ['/' + opts.account + '/stor'];
+    } else {
+        paths = opts._args.slice(0).map(function (p) {
+            var _p = path.normalize(p);
+            ifError(manta.assertPath(_p, true));
+            return (_p);
+        });
+    }
 
-                case 'l':
-                        opts.limit = parseInt(option.optarg, 10);
-                        break;
+    opts.paths = paths;
 
-                case 'm':
-                        opts.marker = option.optarg;
-                        break;
-
-                case 't':
-                        opts.type = option.optarg;
-                        break;
-
-                case 'u':
-                        opts.url = url.parse(option.optarg).href;
-                        break;
-
-                case 'v':
-                        // Allows us to set -vvv -> this little hackery
-                        // just ensures that we're never < TRACE
-                        LOG.level(Math.max(bunyan.TRACE, (LOG.level() - 10)));
-                        if (LOG.level() <= bunyan.DEBUG)
-                                LOG = LOG.child({src: true});
-                        break;
-
-                default:
-                        process.exit(1);
-                        break;
-                }
-
-        }
-
-        opts.log = LOG;
-
-        try {
-                manta.checkBinEnv(opts);
-        } catch (err) {
-                usage(err.message);
-        }
-
-        var paths;
-        if (parser.optind() >= process.argv.length) {
-                var user = opts.user || process.env.MANTA_USER;
-                if (!user) {
-                        usage('account is a required argument with no path');
-                }
-                paths = ['/' + user + '/stor'];
-        } else {
-                paths = process.argv.slice(parser.optind()).map(function (p) {
-                        var _p = path.normalize(p);
-                        ifError(manta.assertPath(_p, true));
-                        return (_p);
-                });
-        }
-
-        opts.paths = paths;
-        return (opts);
+    return (opts);
 }
 
 
-function printEntry(obj, human) {
+function printEntry(obj, json) {
         if (obj.headers)
                 delete obj.headers;
 
-        if (human) {
-                console.log('%s%s',
-                            obj.name,
-                            obj.type === 'directory' ? '/' : '');
+        if (json) {
+            console.log('%j', obj);
         } else {
-                console.log('%j', obj);
+            console.log('%s%s',
+                        obj.name,
+                        obj.type === 'directory' ? '/' : '');
         }
-}
-
-
-function usage(msg) {
-        if (msg)
-                console.error(msg);
-
-        var str = 'usage: ' + path.basename(process.argv[1]);
-        str += '[-v] [-a account] [-u url] [-k keyId] [-l limit] ' +
-                '[-m marker] path';
-        console.error(str);
-        console.error(optionsMsg);
-        process.exit(msg ? 1 : 0);
 }
 
 
@@ -225,7 +173,7 @@ function usage(msg) {
                         } else if (info.extension === 'directory') {
                                 ls(client, p, options, cb);
                         } else {
-                                printEntry(info, options.human);
+                                printEntry(info, options.json);
                                 cb();
                         }
                 });

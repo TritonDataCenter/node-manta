@@ -7,7 +7,7 @@ var path = require('path');
 var url = require('url');
 
 var bunyan = require('bunyan');
-var getopt = require('posix-getopt');
+var dashdash = require('dashdash');
 var restify = require('restify');
 var uuid = require('node-uuid');
 var vasync = require('vasync');
@@ -26,6 +26,9 @@ var LOG = bunyan.createLogger({
         stream: process.stderr,
         serializers: restify.bunyan.serializers
 });
+var OPTIONS_PARSER = dashdash.createParser({
+    options: manta.DEFAULT_CLI_OPTIONS
+});
 
 
 
@@ -33,74 +36,34 @@ var LOG = bunyan.createLogger({
 
 function ifError(err) {
         if (err) {
-                console.error(err.toString());
+                console.error(err.toString() + err.stack);
                 process.exit(1);
         }
 }
 
 
 function parseOptions() {
-        var option;
-        var opts = {
-                parallel: 10
-        };
-        var parser = new getopt.BasicParser('vhk:u:a:p:',
-                                            process.argv);
+    var opts;
 
-        while ((option = parser.getopt()) !== undefined && !option.error) {
-                switch (option.option) {
-                case 'a':
-                        opts.user = option.optarg;
-                        break;
+    try {
+        opts = OPTIONS_PARSER.parse(process.argv);
+        manta.checkBinEnv(opts);
+    } catch (e) {
+        manta.cli_usage(OPTIONS_PARSER, e.message, 'path...');
+    }
 
-                case 'h':
-                        usage();
-                        break;
+    manta.cli_logger(opts, LOG);
 
-                case 'k':
-                        opts.keyId = option.optarg;
-                        break;
+    if (opts.help)
+        manta.cli_usage(OPTIONS_PARSER, false, 'path...');
 
-                case 'p':
-                        opts.parallel = parseInt(opts.parallel, 10);
-                        break;
+    if (opts._args.length < 1)
+        manta.cli_usage(OPTIONS_PARSER, 'path required', 'path...');
 
-                case 'u':
-                        opts.url = url.parse(option.optarg).href;
-                        break;
+    opts.parallel = 10;
+    opts.paths = opts._args;
 
-                case 'v':
-                        // Allows us to set -vvv -> this little hackery
-                        // just ensures that we're never < TRACE
-                        LOG.level(Math.max(bunyan.TRACE, (LOG.level() - 10)));
-                        if (LOG.level() <= bunyan.DEBUG)
-                                LOG = LOG.child({src: true});
-                        break;
-
-                default:
-                        process.exit(1);
-                        break;
-                }
-
-        }
-
-        opts.log = LOG;
-
-        try {
-                manta.checkBinEnv(opts);
-        } catch (err) {
-                usage(err.message);
-        }
-
-        if (parser.optind() >= process.argv.length)
-                usage('missing required argument: "path(s)"');
-
-        opts.paths = process.argv.slice(parser.optind()).map(function (p) {
-                var _p = path.normalize(p);
-                ifError(manta.assertPath(_p, true));
-                return (_p);
-        });
-        return (opts);
+    return (opts);
 }
 
 
@@ -114,18 +77,6 @@ function printError(p, err) {
         HAD_ERR = true;
         var msg = err ? (err.message || err) : '';
         console.error('mmd5: ' + p + ': ' + msg);
-}
-
-
-function usage(msg) {
-        if (msg)
-                console.error(msg);
-
-        var str = 'usage: ' + path.basename(process.argv[1]);
-        str += ' [-v] [-a account] [-u url] [-k keyId] [-p parallel] ';
-        str += 'path [path...]';
-        console.error(str);
-        process.exit(msg ? 1 : 0);
 }
 
 
