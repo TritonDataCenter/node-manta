@@ -1,12 +1,17 @@
 #!/usr/bin/env node
 // -*- mode: js -*-
-// Copyright (c) 2012, Joyent, Inc. All rights reserved.
+// Copyright (c) 2013, Joyent, Inc. All rights reserved.
 
+var fs = require('fs');
 var path = require('path');
 var url = require('url');
+var util = require('util');
 
+var assert = require('assert-plus');
 var bunyan = require('bunyan');
-var getopt = require('posix-getopt');
+var carrier = require('carrier');
+var cmdln = require('cmdln');
+var once = require('once');
 var restify = require('restify');
 var uuid = require('node-uuid');
 
@@ -16,244 +21,789 @@ var manta = require('../lib');
 
 ///--- Globals
 
+var sprintf = util.format;
+
+var JOB_DATA_FMT = '/%s/jobs/%s/%s.txt';
+
 var LOG = bunyan.createLogger({
-        name: path.basename(process.argv[1]),
-        level: (process.env.LOG_LEVEL || 'info'),
-        stream: process.stderr,
-        serializers: restify.bunyan.serializers
+    name: path.basename(process.argv[1]),
+    level: (process.env.LOG_LEVEL || 'info'),
+    stream: process.stderr,
+    serializers: restify.bunyan.serializers
 });
 
-var optionsMsg = [
-        'OPTIONS:',
-        '  jobId        (required) job UUID',
-        '  -a account   Manta account (specify this or export MANTA_USER)',
-        '  -c           cancel job',
-        '  -e           end input for job',
-        '  -f           list failed input keys',
-        '  -i           list input keys',
-        '  -k keyId     SSH fingerprint (specify this or export MANTA_KEY_ID)',
-        '  -o           list output',
-        '  -u url       Manta URL (specify this or export MANTA_URL)',
-        '  -v           verbose mode',
-        '  -x           print job errors'
-].join('\n');
 
 
-///--- Functions
+///-- Helpers
 
-function ifError(err) {
-        if (err) {
-                console.error(err.toString());
-                process.exit(1);
-        }
+function assertOpts(thisp, subcmd, opts, cb) {
+    if (opts.help) {
+        process.nextTick(function () {
+            thisp.do_help('help', {}, [subcmd], cb.bind(thisp));
+        });
+        return (false);
+    }
+
+    try {
+        manta.checkBinEnv(opts);
+        manta.cli_logger(opts, LOG);
+    } catch (e) {
+        process.nextTick(cb.bind(thisp, e));
+        return (false);
+    }
+
+    return (true);
 }
 
 
-function inputStream(client, id, opts) {
-        opts = opts || {};
-        client.jobInput(id, opts, function stream(err, out) {
-                ifError(err);
+function addInputsFromStdin(client, opts, cb) {
+    assert.object(client, 'client');
+    assert.object(opts, 'options');
+    assert.number(opts.batch, 'options.batch');
+    assert.arrayOfString(opts.jobIds, 'options.jobIds');
+    assert.number(opts.parallel, 'options.parallel');
+    assert.optionalBool(opts.open, 'options.open');
+    assert.func(cb, 'callback');
 
-                var last;
-                var seen = 0;
-                var total = 0;
+    process.stdin.setEncoding('utf8');
 
-                out.on('key', function (k) {
-                        if (k === opts.marker)
-                                return;
+    var carry = carrier.carry(process.stdin);
+    var queue = new manta.Queue({
+        limit: opts.parallel,
+        worker: function submit(keys, _cb) {
+            _cb = once(_cb);
 
-                        last = k;
-                        seen++;
-                        console.log(k);
+            var subQueue = new manta.Queue({
+                limit: opts.parallel,
+                worker: function _submit(id, __cb) {
+                    __cb = once(__cb);
+                    client.addJobKey(id, keys, function (err) {
+                        if (err) {
+                            __cb(err);
+                            return;
+                        }
+
+                        if (!opts.quiet) {
+                            console.error('added %d keys to job %s',
+                                          keys.length, id);
+                        }
+
+                        __cb();
+                    });
+                }
+            });
+
+            subQueue.once('end', _cb);
+            subQueue.once('error', _cb);
+
+            opts.jobIds.forEach(subQueue.push.bind(subQueue));
+            subQueue.close();
+        }
+    });
+    var tmp = [];
+
+    carry.on('line', function onLine(l) {
+        tmp.push(l);
+        if (tmp.length === opts.batch) {
+            queue.push(tmp.slice(0));
+            tmp.length = 0;
+        }
+    });
+
+    carry.once('end', function onInputEnd() {
+        if (tmp.length > 0)
+            queue.push(tmp.slice(0));
+        tmp.length = 0;
+
+        queue.once('end', function onKeysAdded() {
+            function _cb(err) {
+                client.close();
+                cb(err);
+            }
+
+            if (!opts.open) {
+                var subQueue = new manta.Queue({
+                    limit: opts.parallel,
+                    worker: function end(id, __cb) {
+                        client.endJob(id, once(__cb));
+                    }
                 });
 
-                out.on('err', function (e) {
-                        console.log(JSON.stringify(e));
+                subQueue.once('end', _cb);
+                subQueue.once('error', _cb);
+
+                opts.jobIds.forEach(subQueue.push.bind(subQueue));
+                subQueue.close();
+            } else {
+                _cb();
+            }
+        });
+
+        queue.close();
+    });
+
+    process.stdin.resume();
+}
+
+
+function createClient(opts) {
+    return (manta.createBinClient(opts));
+}
+
+
+// GetJob(Errors|Failures|Inputs|Outputs) all have the same logic
+// So this is just a generic handler for those
+function jobDataCommon(opts, callback) {
+    assert.object(opts, 'options');
+    assert.arrayOfString(opts.args, 'options.args');
+    assert.object(opts.client, 'options.client');
+    assert.string(opts.func, 'options.func');
+    assert.number(opts.parallel, 'options.parallel');
+    assert.string(opts.type, 'options.type');
+    assert.string(opts.user, 'options.user');
+    assert.string(opts.watch, 'options.watch');
+    assert.func(callback, 'callback');
+
+    var queue = new manta.Queue({
+        limit: opts.parallel,
+        worker: function getJobData(id, cb) {
+            cb = once(cb);
+
+            function handleError(func_err) {
+                if (func_err.statusCode !== 404) {
+                    cb(func_err);
+                    return;
+                }
+
+                var p = sprintf(JOB_DATA_FMT, opts.user, id, opts.type);
+                opts.client.get(p, function (err, stream) {
+                    if (err) {
+                        cb(err);
+                        return;
+                    }
+
+                    var body = '';
+                    stream.setEncoding('utf8');
+                    stream.on('data', function (chunk) {
+                        body += chunk;
+                    });
+                    stream.once('end', function () {
+                        process.stdout.write(body);
+                        cb();
+                    });
+                });
+            }
+
+            opts.client[opts.func](id, function (err, out) {
+                if (err) {
+                    handleError(err);
+                    return;
+                }
+
+                var body = '';
+
+                out.once('error', handleError);
+                out.on(opts.watch, function (obj) {
+                    body += JSON.stringify(obj) + '\n';
                 });
 
                 out.once('end', function () {
-                        if (seen < total && last) {
-                                inputStream(client, id, {marker: last});
-                        } else {
-                                process.exit(0);
-                        }
+                    process.stdout.write(body);
+                    cb();
                 });
+            });
+        }
+    });
 
-                out.once('result', function (res) {
-                        if (res.statusCode !== 200)
-                                return;
-                        total = parseInt(res.headers['result-set-size'] || 0,
-                                         10);
-                });
+    queue.once('end', function () {
+        opts.client.close();
+        callback();
+    });
+    queue.once('error', callback);
+    opts.args.forEach(queue.push.bind(queue));
+    queue.close();
+}
+
+
+
+///--- CLI
+
+function MJob() {
+    cmdln.Cmdln.call(this, {
+        name: 'mjob',
+        desc: 'Manages Manta compute jobs'
+    });
+}
+util.inherits(MJob, cmdln.Cmdln);
+
+
+//-- AddKeys
+
+MJob.prototype.do_addinputs = function do_addinputs(subcmd, opts, args, cb) {
+    cb = once(cb);
+
+    if (!assertOpts(this, subcmd, opts, cb))
+        return;
+
+    if (args.length < 1) {
+        cb(new Error('At least one JobId must be specified'));
+        return;
+    }
+
+    if (args.length < 1) {
+        cb(new Error('At least one JobId must be specified'));
+        return;
+    }
+
+    var client = createClient(opts);
+    opts.jobIds = args;
+    addInputsFromStdin(client, opts, cb);
+};
+
+MJob.prototype.do_addinputs.options = manta.DEFAULT_CLI_OPTIONS.concat([
+    {
+        names: ['batch', 'b'],
+        type: 'positiveInteger',
+        help: 'number of keys to sumbit per batch (default 1000)',
+        'default': 1000,
+        helpArg: 'BATCH_SIZE'
+    },
+    {
+        names: ['parallel', 'p'],
+        type: 'positiveInteger',
+        help: 'limit concurrent operations',
+        'default': 100,
+        helpArg: 'CONCURRENCY'
+    },
+    {
+        names: ['open', 'o'],
+        type: 'bool',
+        help: 'leave job input open for adding more keys',
+        'default': false
+    }
+]);
+
+MJob.prototype.do_addinputs.help = (
+    'Adds inputs to an already created Manta Job.\n' +
+        'Pipe inputs as \\n delimited paths\n' +
+        'Example:\n' +
+        /* JSSTYLED */
+        '    mfind -t o /user/stor | mjob addinputs b19e0925-4c85-4fe9-ab47-8cc9dcfec81a\n' +
+        '\n' +
+        'Usage:\n' +
+        '     mjob addinputs [OPTIONS] JobId...\n' +
+        '\n' +
+        '{{options}}'
+);
+
+
+//-- CancelJob
+
+MJob.prototype.do_cancel = function do_cancel(subcmd, opts, args, cb) {
+    cb = once(cb);
+
+    if (!assertOpts(this, subcmd, opts, cb))
+        return;
+
+    if (args.length < 1) {
+        cb(new Error('At least one JobId must be specified'));
+        return;
+    }
+
+    var client = createClient(opts);
+    var queue = new manta.Queue({
+        limit: opts.parallel,
+        worker: function cancel(id, _cb) {
+            client.cancelJob(id, _cb);
+        }
+    });
+
+    queue.once('end', function () {
+        client.close();
+        cb();
+    });
+    queue.once('error', cb);
+    args.forEach(queue.push.bind(queue));
+    queue.close();
+};
+
+MJob.prototype.do_cancel.options = manta.DEFAULT_CLI_OPTIONS.concat([
+    {
+        names: ['parallel', 'p'],
+        type: 'positiveInteger',
+        help: 'limit concurrent operations',
+        'default': 100,
+        helpArg: 'CONCURRENCY'
+    }
+]);
+
+MJob.prototype.do_cancel.help = (
+    'Cancels a Manta Job by JobId.\n' +
+        'Example:\n' +
+        '    mjob cancel f6e1391b-584d-4722-bbdf-4506621148c7\n' +
+        '\n' +
+        'Usage:\n' +
+        '     mjob cancel [OPTIONS] JobId...\n' +
+        '\n' +
+        '{{options}}'
+);
+
+
+//-- CreateJob
+
+MJob.prototype.do_create = function create(subcmd, opts, args, cb) {
+    cb = once(cb);
+
+    if (!assertOpts(this, subcmd, opts, cb))
+        return;
+
+    var job = {
+        name: opts.name ? opts.name : undefined,
+        phases: []
+    };
+
+    if (opts.manifest) {
+        var tmp = fs.readFileSync(path.normalize(opts.manifest), 'utf8');
+        job = JSON.parse(tmp);
+    } else if (opts.map || opts.reduce) {
+        (opts.map || []).forEach(function (m) {
+            job.phases.push({
+                exec: m,
+                type: 'storage-map'
+            });
         });
-}
+
+        (opts.reduce || []).forEach(function (r) {
+            var p = {
+                exec: r,
+                type: 'reduce'
+            };
+
+            if (opts.count)
+                p.count = opts.count;
+            if (opts.dram)
+                p.memory = opts.dram;
+
+            job.phases.push(p);
+        });
+    } else if (args.length) {
+        var count = opts.count;
+        var exec = '';
+        var type = 'storage-map';
+
+        function addPhase() {
+            var p = {
+                exec: exec,
+                type: type
+            };
+            if (type === 'reduce') {
+                if (count > 1)
+                    p.count = count;
+                if (opts.dram)
+                    p.memory = opts.dram;
+            }
+
+            count = opts.count;
+            exec = '';
+
+            job.phases.push(p);
+        }
+
+        for (var i = 0; i < args.length; i++) {
+            if (args[i] === '^') {
+                type = 'storage-map';
+                if (exec)
+                    addPhase();
+            } else if (/\^{2,}/.test(args[i])) {
+                count = args[i].length - 2 || opts.count;
+                type = 'reduce';
+
+                if (exec)
+                    addPhase();
+            } else {
+                if (exec.length)
+                    exec += ' ';
+            }
+            exec += args[i];
+        }
+        if (exec)
+            addPhase();
+    } else {
+        cb(new Error('At least one map or reduce task must be specified'));
+        return;
+    }
+
+    if (opts.asset) {
+        job.phases.forEach(function (p) {
+            p.assets = opts.asset;
+        });
+    }
+
+    var client = createClient(opts);
+    client.createJob(job, function (err, id) {
+        if (err) {
+            cb(err);
+            return;
+        }
+
+        if (process.stdin.isTTY) {
+            console.log(id);
+            client.close();
+            cb();
+        } else {
+            opts.jobIds = [id];
+            addInputsFromStdin(client, opts, cb);
+        }
+    });
+};
+
+MJob.prototype.do_create.options = manta.DEFAULT_CLI_OPTIONS.concat([
+    {
+        names: ['batch', 'b'],
+        type: 'positiveInteger',
+        help: 'number of keys to sumbit per batch (default 1000)',
+        'default': 1000,
+        helpArg: 'BATCH_SIZE'
+    },
+    {
+        names: ['count', 'c'],
+        type: 'positiveInteger',
+        help: 'number of reducers to create',
+        helpArg: 'REDUCERS',
+        'default': 1
+    },
+    {
+        names: ['dram', 'd'],
+        type: 'positiveInteger',
+        help: 'amount of memory available for all reduce phases',
+        helpArg: 'MEMORY_MB'
+    },
+    {
+        names: ['file', 'f'],
+        type: 'string',
+        help: 'manifest file to create job from',
+        helpArg: 'FILE'
+    },
+    {
+        names: ['map', 'm'],
+        type: 'arrayOfString',
+        help: 'map phase(s)',
+        helpArh: 'MAP_COMMAND'
+    },
+    {
+        names: ['name', 'n'],
+        type: 'string',
+        help: 'job name',
+        helpArg: 'NAME'
+    },
+    {
+        names: ['open', 'o'],
+        type: 'bool',
+        help: 'leave job input open for adding more keys',
+        'default': false
+    },
+    {
+        names: ['parallel', 'p'],
+        type: 'positiveInteger',
+        help: 'limit concurrent operations',
+        'default': 100,
+        helpArg: 'CONCURRENCY'
+    },
+    {
+        names: ['reduce', 'r'],
+        type: 'arrayOfString',
+        help: 'reduce phase(s)',
+        helpArh: 'REDUCE_COMMAND'
+    },
+    {
+        names: ['asset', 's'],
+        type: 'arrayOfString',
+        help: 'asset(s) to place in zones',
+        helpArg: 'ASSET_PATH'
+    }
+]);
+
+MJob.prototype.do_create.help = (
+    'Creates a Manta Job.\n' +
+        /* JSSTYLED */
+        'You can create a job, feed input keys and wait for completion like this:\n' +
+        'Example:\n' +
+        '    mfind -t o /user/stor | mjob create grep foo \|\| true ^^ cat\n' +
+        '\n' +
+        'Usage:\n' +
+        '     mjob create [OPTIONS] [map ^ reduce]\n' +
+        '\n' +
+        '{{options}}'
+);
 
 
-function parseOptions() {
-        var option;
-        var opts = {};
-        var parser = new getopt.BasicParser('vcefiohxk:u:a:',
-                                            process.argv);
+//-- GetJob
+MJob.prototype.do_get = function do_get(subcmd, opts, args, cb) {
+    cb = once(cb);
 
-        while ((option = parser.getopt()) !== undefined && !option.error) {
-                switch (option.option) {
-                case 'a':
-                        opts.user = option.optarg;
-                        break;
+    if (!assertOpts(this, subcmd, opts, cb))
+        return;
 
-                case 'c':
-                        opts.cancel = true;
-                        break;
+    if (args.length < 1) {
+        cb(new Error('At least one JobId must be specified'));
+        return;
+    }
 
-                case 'e':
-                        opts.end = true;
-                        break;
-
-                case 'f':
-                        opts.fail = true;
-                        break;
-
-                case 'h':
-                        usage();
-                        break;
-
-                case 'i':
-                        opts.input = true;
-                        break;
-
-                case 'k':
-                        opts.keyId = option.optarg;
-                        break;
-
-                case 'o':
-                        opts.output = true;
-                        break;
-
-                case 'u':
-                        opts.url = url.parse(option.optarg).href;
-                        break;
-
-                case 'v':
-                        // Allows us to set -vvv -> this little hackery
-                        // just ensures that we're never < TRACE
-                        LOG.level(Math.max(bunyan.TRACE, (LOG.level() - 10)));
-                        if (LOG.level() <= bunyan.DEBUG)
-                                LOG = LOG.child({src: true});
-                        break;
-
-                case 'x':
-                        opts.errors = true;
-                        break;
-
-                default:
-                        usage('invalid argument: ' + option.option);
-                        process.exit(1);
-                        break;
+    var client = createClient(opts);
+    var queue = new manta.Queue({
+        limit: opts.parallel,
+        worker: function getJob(id, _cb) {
+            _cb = once(_cb);
+            client.job(id, function (err, job) {
+                if (err) {
+                    if (err.statusCode !== 404) {
+                        _cb(err);
+                    } else {
+                        var p = '/' + opts.user + '/jobs/' + id + '/job.json';
+                        client.get(p, function (_err, stream) {
+                            if (_err) {
+                                _cb(_err);
+                            } else {
+                                var body = '';
+                                stream.setEncoding('utf8');
+                                stream.on('data', function (chunk) {
+                                    body += chunk;
+                                });
+                                stream.once('end', function () {
+                                    var tmp = JSON.parse(body);
+                                    console.log('%s',
+                                                JSON.stringify(tmp, null, 2));
+                                    _cb();
+                                });
+                            }
+                        });
+                    }
+                } else {
+                    console.log('%s', JSON.stringify(job, null, 2));
+                    _cb();
                 }
+            });
         }
+    });
 
-        if (option && option.error)
-                usage('\n');
+    queue.once('end', function () {
+        client.close();
+        cb();
+    });
+    queue.once('error', cb);
+    args.forEach(queue.push.bind(queue));
+    queue.close();
+};
 
-        opts.log = LOG;
+MJob.prototype.do_get.options = manta.DEFAULT_CLI_OPTIONS.concat([
+    {
+        names: ['parallel', 'p'],
+        type: 'positiveInteger',
+        help: 'limit concurrent operations',
+        'default': 100,
+        helpArg: 'CONCURRENCY'
+    }
+]);
 
-        try {
-                manta.checkBinEnv(opts);
-        } catch (err) {
-                usage(err.message);
-        }
-
-
-        if ((opts.input || opts.output || opts.fail) &&
-            !xor(opts.fail, opts.input, opts.output)) {
-                usage('-f, -i and -o are mutually exclusive');
-        }
-
-        if ((opts.end || opts.cancel) && !xor(opts.end, opts.cancel)) {
-                usage('-c and -e are mutually exclusive');
-        }
-
-        if (parser.optind() >= process.argv.length)
-                usage('missing required argument: "jobId"');
-
-        opts.id = process.argv[parser.optind()];
-
-        return (opts);
-}
-
-
-function usage(msg) {
-        if (msg)
-                console.error(msg);
-
-        var str = 'usage: ' + path.basename(process.argv[1]);
-        str += ' [-v] [-a account] [-u url] [-k keyId] [-c] [-e] [-o] ';
-        str += '[-f] [-i] [-x] jobId';
-        console.error(str);
-        console.error(optionsMsg);
-        process.exit(msg ? 1 : 0);
-}
+MJob.prototype.do_get.help = (
+    'Retrieves the status of a Manta Job by JobId.\n' +
+        'Example:\n' +
+        '    mjob get f6e1391b-584d-4722-bbdf-4506621148c7\n' +
+        '\n' +
+        'Usage:\n' +
+        '     mjob get [OPTIONS] JobId...\n' +
+        '\n' +
+        '{{options}}'
+);
 
 
-function xor() {
-        var b = false;
-        for (var i = 0; i < arguments.length; i++) {
-                if (arguments[i] && !b) {
-                        b = (true);
-                } else if (arguments[i] && b) {
-                        return (false);
-                }
-        }
-        return (b);
-}
+//-- GetJobInputs
+
+MJob.prototype.do_inputs = function do_inputs(subcmd, opts, args, cb) {
+    cb = once(cb);
+
+    if (!assertOpts(this, subcmd, opts, cb))
+        return;
+
+    if (args.length < 1) {
+        cb(new Error('At least one JobId must be specified'));
+        return;
+    }
+
+    var client = createClient(opts);
+    jobDataCommon({
+        args: args,
+        client: client,
+        func: 'jobInput',
+        parallel: opts.parallel,
+        type: 'in',
+        user: opts.user,
+        watch: 'key'
+    }, cb);
+};
+
+MJob.prototype.do_inputs.options = manta.DEFAULT_CLI_OPTIONS.concat([
+    {
+        names: ['parallel', 'p'],
+        type: 'positiveInteger',
+        help: 'limit concurrent operations',
+        'default': 100,
+        helpArg: 'CONCURRENCY'
+    }
+]);
+
+MJob.prototype.do_inputs.help = (
+    'Retrieves the inputs of a Manta Job by JobId.\n' +
+        'Example:\n' +
+        '    mjob inputs f6e1391b-584d-4722-bbdf-4506621148c7\n' +
+        '\n' +
+        'Usage:\n' +
+        '     mjob inputs [OPTIONS] JobId...\n' +
+        '\n' +
+        '{{options}}'
+);
+
+//-- GetJobOutputs
+
+MJob.prototype.do_outputs = function do_outputs(subcmd, opts, args, cb) {
+    cb = once(cb);
+
+    if (!assertOpts(this, subcmd, opts, cb))
+        return;
+
+    if (args.length < 1) {
+        cb(new Error('At least one JobId must be specified'));
+        return;
+    }
+
+    var client = createClient(opts);
+    jobDataCommon({
+        args: args,
+        client: client,
+        func: 'jobOutput',
+        parallel: opts.parallel,
+        type: 'out',
+        user: opts.user,
+        watch: 'key'
+    }, cb);
+};
+
+MJob.prototype.do_outputs.options = manta.DEFAULT_CLI_OPTIONS.concat([
+    {
+        names: ['parallel', 'p'],
+        type: 'positiveInteger',
+        help: 'limit concurrent operations',
+        'default': 100,
+        helpArg: 'CONCURRENCY'
+    }
+]);
+
+MJob.prototype.do_outputs.help = (
+    'Retrieves the outputs of a Manta Job by JobId.\n' +
+        'Example:\n' +
+        '    mjob outputs f6e1391b-584d-4722-bbdf-4506621148c7\n' +
+        '\n' +
+        'Usage:\n' +
+        '     mjob outputs [OPTIONS] JobId...\n' +
+        '\n' +
+        '{{options}}'
+);
+
+//-- GetJobErrors
+
+MJob.prototype.do_errors = function do_errors(subcmd, opts, args, cb) {
+    cb = once(cb);
+
+    if (!assertOpts(this, subcmd, opts, cb))
+        return;
+
+    if (args.length < 1) {
+        cb(new Error('At least one JobId must be specified'));
+        return;
+    }
+
+    var client = createClient(opts);
+    jobDataCommon({
+        args: args,
+        client: client,
+        func: 'jobErrors',
+        parallel: opts.parallel,
+        type: 'err',
+        user: opts.user,
+        watch: 'err'
+    }, cb);
+};
+
+MJob.prototype.do_errors.options = manta.DEFAULT_CLI_OPTIONS.concat([
+    {
+        names: ['parallel', 'p'],
+        type: 'positiveInteger',
+        help: 'limit concurrent operations',
+        'default': 100,
+        helpArg: 'CONCURRENCY'
+    }
+]);
+
+MJob.prototype.do_errors.help = (
+    'Retrieves the errors of a Manta Job by JobId.\n' +
+        'Example:\n' +
+        '    mjob errors f6e1391b-584d-4722-bbdf-4506621148c7\n' +
+        '\n' +
+        'Usage:\n' +
+        '     mjob errors [OPTIONS] JobId...\n' +
+        '\n' +
+        '{{options}}'
+);
+
+
+//-- GetJobFailures
+
+MJob.prototype.do_failures = function do_failures(subcmd, opts, args, cb) {
+    cb = once(cb);
+
+    if (!assertOpts(this, subcmd, opts, cb))
+        return;
+
+    if (args.length < 1) {
+        cb(new Error('At least one JobId must be specified'));
+        return;
+    }
+
+    var client = createClient(opts);
+    jobDataCommon({
+        args: args,
+        client: client,
+        func: 'jobFailures',
+        parallel: opts.parallel,
+        type: 'fail',
+        user: opts.user,
+        watch: 'key'
+    }, cb);
+};
+
+MJob.prototype.do_failures.options = manta.DEFAULT_CLI_OPTIONS.concat([
+    {
+        names: ['parallel', 'p'],
+        type: 'positiveInteger',
+        help: 'limit concurrent operations',
+        'default': 100,
+        helpArg: 'CONCURRENCY'
+    }
+]);
+
+MJob.prototype.do_failures.help = (
+    'Retrieves the input failures of a Manta Job by JobId.\n' +
+        'Example:\n' +
+        '    mjob failures f6e1391b-584d-4722-bbdf-4506621148c7\n' +
+        '\n' +
+        'Usage:\n' +
+        '     mjob failures [OPTIONS] JobId...\n' +
+        '\n' +
+        '{{options}}'
+);
 
 
 
 ///--- Mainline
 
-(function main() {
-        var options = parseOptions();
-        var client = manta.createBinClient(options);
-
-        client.job(options.id, function (job_err, job) {
-                ifError(job_err);
-
-                function cb(err) {
-                        ifError(err);
-
-                        process.exit(0);
-                }
-
-                function streamOut(err, out) {
-                        ifError(err);
-
-                        out.once('end', cb.bind(null, null));
-                        out.on('err', function (e) {
-                                console.log(JSON.stringify(e));
-                        });
-                        out.on('key', function (k) {
-                                console.log(k);
-                        });
-                }
-
-                if (options.output) {
-                        client.jobOutput(options.id, streamOut);
-                } else if (options.input) {
-                        inputStream(client, options.id);
-                } else if (options.fail) {
-                        client.jobFailures(options.id, streamOut);
-                } else if (options.errors) {
-                        client.jobErrors(options.id, streamOut);
-                } else if (options.end) {
-                        client.endJob(options.id, cb);
-                } else if (options.cancel) {
-                        client.cancelJob(options.id, cb);
-                } else {
-                        if (!job.inputDone)
-                                console.error('warning: job input not done');
-
-                        console.log(JSON.stringify(job, null, 2));
-                        cb();
-                }
-        });
-})();
+cmdln.main(MJob);
