@@ -8,6 +8,7 @@ var url = require('url');
 var util = require('util');
 
 var assert = require('assert-plus');
+var backoff = require('backoff');
 var bunyan = require('bunyan');
 var carrier = require('carrier');
 var cmdln = require('cmdln');
@@ -84,8 +85,10 @@ function addInputsFromStdin(client, opts, cb) {
                         }
 
                         if (!opts.quiet) {
-                            console.error('added %d keys to job %s',
-                                          keys.length, id);
+                            console.error('added %d key%s to %s',
+                                          keys.length,
+                                          keys.length > 1 ? 's' : '',
+                                          id);
                         }
 
                         __cb();
@@ -225,6 +228,48 @@ function jobDataCommon(opts, callback) {
 }
 
 
+function jobWatch(opts, cb) {
+    assert.object(opts);
+    assert.string(opts.job, 'job');
+    assert.object(opts.client, 'client');
+    assert.func(cb, 'callback');
+
+    cb = once(cb);
+
+    var client = opts.client;
+    var job = opts.job;
+
+    var monitor = backoff.exponential({
+        initialDelay: 100,
+        maxDelay: 10000
+    });
+
+    monitor.on('ready', function onReady(attempts, delayms) {
+        client.job(job, function onJob(err, status) {
+            if (err) {
+                monitor.reset(); // stop monitoring
+                monitor.removeAllListeners('fail');
+                monitor.removeAllListeners('ready');
+                cb(err);
+            } else if (status.state !== 'done' && status.state !== 'archiving') {
+                monitor.backoff();
+            } else {
+                monitor.reset(); // stop monitoring
+                monitor.removeAllListeners('fail');
+                monitor.removeAllListeners('ready');
+                cb(null, status);
+            }
+        });
+    });
+
+    monitor.on('fail', function onFail() {
+        cb(new Error(job + ' did not complete in time'));
+    });
+
+    monitor.backoff();
+}
+
+
 
 ///--- CLI
 
@@ -357,6 +402,7 @@ MJob.prototype.do_create = function create(subcmd, opts, args, cb) {
     if (!assertOpts(this, subcmd, opts, cb))
         return;
 
+    var count = opts['num-reducers'];
     var job = {
         name: opts.name ? opts.name : undefined,
         phases: []
@@ -367,10 +413,15 @@ MJob.prototype.do_create = function create(subcmd, opts, args, cb) {
         job = JSON.parse(tmp);
     } else if (opts.map || opts.reduce) {
         (opts.map || []).forEach(function (m) {
-            job.phases.push({
+            var p = {
                 exec: m,
                 type: 'storage-map'
-            });
+            };
+
+            if (opts.dram)
+                p.memory = opts.dram;
+
+            job.phases.push(p);
         });
 
         (opts.reduce || []).forEach(function (r) {
@@ -379,15 +430,13 @@ MJob.prototype.do_create = function create(subcmd, opts, args, cb) {
                 type: 'reduce'
             };
 
-            if (opts.count)
-                p.count = opts.count;
             if (opts.dram)
                 p.memory = opts.dram;
+            p.count = count;
 
             job.phases.push(p);
         });
     } else if (args.length) {
-        var count = opts.count;
         var exec = '';
         var type = 'storage-map';
 
@@ -396,11 +445,13 @@ MJob.prototype.do_create = function create(subcmd, opts, args, cb) {
                 exec: exec,
                 type: type
             };
+
+            if (opts.dram)
+                p.memory = opts.dram;
+
             if (type === 'reduce') {
                 if (count > 1)
                     p.count = count;
-                if (opts.dram)
-                    p.memory = opts.dram;
             }
 
             count = opts.count;
@@ -415,7 +466,7 @@ MJob.prototype.do_create = function create(subcmd, opts, args, cb) {
                 if (exec)
                     addPhase();
             } else if (/\^{2,}/.test(args[i])) {
-                count = args[i].length - 2 || opts.count;
+                count = args[i].length - 2 || count;
                 type = 'reduce';
 
                 if (exec)
@@ -446,13 +497,53 @@ MJob.prototype.do_create = function create(subcmd, opts, args, cb) {
             return;
         }
 
-        if (process.stdin.isTTY) {
+        function wait(err2) {
+            if (err2) {
+                cb(err2);
+                return;
+            } else if (!opts.watch && !opts.cat_outputs) {
+                cb();
+                return;
+            }
+
+            jobWatch({client: client, job: id}, function (err3, _job) {
+                if (err3) {
+                    cb(err3);
+                    return;
+                }
+
+                var _s = _job.stats;
+                if (_s.errors > 0) {
+                    var msg = sprintf('job %s had %d error%s', id, _s.errors,
+                                      _s.errors > 1 ? 's' : '');
+                    cb(new Error(msg));
+                    return;
+                }
+
+                if (!opts.cat_outputs) {
+                    cb();
+                } else {
+                    jobDataCommon({
+                        args: [id],
+                        client: client,
+                        func: 'jobOutput',
+                        parallel: opts.parallel,
+                        type: 'out',
+                        user: opts.account,
+                        watch: 'key'
+                    }, cb);
+                }
+            });
+        }
+
+        if (!opts.cat_outputs)
             console.log(id);
-            client.close();
-            cb();
+
+        if (process.stdin.isTTY) {
+            wait();
         } else {
             opts.jobIds = [id];
-            addInputsFromStdin(client, opts, cb);
+            addInputsFromStdin(client, opts, wait);
         }
     });
 };
@@ -466,7 +557,12 @@ MJob.prototype.do_create.options = manta.DEFAULT_CLI_OPTIONS.concat([
         helpArg: 'BATCH_SIZE'
     },
     {
-        names: ['count', 'c'],
+        names: ['cat-outputs', 'o'],
+        type: 'bool',
+        help: 'wait for job to complete, then fetch outputs'
+    },
+    {
+        names: ['count'],
         type: 'positiveInteger',
         help: 'number of reducers to create',
         helpArg: 'REDUCERS',
@@ -497,7 +593,7 @@ MJob.prototype.do_create.options = manta.DEFAULT_CLI_OPTIONS.concat([
         helpArg: 'NAME'
     },
     {
-        names: ['open', 'o'],
+        names: ['open'],
         type: 'bool',
         help: 'leave job input open for adding more keys',
         'default': false
@@ -510,6 +606,12 @@ MJob.prototype.do_create.options = manta.DEFAULT_CLI_OPTIONS.concat([
         helpArg: 'CONCURRENCY'
     },
     {
+        names: ['quiet', 'q'],
+        type: 'bool',
+        help: 'do not output verbose information',
+        'default': false
+    },
+    {
         names: ['reduce', 'r'],
         type: 'arrayOfString',
         help: 'reduce phase(s)',
@@ -520,6 +622,11 @@ MJob.prototype.do_create.options = manta.DEFAULT_CLI_OPTIONS.concat([
         type: 'arrayOfString',
         help: 'asset(s) to place in zones',
         helpArg: 'ASSET_PATH'
+    },
+    {
+        names: ['watch', 'w'],
+        type: 'bool',
+        help: 'wait for job to complete, and dump outputs'
     }
 ]);
 
@@ -798,6 +905,73 @@ MJob.prototype.do_failures.help = (
         '\n' +
         'Usage:\n' +
         '     mjob failures [OPTIONS] JobId...\n' +
+        '\n' +
+        '{{options}}'
+);
+
+
+//-- Watch
+
+MJob.prototype.do_watch = function do_watch(subcmd, opts, args, cb) {
+    cb = once(cb);
+
+    if (!assertOpts(this, subcmd, opts, cb))
+        return;
+
+    if (args.length < 1) {
+        cb(new Error('At least one JobId must be specified'));
+        return;
+    }
+
+    var client = createClient(opts);
+
+    var queue = new manta.Queue({
+        limit: opts.parallel,
+        worker: function submit(j, _cb) {
+            _cb = once(_cb);
+            var _opts = {
+                client: client,
+                job: j
+            };
+            jobWatch(_opts, function (err, job) {
+                if (err) {
+                    _cb(err);
+                    return;
+                }
+
+                console.log('%s', JSON.stringify(job, null, 2));
+                _cb();
+            });
+        }
+    });
+
+    queue.once('error', cb);
+    queue.once('end', function () {
+        client.close();
+        cb();
+    });
+
+    args.forEach(queue.push.bind(queue));
+    queue.close();
+};
+
+MJob.prototype.do_watch.options = manta.DEFAULT_CLI_OPTIONS.concat([
+    {
+        names: ['parallel', 'p'],
+        type: 'positiveInteger',
+        help: 'limit concurrent operations',
+        'default': 100,
+        helpArg: 'CONCURRENCY'
+    }
+]);
+
+MJob.prototype.do_watch.help = (
+    'Waits for a job to complete.\n' +
+        'Example:\n' +
+        '    mjob watch b19e0925-4c85-4fe9-ab47-8cc9dcfec81a\n' +
+        '\n' +
+        'Usage:\n' +
+        '     mjob watch [OPTIONS] JobId...\n' +
         '\n' +
         '{{options}}'
 );
