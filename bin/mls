@@ -1,13 +1,15 @@
 #!/usr/bin/env node
 // -*- mode: js -*-
-// Copyright (c) 2012, Joyent, Inc. All rights reserved.
+// Copyright (c) 2013, Joyent, Inc. All rights reserved.
 
 var path = require('path');
 var url = require('url');
 
 var bunyan = require('bunyan');
 var dashdash = require('dashdash');
+var moment = require('moment');
 var restify = require('restify');
+var sprintf = require('extsprintf').sprintf;
 var uuid = require('node-uuid');
 
 var manta = require('../lib');
@@ -26,15 +28,20 @@ var LOG = bunyan.createLogger({
 var OPTIONS_PARSER = dashdash.createParser({
     options: manta.DEFAULT_CLI_OPTIONS.concat([
         {
+            names: ['batch', 'b'],
+            type: 'positiveInteger',
+            help: 'limit the number of results returned per batch',
+            helpArg: 'LIMIT'
+        },
+        {
             names: ['json', 'j'],
             type: 'bool',
             help: 'output in JSON'
         },
         {
-            names: ['limit', 'l'],
-            type: 'positiveInteger',
-            help: 'limit the number of results returned',
-            helpArg: 'LIMIT'
+            names: ['long', 'l'],
+            type: 'bool',
+            help: 'use a long listing format'
         },
         {
             names: ['marker', 'm'],
@@ -80,7 +87,7 @@ function ls(client, p, options, cb) {
                         last = e.name;
                         seen++;
                         if (e.name !== options.marker)
-                                printEntry(e, options.json);
+                                printEntry(e, options);
                 }
 
                 res.on('directory', onEntry);
@@ -137,12 +144,31 @@ function parseOptions() {
 }
 
 
-function printEntry(obj, json) {
+function printEntry(obj, opts) {
         if (obj.headers)
                 delete obj.headers;
 
-        if (json) {
+        if (opts.json) {
             console.log('%j', obj);
+        } else if (opts['long']) {
+            var d = moment(obj.mtime);
+            var fmt = 'MMM D ';
+            var now = moment();
+
+            if (now.diff(d, 'months') >= 6) {
+                fmt += ' YYYY';
+            } else {
+                fmt += 'HH:mm';
+            }
+
+            var out = sprintf('%srwxr-xr-x 1 %s %13d %s %s',
+                              (obj.type === 'directory' ? 'd' : '-'),
+                              opts.user,
+                              (obj.type === 'directory' ? '0' : obj.size),
+                              d.format(fmt),
+                              obj.name);
+
+            console.log(out);
         } else {
             console.log('%s%s',
                         obj.name,
@@ -173,7 +199,7 @@ function printEntry(obj, json) {
                         } else if (info.extension === 'directory') {
                                 ls(client, p, options, cb);
                         } else {
-                                printEntry(info, options.json);
+                                printEntry(info, options);
                                 cb();
                         }
                 });

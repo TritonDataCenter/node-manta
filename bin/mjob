@@ -12,6 +12,7 @@ var backoff = require('backoff');
 var bunyan = require('bunyan');
 var carrier = require('carrier');
 var cmdln = require('cmdln');
+var moment = require('moment');
 var once = require('once');
 var restify = require('restify');
 var uuid = require('node-uuid');
@@ -207,7 +208,11 @@ function jobDataCommon(opts, callback) {
 
                 out.once('error', handleError);
                 out.on(opts.watch, function (obj) {
-                    body += JSON.stringify(obj) + '\n';
+                    if (opts.watch === 'jobErrors') {
+                        body += JSON.stringify(obj) + '\n';
+                    } else {
+                        body += obj + '\n';
+                    }
                 });
 
                 out.once('end', function () {
@@ -909,6 +914,74 @@ MJob.prototype.do_failures.help = (
         '{{options}}'
 );
 
+
+//-- List
+
+MJob.prototype.do_list = function do_list(subcmd, opts, args, cb) {
+    cb = once(cb);
+
+    if (!assertOpts(this, subcmd, opts, cb))
+        return;
+
+    client = createClient(opts);
+
+    client.listJobs(opts, function (err, res) {
+        if (err) {
+            cb(err);
+            return;
+        }
+
+        var now = moment();
+        res.on('job', function (j) {
+            if (opts['long']) {
+                var d = moment(j.mtime);
+                var fmt = 'MMM D ';
+                if (now.diff(d, 'months') >= 6) {
+                    fmt += 'YYYY';
+                } else {
+                    fmt += 'HH:mm';
+                }
+                console.log('drwxr-xr-x 1 ' +
+                            opts.user + ' 1 ' +
+                            d.format(fmt) + ' ' +
+                            j.name);
+            } else {
+                console.log(j.name + '/');
+            }
+        });
+
+        res.once('error', cb);
+        res.once('end', function () {
+            client.close();
+            cb();
+        });
+    });
+};
+
+MJob.prototype.do_list.options = manta.DEFAULT_CLI_OPTIONS.concat([
+    {
+        names: ['long', 'l'],
+        type: 'bool',
+        help: 'use a long listing format'
+    },
+    {
+        names: ['state', 's'],
+        type: 'string',
+        help: 'only list jobs in a given state',
+        helpArg: 'STATE'
+    }
+]);
+
+MJob.prototype.do_list.help = (
+    'Lists all jobs.\n' +
+        'Example:\n' +
+        '    mjob list -s running\n' +
+        '\n' +
+        'Usage:\n' +
+        '     mjob list [OPTIONS]\n' +
+        '\n' +
+        '{{options}}'
+);
 
 //-- Watch
 
