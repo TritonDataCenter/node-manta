@@ -208,7 +208,7 @@ function jobDataCommon(opts, callback) {
 
                 out.once('error', handleError);
                 out.on(opts.watch, function (obj) {
-                    if (opts.watch === 'jobErrors') {
+                    if (opts.func === 'jobErrors') {
                         body += JSON.stringify(obj) + '\n';
                     } else {
                         body += obj + '\n';
