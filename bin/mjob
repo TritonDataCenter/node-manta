@@ -407,7 +407,7 @@ MJob.prototype.do_create = function create(subcmd, opts, args, cb) {
     if (!assertOpts(this, subcmd, opts, cb))
         return;
 
-    var count = opts['num-reducers'];
+    var count = opts['count'];
     var job = {
         name: opts.name ? opts.name : undefined,
         phases: []
