@@ -86,7 +86,7 @@ function addInputsFromStdin(client, opts, cb) {
                         }
 
                         if (!opts.quiet) {
-                            console.error('added %d key%s to %s',
+                            console.error('added %d input%s to %s',
                                           keys.length,
                                           keys.length > 1 ? 's' : '',
                                           id);
@@ -256,7 +256,8 @@ function jobWatch(opts, cb) {
                 monitor.removeAllListeners('fail');
                 monitor.removeAllListeners('ready');
                 cb(err);
-            } else if (status.state !== 'done' && status.state !== 'archiving') {
+            } else if (status.state !== 'done' &&
+                status.state !== 'archiving') {
                 monitor.backoff();
             } else {
                 monitor.reset(); // stop monitoring
@@ -314,7 +315,7 @@ MJob.prototype.do_addinputs.options = manta.DEFAULT_CLI_OPTIONS.concat([
     {
         names: ['batch', 'b'],
         type: 'positiveInteger',
-        help: 'number of keys to sumbit per batch (default 1000)',
+        help: 'number of inputs to submit per batch (default 1000)',
         'default': 1000,
         helpArg: 'BATCH_SIZE'
     },
@@ -328,7 +329,7 @@ MJob.prototype.do_addinputs.options = manta.DEFAULT_CLI_OPTIONS.concat([
     {
         names: ['open', 'o'],
         type: 'bool',
-        help: 'leave job input open for adding more keys',
+        help: 'leave job input open for adding more inputs',
         'default': false
     }
 ]);
@@ -557,7 +558,7 @@ MJob.prototype.do_create.options = manta.DEFAULT_CLI_OPTIONS.concat([
     {
         names: ['batch', 'b'],
         type: 'positiveInteger',
-        help: 'number of keys to sumbit per batch (default 1000)',
+        help: 'number of inputs to submit per batch (default 1000)',
         'default': 1000,
         helpArg: 'BATCH_SIZE'
     },
@@ -600,7 +601,7 @@ MJob.prototype.do_create.options = manta.DEFAULT_CLI_OPTIONS.concat([
     {
         names: ['open'],
         type: 'bool',
-        help: 'leave job input open for adding more keys',
+        help: 'leave job input open for adding more inputs',
         'default': false
     },
     {
@@ -638,7 +639,7 @@ MJob.prototype.do_create.options = manta.DEFAULT_CLI_OPTIONS.concat([
 MJob.prototype.do_create.help = (
     'Creates a Manta Job.\n' +
         /* JSSTYLED */
-        'You can create a job, feed input keys and wait for completion like this:\n' +
+        'You can create a job, feed inputs and wait for completion like this:\n' +
         'Example:\n' +
         '    mfind -t o /user/stor | mjob create grep foo \|\| true ^^ cat\n' +
         '\n' +
@@ -923,7 +924,7 @@ MJob.prototype.do_list = function do_list(subcmd, opts, args, cb) {
     if (!assertOpts(this, subcmd, opts, cb))
         return;
 
-    client = createClient(opts);
+    var client = createClient(opts);
 
     client.listJobs(opts, function (err, res) {
         if (err) {
