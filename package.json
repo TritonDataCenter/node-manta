@@ -31,7 +31,8 @@
     },
     "directories": {
         "bin": "./bin",
-        "lib": "./lib"
+        "lib": "./lib",
+        "man": "./man"
     },
     "engines": {
         "node": ">=0.8.14"

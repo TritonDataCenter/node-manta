@@ -19,20 +19,14 @@ var manta = require('../lib');
 ///--- Globals
 
 var LOG = bunyan.createLogger({
-        name: path.basename(process.argv[1]),
-        level: (process.env.LOG_LEVEL || 'info'),
-        stream: process.stderr,
-        serializers: restify.bunyan.serializers
+    name: path.basename(process.argv[1]),
+    level: (process.env.LOG_LEVEL || 'info'),
+    stream: process.stderr,
+    serializers: restify.bunyan.serializers
 });
 
 var OPTIONS_PARSER = dashdash.createParser({
     options: manta.DEFAULT_CLI_OPTIONS.concat([
-        {
-            names: ['batch', 'b'],
-            type: 'positiveInteger',
-            help: 'limit the number of results returned per batch',
-            helpArg: 'LIMIT'
-        },
         {
             names: ['json', 'j'],
             type: 'bool',
@@ -57,58 +51,58 @@ var OPTIONS_PARSER = dashdash.createParser({
 ///--- Functions
 
 function ifError(err) {
-        if (err) {
-                console.error(err.toString());
-                process.exit(1);
-        }
+    if (err) {
+        console.error(err.toString());
+        process.exit(1);
+    }
 }
 
 
 function ls(client, p, options, cb) {
-        var last;
-        var opts = {
-                log: LOG,
-                query: {}
-        };
-        var seen = 0;
+    var last;
+    var opts = {
+        log: LOG,
+        query: {}
+    };
+    var seen = 0;
 
-        if (options.limit)
-                opts.query.limit = options.limit;
-        if (options.marker)
-                opts.query.marker = options.marker;
-        if (options.type) {
-                opts.query[options.type] = true;
+    if (options.limit)
+        opts.query.limit = options.limit;
+    if (options.marker)
+        opts.query.marker = options.marker;
+    if (options.type) {
+        opts.query[options.type] = true;
+    }
+
+    client.ls(p, opts, function (err, res) {
+        ifError(err);
+
+        function onEntry(e) {
+            last = e.name;
+            seen++;
+            if (e.name !== options.marker)
+                printEntry(e, options);
         }
 
-        client.ls(p, opts, function (err, res) {
-                ifError(err);
+        res.on('directory', onEntry);
+        res.on('object', onEntry);
+        res.once('error', cb);
+        res.once('end', function (http_res) {
+            var rss = parseInt(http_res.headers['result-set-size'],
+                               10);
+            if (options.limit !== undefined ||
+                seen >= rss || !last) {
+                cb(null);
+                return;
+            }
 
-                function onEntry(e) {
-                        last = e.name;
-                        seen++;
-                        if (e.name !== options.marker)
-                                printEntry(e, options);
-                }
-
-                res.on('directory', onEntry);
-                res.on('object', onEntry);
-                res.once('error', cb);
-                res.once('end', function (http_res) {
-                        var rss = parseInt(http_res.headers['result-set-size'],
-                                           10);
-                        if (options.limit !== undefined ||
-                            seen >= rss || !last) {
-                                cb(null);
-                                return;
-                        }
-
-                        var o = {
-                                marker: last,
-                                type: options.type
-                        };
-                        ls(client, p, o, cb);
-                });
+            var o = {
+                marker: last,
+                type: options.type
+            };
+            ls(client, p, o, cb);
         });
+    });
 }
 
 
@@ -145,35 +139,35 @@ function parseOptions() {
 
 
 function printEntry(obj, opts) {
-        if (obj.headers)
-                delete obj.headers;
+    if (obj.headers)
+        delete obj.headers;
 
-        if (opts.json) {
-            console.log('%j', obj);
-        } else if (opts['long']) {
-            var d = moment(obj.mtime);
-            var fmt = 'MMM D ';
-            var now = moment();
+    if (opts.json) {
+        console.log('%j', obj);
+    } else if (opts['long']) {
+        var d = moment(obj.mtime);
+        var fmt = 'MMM D ';
+        var now = moment();
 
-            if (now.diff(d, 'months') >= 6) {
-                fmt += ' YYYY';
-            } else {
-                fmt += 'HH:mm';
-            }
-
-            var out = sprintf('%srwxr-xr-x 1 %s %13d %s %s',
-                              (obj.type === 'directory' ? 'd' : '-'),
-                              opts.user,
-                              (obj.type === 'directory' ? '0' : obj.size),
-                              d.format(fmt),
-                              obj.name);
-
-            console.log(out);
+        if (now.diff(d, 'months') >= 6) {
+            fmt += ' YYYY';
         } else {
-            console.log('%s%s',
-                        obj.name,
-                        obj.type === 'directory' ? '/' : '');
+            fmt += 'HH:mm';
         }
+
+        var out = sprintf('%srwxr-xr-x 1 %s %13d %s %s',
+                          (obj.type === 'directory' ? 'd' : '-'),
+                          opts.user,
+                          (obj.type === 'directory' ? '0' : obj.size),
+                          d.format(fmt),
+                          obj.name);
+
+        console.log(out);
+    } else {
+        console.log('%s%s',
+                    obj.name,
+                    obj.type === 'directory' ? '/' : '');
+    }
 }
 
 
@@ -181,27 +175,27 @@ function printEntry(obj, opts) {
 ///--- Mainline
 
 (function main() {
-        var done = 0;
-        var options = parseOptions();
-        var client = manta.createBinClient(options);
+    var done = 0;
+    var options = parseOptions();
+    var client = manta.createBinClient(options);
 
-        function cb(err) {
-                ifError(err);
+    function cb(err) {
+        ifError(err);
 
-                if (++done === options.paths.length)
-                        client.close();
-        }
+        if (++done === options.paths.length)
+            client.close();
+    }
 
-        options.paths.forEach(function (p) {
-                client.info(p, function (info_err, info) {
-                        if (info_err) {
-                                client.get(p, cb);
-                        } else if (info.extension === 'directory') {
-                                ls(client, p, options, cb);
-                        } else {
-                                printEntry(info, options);
-                                cb();
-                        }
-                });
+    options.paths.forEach(function (p) {
+        client.info(p, function (info_err, info) {
+            if (info_err) {
+                client.get(p, cb);
+            } else if (info.extension === 'directory') {
+                ls(client, p, options, cb);
+            } else {
+                printEntry(info, options);
+                cb();
+            }
         });
+    });
 })();

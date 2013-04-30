@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2012, Joyent, Inc. All rights reserved.
+# Copyright (c) 2013, Joyent, Inc. All rights reserved.
 #
 # Makefile: basic Makefile for template API service
 #
@@ -17,6 +17,7 @@
 #
 # Tools
 #
+MD2MAN                  := md2man
 NODEUNIT		:= ./node_modules/.bin/nodeunit
 NPM			:= npm
 
@@ -36,6 +37,15 @@ CLEAN_FILES += node_modules
 include ./tools/mk/Makefile.defs
 
 #
+# Variables
+#
+
+MAN_PAGES       := $(shell ls docs/man)
+MAN_OUTDIR      := man
+MAN_OUTPAGES=$(MAN_PAGES:%.md=$(MAN_OUTDIR)/%.1)
+MAN_ROOT        := docs/man
+
+#
 # Repo-specific targets
 #
 .PHONY: all
@@ -49,6 +59,16 @@ deps: | $(REPO_DEPS) $(NPM_EXEC)
 .PHONY: test
 test: deps
 	$(NODEUNIT) test/*.test.js
+
+$(MAN_OUTDIR):
+	mkdir -p $@
+
+$(MAN_OUTDIR)/%.1: $(MAN_ROOT)/%.md | $(MAN_OUTDIR)
+	$(MD2MAN) $^ > $@
+
+.PHONY: manpages
+manpages: $(MAN_OUTPAGES)
+
 
 include ./tools/mk/Makefile.deps
 include ./tools/mk/Makefile.targ

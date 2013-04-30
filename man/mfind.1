@@ -1,0 +1,98 @@
+.TH mfind 1 "May 2013" Manta "Manta Commands"
+.SH NAME
+.PP
+mfind \- search for objects in a directory hierarchy.
+.SH SYNOPSIS
+.PP
+\fB\fCmfind\fR [OPTION...] PATH...
+.SH DESCRIPTION
+.PP
+The mfind utility recursively descends the directory tree for each path listed,
+listing names that are the specified \fB\fCtype\fR (or all if none is specified).
+.PP
+Unlike GNU/BSD find, \fB\fCmfind\fR is not yet sophisticated enough to support full
+\fB\fCexpression\fR matching, but does (currently) allow a \fB\fC--name\fR option that
+supports Regular Expression matching.
+.SH EXAMPLES
+.PP
+.RS
+.nf
+$ mfind -t o -n '.+.log$' /$MANTA_USER/stor/logs/foo/2013/04/29
+/$MANTA_USER/stor/logs/foo/2013/04/29/00/gandalf.log
+/$USER/stor/logs/foo/2013/04/29/00/frodo.log
+/$MANTA_USER/stor/logs/foo/2013/04/29/01/sam.log
+/$USER/stor/logs/foo/2013/04/29/01/aragorn.log
+.fi
+.RE
+.SH OPTIONS
+.TP
+\fB\fC-a, --account login\fR
+Authenticate as account (login name).
+.TP
+\fB\fC-h, --help\fR
+Print a help message and exit.
+.TP
+\fB\fC-i, --insecure\fR
+This option explicitly allows "insecure" SSL connections and transfers.  All
+SSL connections are attempted to be made secure by using the CA certificate
+bundle installed by default.
+.TP
+\fB\fC-k, --key fingerprint\fR
+Authenticate using the SSH key described by FINGERPRINT.  The key must
+either be in \fB\fC~/.ssh\fR or loaded in the SSH agent via \fB\fCssh-add\fR.
+.TP
+\fB\fC-l, --limit\fR
+Limit number of entries returned per request.
+.TP
+\fB\fC-n, --name regexp\fR
+Only return entries that have a name matching RegExp.  RegExp is a
+Javascript Regular Expression.
+.TP
+\fB\fC-p, --parallel concurrency\fR
+Limit concurrent operations to CONCURRENCY.  Default is 50.
+.TP
+\fB\fC-s, --size SIZE\fR
+Only list objects that are greater than SIZE bytes.
+.TP
+\fB\fC-t, --type type\fR
+Specify \fB\fCd\fR for directories, and \fB\fCo\fR for objects.  If specified, only names of
+that type will be returned.
+.PP
+\fB\fC-u, --url url\fR
+  Manta base URL (such as 
+.UR https://manta.us-east.joyent.com
+.UE ).
+.TP
+\fB\fC-v, --verbose\fR
+Print debug output to stderr.  Repeat option to increase verbosity.
+.SH ENVIRONMENT
+.TP
+\fB\fCMANTA_USER\fR
+In place of \fB\fC-a, --account\fR
+.TP
+\fB\fCMANTA_KEY_ID\fR
+In place of \fB\fC-k, --key\fR.
+.TP
+\fB\fCMANTA_URL\fR
+In place of \fB\fC-u, --url\fR.
+.TP
+\fB\fCMANTA_TLS_INSECURE\fR
+In place of \fB\fC-i, --insecure\fR.
+.SH DIAGNOSTICS
+.PP
+When using the \fB\fC-v\fR option, diagnostics will be sent to stderr in bunyan
+output format.  As an example of tracing all information about a request,
+try:
+.PP
+.RS
+.nf
+$ mfind -vv /$MANTA_USER/stor 2>&1 | bunyan
+.fi
+.RE
+.SH BUGS
+.PP
+DSA keys do not work when loaded via the SSH agent.
+.PP
+Report bugs at Github
+.UR https://github.com/joyent/node-manta/issues
+.UE

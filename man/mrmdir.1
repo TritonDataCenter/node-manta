@@ -1,0 +1,72 @@
+.TH mrmdir 1 "May 2013" Manta "Manta Commands"
+.SH NAME
+.PP
+mrmdir \- remove empty directories
+.SH SYNOPSIS
+.PP
+\fB\fCmrmdir\fR [OPTION...] DIRECTORY...
+.SH DESCRIPTION
+.PP
+mrmdir removes each specified directory, if they are empty.
+.SH EXAMPLES
+.PP
+.RS
+.nf
+$ mrmdir /$MANTA_USER/stor/tmp
+.fi
+.RE
+.SH OPTIONS
+.TP
+\fB\fC-a, --account login\fR
+Authenticate as account (login name).
+.TP
+\fB\fC-h, --help\fR
+Print a help message and exit.
+.TP
+\fB\fC-i, --insecure\fR
+This option explicitly allows "insecure" SSL connections and transfers.  All
+SSL connections are attempted to be made secure by using the CA certificate
+bundle installed by default.
+.TP
+\fB\fC-k, --key fingerprint\fR
+Authenticate using the SSH key described by FINGERPRINT.  The key must
+either be in \fB\fC~/.ssh\fR or loaded in the SSH agent via \fB\fCssh-add\fR.
+.PP
+\fB\fC-u, --url url\fR
+  Manta base URL (such as 
+.UR https://manta.us-east.joyent.com
+.UE ).
+.TP
+\fB\fC-v, --verbose\fR
+Print debug output to stderr.  Repeat option to increase verbosity.
+.SH ENVIRONMENT
+.TP
+\fB\fCMANTA_USER\fR
+In place of \fB\fC-a, --account\fR
+.TP
+\fB\fCMANTA_KEY_ID\fR
+In place of \fB\fC-k, --key\fR.
+.TP
+\fB\fCMANTA_URL\fR
+In place of \fB\fC-u, --url\fR.
+.TP
+\fB\fCMANTA_TLS_INSECURE\fR
+In place of \fB\fC-i, --insecure\fR.
+.SH DIAGNOSTICS
+.PP
+When using the \fB\fC-v\fR option, diagnostics will be sent to stderr in bunyan
+output format.  As an example of tracing all information about a request,
+try:
+.PP
+.RS
+.nf
+$ mrmdir -vv /$MANTA_USER/stor/foo 2>&1 | bunyan
+.fi
+.RE
+.SH BUGS
+.PP
+DSA keys do not work when loaded via the SSH agent.
+.PP
+Report bugs at Github
+.UR https://github.com/joyent/node-manta/issues
+.UE

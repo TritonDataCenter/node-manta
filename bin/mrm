@@ -29,7 +29,7 @@ var OPTIONS_PARSER = dashdash.createParser({
             names: ['parallel', 'p'],
             type: 'positiveInteger',
             help: 'limit concurrent operations',
-            'default': 100,
+            'default': 50,
             helpArg: 'CONCURRENCY'
         },
         {

@@ -1,0 +1,90 @@
+.TH msign 1 "May 2013" Manta "Manta Commands"
+.SH NAME
+.PP
+msign \- create a signed URL to a Manta object
+.SH SYNOPSIS
+.PP
+\fB\fCmsign\fR [OPTION...] OBJECT...
+.SH DESCRIPTION
+.PP
+msign takes a list of objects (or directories), and using the credentials from
+the environment (whether environment variables or command line switches) creates
+time\-expiring URLs that can be shared with others.  This is useful to generate
+HTML links, for example.
+.PP
+The default expiration for URLs is 5 minutes from \fB\fCnow\fR, but this can be changed
+with the \fB\fCexpires\fR option.  The expires option is designed to be used in
+conjunction with the UNIX date command.  In general, you should use the date
+command with a modifier (the syntax is different between BSD and GNU forms), and
+format the output to epoch time.
+.SH EXAMPLES
+.PP
+Assuming the GNU date command, generate a signed URL that expires in one month:
+.PP
+.RS
+.nf
+$ msign -e $(date -d "1 month" "+%s") /$MANTA_USER/stor/tmp
+.fi
+.RE
+.SH OPTIONS
+.TP
+\fB\fC-a, --account login\fR
+Authenticate as account (login name).
+.TP
+\fB\fC-e, --expires expiration\fR
+Signed URL should last until EXPIRATION (seconds since epoch).  Default is 300
+seconds from \fB\fCnow\fR.
+.TP
+\fB\fC-h, --help\fR
+Print a help message and exit.
+.TP
+\fB\fC-i, --insecure\fR
+This option explicitly allows "insecure" SSL connections and transfers.  All
+SSL connections are attempted to be made secure by using the CA certificate
+bundle installed by default.
+.TP
+\fB\fC-k, --key fingerprint\fR
+Authenticate using the SSH key described by FINGERPRINT.  The key must
+either be in \fB\fC~/.ssh\fR or loaded in the SSH agent via \fB\fCssh-add\fR.
+.TP
+\fB\fC-m, --method http_method\fR
+Allow URL to work for the HTTP method specified (default is GET).
+.PP
+\fB\fC-u, --url url\fR
+  Manta base URL (such as 
+.UR https://manta.us-east.joyent.com
+.UE ).
+.TP
+\fB\fC-v, --verbose\fR
+Print debug output to stderr.  Repeat option to increase verbosity.
+.SH ENVIRONMENT
+.TP
+\fB\fCMANTA_USER\fR
+In place of \fB\fC-a, --account\fR
+.TP
+\fB\fCMANTA_KEY_ID\fR
+In place of \fB\fC-k, --key\fR.
+.TP
+\fB\fCMANTA_URL\fR
+In place of \fB\fC-u, --url\fR.
+.TP
+\fB\fCMANTA_TLS_INSECURE\fR
+In place of \fB\fC-i, --insecure\fR.
+.SH DIAGNOSTICS
+.PP
+When using the \fB\fC-v\fR option, diagnostics will be sent to stderr in bunyan
+output format.  As an example of tracing all information about a request,
+try:
+.PP
+.RS
+.nf
+$ msign -vv /$MANTA_USER/stor/foo 2>&1 | bunyan
+.fi
+.RE
+.SH BUGS
+.PP
+DSA keys do not work when loaded via the SSH agent.
+.PP
+Report bugs at Github
+.UR https://github.com/joyent/node-manta/issues
+.UE

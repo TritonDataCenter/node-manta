@@ -608,7 +608,7 @@ MJob.prototype.do_create.options = manta.DEFAULT_CLI_OPTIONS.concat([
         names: ['parallel', 'p'],
         type: 'positiveInteger',
         help: 'limit concurrent operations',
-        'default': 100,
+        'default': 50,
         helpArg: 'CONCURRENCY'
     },
     {

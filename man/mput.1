@@ -1,0 +1,108 @@
+.TH mput 1 "May 2013" Manta "Manta Commands"
+.SH NAME
+.PP
+mput \- create an object
+.SH SYNOPSIS
+.PP
+\fB\fCmput\fR [OPTION...] OBJECT
+.SH DESCRIPTION
+.PP
+mput creates an object specified at the name OBJECT with the contents either
+coming from stdin, or from the file specified with \fB\fC-f\fR.  When using the \fB\fC-f\fR
+form, mput will attempt to set the HTTP Content\-Type from the file extension,
+unless Content\-Type is specified as an HTTP header.  When using the stdin form
+the content\-type will be (default) application/octet\-stream, so you will likely
+want to set it manually.
+.PP
+By default, mput creates two copies of an object; this can be overridden with
+\fB\fC-c\fR.  Lastly, mput also draws a progress meter by default; this can be disabled
+with \fB\fC-q\fR.
+.SH EXAMPLES
+.PP
+Create an object with the contents of foo.txt.  Content\-type will be text/plain.
+.PP
+.RS
+.nf
+$ mput -f ./foo.txt /$MANTA_USER/stor/foo.txt
+.fi
+.RE
+.PP
+Create the same object from stdin, and set content\-type.
+.PP
+.RS
+.nf
+$ cat ./foo.txt | mput -H 'content-type: text/plain' /$MANTA_USER/stor/foo.txt
+.fi
+.RE
+.PP
+Create the same object, set CORS header, and create 3 copies, with no progress bar:
+.PP
+.RS
+.nf
+$ cat ./foo.txt | mput -H 'content-type: text/plain' \\
+                       -H 'access-control-allow-origin: *' \\
+                       -c 3 -q \\
+                       /$MANTA_USER/stor/foo.txt
+.fi
+.RE
+.SH OPTIONS
+.TP
+\fB\fC-a, --account login\fR
+Authenticate as account (login name).
+.TP
+\fB\fC-c, --copies file\fR
+Create COPIES copies as a replication factor (default 2).
+.TP
+\fB\fC-f, --file file\fR
+Create contents of object from file.
+.TP
+\fB\fC-h, --help\fR
+Print a help message and exit.
+.TP
+\fB\fC-i, --insecure\fR
+This option explicitly allows "insecure" SSL connections and transfers.  All
+SSL connections are attempted to be made secure by using the CA certificate
+bundle installed by default.
+.TP
+\fB\fC-k, --key fingerprint\fR
+Authenticate using the SSH key described by FINGERPRINT.  The key must
+either be in \fB\fC~/.ssh\fR or loaded in the SSH agent via \fB\fCssh-add\fR.
+.PP
+\fB\fC-u, --url url\fR
+  Manta base URL (such as 
+.UR https://manta.us-east.joyent.com
+.UE ).
+.TP
+\fB\fC-v, --verbose\fR
+Print debug output to stderr.  Repeat option to increase verbosity.
+.SH ENVIRONMENT
+.TP
+\fB\fCMANTA_USER\fR
+In place of \fB\fC-a, --account\fR
+.TP
+\fB\fCMANTA_KEY_ID\fR
+In place of \fB\fC-k, --key\fR.
+.TP
+\fB\fCMANTA_URL\fR
+In place of \fB\fC-u, --url\fR.
+.TP
+\fB\fCMANTA_TLS_INSECURE\fR
+In place of \fB\fC-i, --insecure\fR.
+.SH DIAGNOSTICS
+.PP
+When using the \fB\fC-v\fR option, diagnostics will be sent to stderr in bunyan
+output format.  As an example of tracing all information about a request,
+try:
+.PP
+.RS
+.nf
+$ mput -vv /$MANTA_USER/stor/foo 2>&1 | bunyan
+.fi
+.RE
+.SH BUGS
+.PP
+DSA keys do not work when loaded via the SSH agent.
+.PP
+Report bugs at Github
+.UR https://github.com/joyent/node-manta/issues
+.UE
