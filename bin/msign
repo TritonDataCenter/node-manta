@@ -31,8 +31,22 @@ var OPTIONS_PARSER = dashdash.createParser({
             names: ['expires', 'e'],
             type: 'positiveInteger',
             help: 'expiration time (epoch). Default is 1hr from now.',
-            'default': (new Date().getTime() / 1000) + 3600,
+            'default': Math.floor((new Date().getTime() / 1000) + 3600),
             helpArg: 'EXPIRATION'
+        },
+        {
+            names: ['file', 'f'],
+            type: 'string',
+            help: 'Use private key. Default is to try the SSH agent first ' +
+                ' then fallback to $HOME/.ssh/id_rsa)',
+            helpArg: 'PRIVATE_KEY'
+        },
+        {
+            names: ['algorithm', 'g'],
+            type: 'string',
+            help: 'Sign using algorithm. Default is RSA-SHA256',
+            'default': 'RSA-SHA1',
+            helpArg: 'PRIVATE_KEY'
         },
         {
             names: ['method', 'm'],
@@ -50,7 +64,7 @@ var OPTIONS_PARSER = dashdash.createParser({
 
 function ifError(err) {
     if (err) {
-        console.error(err.toString());
+        console.error('msign: ' + err.toString());
         process.exit(1);
     }
 }
@@ -91,36 +105,31 @@ function parseOptions() {
 ///--- Mainline
 
 (function main() {
-    var options = parseOptions();
+    var client;
+    var opts = parseOptions();
+    try {
+        client = manta.createBinClient(opts);
+    } catch (e) {
+        ifError(e);
+    }
 
-    manta.loadSSHKey(options.keyId, function (load_err, key) {
-        ifError(load_err);
-
-        var alg = / DSA /.test(key) ? 'DSA-SHA1' : 'RSA-SHA256';
-        var signer = manta.privateKeySigner({
-            key: key,
-            keyId: options.keyId,
-            log: options.log,
-            user: options.account
+    opts.paths.forEach(function (p) {
+        var _opts = {
+            algorithm: opts.algorithm,
+            expires: opts.expires,
+            host: url.parse(opts.url).host,
+            keyId: opts.keyId,
+            log: opts.log,
+            method: opts.method,
+            path: p,
+            sign: client.sign,
+            user: opts.account
+        };
+        client.signUrl(_opts, function (err, resource) {
+            ifError(err);
+            console.log(opts.url + resource);
         });
-
-        options.paths.forEach(function (p) {
-            var opts = {
-                algorithm: alg,
-                expires: options.expires,
-                host: url.parse(options.url).host,
-                keyId: options.keyId,
-                log: options.log,
-                method: options.method || 'GET',
-                path: p,
-                sign: signer,
-                user: options.account
-            };
-            manta.signUrl(opts, function (err, resource) {
-                ifError(err);
-                console.log(options.url + resource);
-            });
-        });
-
     });
+
+    client.close();
 })();

@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 // -*- mode: js -*-
-// vim: set expandtab sw=4:
-// Copyright (c) 2012, Joyent, Inc. All rights reserved.
+// Copyright (c) 2013, Joyent, Inc. All rights reserved.
 
 var fs = require('fs');
 var path = require('path');
@@ -19,10 +18,10 @@ var manta = require('../lib');
 ///--- Globals
 
 var LOG = bunyan.createLogger({
-        name: path.basename(process.argv[1]),
-        level: (process.env.LOG_LEVEL || 'info'),
-        stream: process.stderr,
-        serializers: restify.bunyan.serializers
+    name: path.basename(process.argv[1]),
+    level: (process.env.LOG_LEVEL || 'info'),
+    stream: process.stderr,
+    serializers: restify.bunyan.serializers
 });
 
 var OPTIONS_PARSER = dashdash.createParser({
@@ -40,10 +39,10 @@ var OPTIONS_PARSER = dashdash.createParser({
 ///--- Functions
 
 function ifError(err) {
-        if (err) {
-                console.error(err.toString());
-                process.exit(1);
-        }
+    if (err) {
+        console.error(err.toString());
+        process.exit(1);
+    }
 }
 
 
@@ -72,75 +71,74 @@ function parseOptions() {
 
 
 function printEntry(obj) {
-        console.log('%j', obj);
+    console.log('%j', obj);
 }
 
 
 
 ///--- Mainline
-// Leading _ to avoid scope conflicts in functions
 
 (function main() {
-        var opts = parseOptions();
-        var client = manta.createBinClient(opts);
-        var i = -1;
-        var out = process.stdout;
-        var drawProgressBar = true;
+    var opts = parseOptions();
+    var client = manta.createBinClient(opts);
+    var i = -1;
+    var out = process.stdout;
+    var drawProgressBar = true;
 
-        function get() {
-                var p = opts.paths[++i];
-                if (!p) {
-                        client.close();
-                        return;
-                }
-
-                client.get(p, function (err, stream, res) {
-                        ifError(err);
-
-                        var bar;
-                        if (drawProgressBar) {
-                                var baropts = {
-                                        filename: p
-                                };
-                                var clen =
-                                        parseInt(res.headers['content-length'],
-                                                 10);
-                                if (clen >= 0) {
-                                        baropts.size = clen;
-                                } else {
-                                        baropts.nosize = true;
-                                }
-                                bar = new manta.ProgressBar(baropts);
-                        }
-
-                        stream.on('data', function (data) {
-                                if (bar)
-                                        bar.advance(data.length);
-                                out.write(data);
-                        });
-                        stream.on('end', function () {
-                                if (bar)
-                                        bar.end();
-                                get();
-                        });
-                });
+    function get() {
+        var p = opts.paths[++i];
+        if (!p) {
+            client.close();
+            return;
         }
 
-        if (opts.quiet || !Boolean(process.stderr.isTTY))
-                drawProgressBar = false;
+        client.get(p, function (err, stream, res) {
+            ifError(err);
 
-        if (opts.file) {
-                out = fs.createWriteStream(opts.file);
-                out.on('open', get.bind(this));
-        } else {
-                if (out.isTTY) {
-                        /*
-                         * If we're outputting to a TTY, then we don't
-                         * want to draw the progress bar as it will likely
-                         * clobber the output.
-                         */
-                        drawProgressBar = false;
+            var bar;
+            if (drawProgressBar) {
+                var baropts = {
+                    filename: p
+                };
+                var clen =
+                    parseInt(res.headers['content-length'],
+                             10);
+                if (clen >= 0) {
+                    baropts.size = clen;
+                } else {
+                    baropts.nosize = true;
                 }
+                bar = new manta.ProgressBar(baropts);
+            }
+
+            stream.on('data', function (data) {
+                if (bar)
+                    bar.advance(data.length);
+                out.write(data);
+            });
+            stream.on('end', function () {
+                if (bar)
+                    bar.end();
                 get();
+            });
+        });
+    }
+
+    if (opts.quiet || !Boolean(process.stderr.isTTY))
+        drawProgressBar = false;
+
+    if (opts.file) {
+        out = fs.createWriteStream(opts.file);
+        out.on('open', get.bind(this));
+    } else {
+        if (out.isTTY) {
+            /*
+             * If we're outputting to a TTY, then we don't
+             * want to draw the progress bar as it will likely
+             * clobber the output.
+             */
+            drawProgressBar = false;
         }
+        get();
+    }
 })();
