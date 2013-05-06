@@ -18,10 +18,10 @@ var manta = require('../lib');
 ///--- Globals
 
 var LOG = bunyan.createLogger({
-        name: path.basename(process.argv[1]),
-        level: (process.env.LOG_LEVEL || 'info'),
-        stream: process.stderr,
-        serializers: restify.bunyan.serializers
+    name: path.basename(process.argv[1]),
+    level: (process.env.LOG_LEVEL || 'info'),
+    stream: process.stderr,
+    serializers: restify.bunyan.serializers
 });
 
 var OPTIONS_PARSER = dashdash.createParser({
@@ -33,10 +33,10 @@ var OPTIONS_PARSER = dashdash.createParser({
 ///--- Functions
 
 function ifError(err) {
-        if (err) {
-                console.error(err.toString());
-                process.exit(1);
-        }
+    if (err) {
+        console.error('mln: ' + err.toString());
+        process.exit(1);
+    }
 }
 
 
@@ -71,14 +71,14 @@ function parseOptions() {
 ///--- Mainline
 
 (function main() {
-        var options = parseOptions();
-        var client = manta.createBinClient(options);
+    var options = parseOptions();
+    var client = manta.createBinClient(options);
 
-        ifError(manta.assertPath(options.path, true));
+    ifError(manta.assertPath(options.path, true));
 
-        client.ln(options.source, options.path, function (err) {
-                ifError(err);
+    client.ln(options.source, options.path, function (err) {
+        ifError(err);
 
-                client.close();
-        });
+        client.close();
+    });
 })();

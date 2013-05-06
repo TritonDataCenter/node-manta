@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // -*- mode: js -*-
-// Copyright (c) 2012, Joyent, Inc. All rights reserved.
+// Copyright (c) 2013, Joyent, Inc. All rights reserved.
 
 var path = require('path');
 var url = require('url');
@@ -31,7 +31,7 @@ var OPTIONS_PARSER = dashdash.createParser({
 
 function ifError(err) {
     if (err) {
-        console.error(err.toString());
+        console.error('mrmdir: ' + err.toString());
         process.exit(1);
     }
 }

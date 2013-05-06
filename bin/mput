@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 // -*- mode: js -*-
-// vim: set expandtab sw=8
-// Copyright (c) 2012, Joyent, Inc. All rights reserved.
+// Copyright (c) 2013, Joyent, Inc. All rights reserved.
 
 var fs = require('fs');
 var path = require('path');
@@ -64,10 +63,10 @@ function ifError(err) {
 
     if (err.name === 'OperationNotAllowedOnRootDirectoryError' ||
         err.name === 'OperationNotAllowedOnDirectoryError') {
-        console.error('Cannot mput to a directory; ' +
+        console.error('mput: Cannot write to a directory; ' +
                       'specify full object path');
     } else {
-        console.error(err.toString());
+        console.error('mput: ' + err.toString());
     }
 
     process.exit(1);

@@ -45,7 +45,7 @@ var OPTIONS_PARSER = dashdash.createParser({
 
 function ifError(err) {
     if (err) {
-        console.error(err.toString());
+        console.error('mmkdir: ' + err.toString());
         process.exit(1);
     }
 }

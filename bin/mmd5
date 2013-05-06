@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // -*- mode: js -*-
-// Copyright (c) 2012, Joyent, Inc. All rights reserved.
+// Copyright (c) 2013, Joyent, Inc. All rights reserved.
 
 var fs = require('fs');
 var path = require('path');
@@ -21,10 +21,10 @@ var manta = require('../lib');
 var DIR_CT = 'application/x-json-stream; type=directory';
 var HAD_ERR = false;
 var LOG = bunyan.createLogger({
-        name: path.basename(process.argv[1]),
-        level: (process.env.LOG_LEVEL || 'info'),
-        stream: process.stderr,
-        serializers: restify.bunyan.serializers
+    name: path.basename(process.argv[1]),
+    level: (process.env.LOG_LEVEL || 'info'),
+    stream: process.stderr,
+    serializers: restify.bunyan.serializers
 });
 var OPTIONS_PARSER = dashdash.createParser({
     options: manta.DEFAULT_CLI_OPTIONS
@@ -35,10 +35,10 @@ var OPTIONS_PARSER = dashdash.createParser({
 ///--- Functions
 
 function ifError(err) {
-        if (err) {
-                console.error(err.toString() + err.stack);
-                process.exit(1);
-        }
+    if (err) {
+        console.error('mmd5: ' + err.toString());
+        process.exit(1);
+    }
 }
 
 
@@ -68,15 +68,15 @@ function parseOptions() {
 
 
 function printEntry(p, md5) {
-        var _md5 = new Buffer(md5, 'base64');
-        console.log(_md5.toString('hex') + '  ' + p);
+    var _md5 = new Buffer(md5, 'base64');
+    console.log(_md5.toString('hex') + '  ' + p);
 }
 
 
 function printError(p, err) {
-        HAD_ERR = true;
-        var msg = err ? (err.message || err) : '';
-        console.error('mmd5: ' + p + ': ' + msg);
+    HAD_ERR = true;
+    var msg = err ? (err.message || err) : '';
+    console.error('mmd5: ' + p + ': ' + msg);
 }
 
 
@@ -84,33 +84,33 @@ function printError(p, err) {
 ///--- Mainline
 
 (function main() {
-        var options = parseOptions();
-        var client = manta.createBinClient(options);
-        var queue = new manta.Queue({
-                limit: options.parallel,
-                worker: function getMD5(p, cb) {
-                        client.info(p, function (err, info) {
-                                if (err) {
-                                        printError(p, err);
-                                } else if (info.hasOwnProperty('md5')) {
-                                        printEntry(p, info.md5);
-                                } else if (info.type === DIR_CT) {
-                                        printError(p, p + ' is a directory');
-                                } else {
-                                        printError(p, 'missing MD5');
-                                }
-                                cb();
-                        });
+    var options = parseOptions();
+    var client = manta.createBinClient(options);
+    var queue = new manta.Queue({
+        limit: options.parallel,
+        worker: function getMD5(p, cb) {
+            client.info(p, function (err, info) {
+                if (err) {
+                    printError(p, err);
+                } else if (info.hasOwnProperty('md5')) {
+                    printEntry(p, info.md5);
+                } else if (info.type === DIR_CT) {
+                    printError(p, p + ' is a directory');
+                } else {
+                    printError(p, 'missing MD5');
                 }
-        });
+                cb();
+            });
+        }
+    });
 
-        queue.once('end', function () {
-                process.exit(HAD_ERR ? 1 : 0);
-        });
+    queue.once('end', function () {
+        process.exit(HAD_ERR ? 1 : 0);
+    });
 
-        options.paths.forEach(function (p) {
-                queue.push(p);
-        });
+    options.paths.forEach(function (p) {
+        queue.push(p);
+    });
 
-        queue.close();
+    queue.close();
 })();
