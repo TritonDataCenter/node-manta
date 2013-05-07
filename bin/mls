@@ -9,7 +9,7 @@ var bunyan = require('bunyan');
 var dashdash = require('dashdash');
 var moment = require('moment');
 var restify = require('restify');
-var sprintf = require('extsprintf').sprintf;
+var sprintf = require('extsprintf');
 var uuid = require('node-uuid');
 
 var manta = require('../lib');
