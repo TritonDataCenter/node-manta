@@ -421,7 +421,7 @@ MJob.prototype.do_create = function create(subcmd, opts, args, cb) {
         (opts.map || []).forEach(function (m) {
             var p = {
                 exec: m,
-                type: 'storage-map'
+                type: 'map'
             };
 
             if (opts.dram)
@@ -444,7 +444,7 @@ MJob.prototype.do_create = function create(subcmd, opts, args, cb) {
         });
     } else if (args.length) {
         var exec = '';
-        var type = 'storage-map';
+        var type = 'map';
 
         function addPhase() {
             var p = {
@@ -468,7 +468,7 @@ MJob.prototype.do_create = function create(subcmd, opts, args, cb) {
 
         for (var i = 0; i < args.length; i++) {
             if (args[i] === '^') {
-                type = 'storage-map';
+                type = 'map';
                 if (exec)
                     addPhase();
             } else if (/\^{2,}/.test(args[i])) {

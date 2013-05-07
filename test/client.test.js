@@ -188,7 +188,7 @@ test('get job', function (t) {
         t.ifError(err);
         t.ok(job);
         t.equal(job.id, JOB);
-        t.ok(job.name);
+        t.ok(job.name === '');
         t.ok((job.state === 'queued' || job.state === 'running'));
         t.ok(job.timeCreated);
         t.ok(job.phases);

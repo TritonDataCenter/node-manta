@@ -523,7 +523,7 @@ The full set of allowed options for `job`:
 properties:
 
 ||**Name**||**JS Type**||**Description**||
-||type||String||*(optional)* one of: `storage-map` or `reduce`||
+||type||String||*(optional)* one of: `map` or `reduce`||
 ||assets||Array[String]||*(optional)* an array of manta keys to be placed *in* your compute zones||
 ||exec||String||*(required)* the actual (shell) statement to execute||
 ||count||Number||*(optional)* an optional number of reducers for this phase (reduce-only): default is `1`||
