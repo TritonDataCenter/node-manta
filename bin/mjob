@@ -414,8 +414,8 @@ MJob.prototype.do_create = function create(subcmd, opts, args, cb) {
         phases: []
     };
 
-    if (opts.manifest) {
-        var tmp = fs.readFileSync(path.normalize(opts.manifest), 'utf8');
+    if (opts.file) {
+        var tmp = fs.readFileSync(path.normalize(opts.file), 'utf8');
         job = JSON.parse(tmp);
     } else if (opts.map || opts.reduce) {
         (opts.map || []).forEach(function (m) {
