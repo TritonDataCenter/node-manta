@@ -30,6 +30,16 @@ var OPTIONS_PARSER = dashdash.createParser({
             names: ['quiet', 'q'],
             type: 'bool',
             help: 'disable the progress bar'
+        },
+        {
+            names: ['output', 'o'],
+            type: 'string',
+            help: 'write output to <file> instead of stdout'
+        },
+        {
+            names: ['remote-name', 'O'],
+            type: 'bool',
+            help: 'write output to a file using remote object name as filename'
         }
     ])
 });
@@ -65,6 +75,15 @@ function parseOptions() {
         manta.cli_usage(OPTIONS_PARSER, 'path required', 'path...');
 
     opts.paths = opts._args;
+
+    if (opts.remote_name) {
+        if (opts.paths.length !== 1) {
+            manta.cli_usage(OPTIONS_PARSER, '--remote-name only works with ' +
+              'a single object path', 'path...');
+        } else {
+            opts.output = path.basename(opts.paths[0]);
+        }
+    }
 
     return (opts);
 }
@@ -127,8 +146,8 @@ function printEntry(obj) {
     if (opts.quiet || !Boolean(process.stderr.isTTY))
         drawProgressBar = false;
 
-    if (opts.file) {
-        out = fs.createWriteStream(opts.file);
+    if (opts.output) {
+        out = fs.createWriteStream(opts.output);
         out.on('open', get.bind(this));
     } else {
         if (out.isTTY) {

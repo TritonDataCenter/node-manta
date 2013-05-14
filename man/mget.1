@@ -29,6 +29,15 @@ $ mget /$MANTA_USER/stor/README.md > /tmp/README.md
 .fi
 .RE
 .PP
+Retrieves the given object, with a progress indicator, and stores it in the
+file README.md in the current directory.
+.PP
+.RS
+.nf
+$ mget -O /$MANTA_USER/stor/README.md
+.fi
+.RE
+.PP
 Finds and fetches a set of Javascript files, and pipes them to less.
 .PP
 .RS
@@ -52,6 +61,13 @@ bundle installed by default.
 \fB\fC-k, --key fingerprint\fR
 Authenticate using the SSH key described by FINGERPRINT.  The key must
 either be in \fB\fC~/.ssh\fR or loaded in the SSH agent via \fB\fCssh-add\fR.
+.TP
+\fB\fC-o, --output file\fR
+Write output to <file> instead of stdout.
+.TP
+\fB\fC-O, --remote-name\fR
+Write output to a file using the requested object's name (i.e. the last element
+of the full object path) instead of stdout.
 .TP
 \fB\fC-q, --quiet\fR
 Do not display a progress meter.
