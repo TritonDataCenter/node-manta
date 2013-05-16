@@ -2,6 +2,7 @@
 // -*- mode: js -*-
 // Copyright (c) 2013, Joyent, Inc. All rights reserved.
 
+var EventEmitter = require('events').EventEmitter;
 var fs = require('fs');
 var path = require('path');
 var url = require('url');
@@ -166,7 +167,7 @@ function jobDataCommon(opts, callback) {
     assert.string(opts.type, 'options.type');
     assert.string(opts.user, 'options.user');
     assert.string(opts.watch, 'options.watch');
-    assert.func(callback, 'callback');
+    assert.optionalFunc(callback, 'callback');
 
     var queue = new manta.Queue({
         limit: opts.parallel,
@@ -210,24 +211,35 @@ function jobDataCommon(opts, callback) {
                 out.on(opts.watch, function (obj) {
                     if (opts.func === 'jobErrors') {
                         body += JSON.stringify(obj) + '\n';
+                    } else if (opts.emit) {
+                        opts.emit.emit(opts.watch, obj);
                     } else {
                         body += obj + '\n';
                     }
                 });
 
                 out.once('end', function () {
-                    process.stdout.write(body);
-                    cb();
+                    if (!opts.emit) {
+                        process.stdout.write(body);
+                        cb();
+                    } else {
+                        opts.emit.emit('end');
+                    }
                 });
             });
         }
     });
 
     queue.once('end', function () {
-        opts.client.close();
-        callback();
+        if (callback) {
+            opts.client.close();
+            callback();
+        }
     });
-    queue.once('error', callback);
+    queue.once('error', callback || function (err) {
+        console.error('mjob: ' + err.toString());
+        process.exit(1);
+    });
     opts.args.forEach(queue.push.bind(queue));
     queue.close();
 }
@@ -468,20 +480,21 @@ MJob.prototype.do_create = function create(subcmd, opts, args, cb) {
 
         for (var i = 0; i < args.length; i++) {
             if (args[i] === '^') {
-                type = 'map';
                 if (exec)
                     addPhase();
+                type = 'map';
             } else if (/\^{2,}/.test(args[i])) {
+                if (exec)
+                    addPhase();
                 count = args[i].length - 2 || count;
                 type = 'reduce';
-
-                if (exec)
-                    addPhase();
             } else {
                 if (exec.length)
                     exec += ' ';
+
+                exec += args[i];
             }
-            exec += args[i];
+
         }
         if (exec)
             addPhase();
@@ -529,15 +542,42 @@ MJob.prototype.do_create = function create(subcmd, opts, args, cb) {
                 if (!opts.cat_outputs) {
                     cb();
                 } else {
+                    var ee = new EventEmitter();
+                    var outQueue = new manta.Queue({
+                        limit: 1,
+                        worker: function get(k, _cb) {
+                            _cb = once(_cb);
+                            client.get(k, function (get_err, stream) {
+                                if (get_err) {
+                                    _cb(get_err);
+                                    return;
+                                }
+                                stream.pipe(process.stdout, {end: false});
+                            });
+                        }
+                    });
+
+                    function get_done(get_err) {
+                        client.close();
+                        cb(get_err);
+                    }
+
+                    outQueue.on('end', get_done);
+                    outQueue.on('error', get_done);
+
+                    ee.on('key', outQueue.push.bind(outQueue));
+                    ee.on('key', outQueue.close.bind(outQueue));
+
                     jobDataCommon({
                         args: [id],
                         client: client,
+                        emit: ee,
                         func: 'jobOutput',
                         parallel: opts.parallel,
                         type: 'out',
                         user: opts.account,
                         watch: 'key'
-                    }, cb);
+                    });
                 }
             });
         }
