@@ -42,6 +42,12 @@ var OPTIONS_PARSER = dashdash.createParser({
             type: 'string',
             help: 'start listing from MARKER',
             helpArg: 'MARKER'
+        },
+        {
+            names: ['type', 't'],
+            type: 'string',
+            help: 'only return names of type <type> d=directory, o=object',
+            helpArg: 'd|o'
         }
     ])
 });
@@ -133,6 +139,16 @@ function parseOptions() {
     }
 
     opts.paths = paths;
+
+    if (opts.type) {
+        if (opts.type === 'o') {
+            opts.type = 'object';
+        } else if (opts.type === 'd') {
+            opts.type = 'directory';
+        } else {
+            ifError(new Error('invalid type, must be t or o'));
+        }
+    }
 
     return (opts);
 }
