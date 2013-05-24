@@ -1001,6 +1001,12 @@ MJob.prototype.do_list = function do_list(subcmd, opts, args, cb) {
 
 MJob.prototype.do_list.options = manta.DEFAULT_CLI_OPTIONS.concat([
     {
+        names: ['name', 'n'],
+        type: 'string',
+        help: 'only list jobs with the given name',
+        helpArg: 'NAME'
+    },
+    {
         names: ['long', 'l'],
         type: 'bool',
         help: 'use a long listing format'
@@ -1015,8 +1021,9 @@ MJob.prototype.do_list.options = manta.DEFAULT_CLI_OPTIONS.concat([
 
 MJob.prototype.do_list.help = (
     'Lists all jobs.\n' +
-        'Example:\n' +
+        'Examples:\n' +
         '    mjob list -s running\n' +
+        '    mjob list -n testjob\n' +
         '\n' +
         'Usage:\n' +
         '     mjob list [OPTIONS]\n' +
