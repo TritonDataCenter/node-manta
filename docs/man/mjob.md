@@ -123,6 +123,10 @@ The following options are supported on `create`:
 `-f, --file file`
   Read job description from file.
 
+`--image version`
+  Specifies an image version semver to use in job phases.  Must be specified as
+  a semver string (default is ~1.0).
+
 `--init path`
   Specifies an asset to make available in the compute zone that runs *before*
   the exec command.  This is useful for setup, etc.

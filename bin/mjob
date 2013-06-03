@@ -422,7 +422,7 @@ MJob.prototype.do_create = function create(subcmd, opts, args, cb) {
 
     var count = opts.count;
     var job = {
-        name: opts.name ? opts.name : undefined,
+        name: opts.name,
         phases: []
     };
 
@@ -439,16 +439,20 @@ MJob.prototype.do_create = function create(subcmd, opts, args, cb) {
             case 'disk':
                 next.disk = o.value;
                 break;
-            case 'memory':
-                next.memory = o.value;
+            case 'image':
+                next.image = o.value;
                 break;
             case 'init':
                 next.init = o.value;
+                break;
+            case 'memory':
+                next.memory = o.value;
                 break;
             case 'map':
                 job.phases.push({
                     disk: next.disk,
                     exec: o.value,
+                    image: next.image,
                     init: next.init,
                     memory: next.memory,
                     type: 'map'
@@ -460,6 +464,7 @@ MJob.prototype.do_create = function create(subcmd, opts, args, cb) {
                     count: next.count,
                     disk: next.disk,
                     exec: o.value,
+                    image: next.image,
                     init: next.init,
                     memory: next.memory,
                     type: 'reduce'
@@ -478,6 +483,7 @@ MJob.prototype.do_create = function create(subcmd, opts, args, cb) {
         function addPhase() {
             var p = {
                 exec: exec,
+                image: opts.image,
                 type: type
             };
 
@@ -645,6 +651,12 @@ MJob.prototype.do_create.options = manta.DEFAULT_CLI_OPTIONS.concat([
         type: 'string',
         help: 'manifest file to create job from',
         helpArg: 'FILE'
+    },
+    {
+        names: ['image'],
+        type: 'string',
+        help: 'Allowed compute image string (semver)',
+        helpArg: 'IMAGE_SEMVER'
     },
     {
         names: ['init'],
