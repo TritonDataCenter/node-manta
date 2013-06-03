@@ -120,31 +120,31 @@ function addInputsFromStdin(client, opts, cb) {
             queue.push(tmp.slice(0));
         tmp.length = 0;
 
-        queue.once('end', function onKeysAdded() {
-            function _cb(err) {
-                client.close();
-                cb(err);
-            }
-
-            if (!opts.open) {
-                var subQueue = new manta.Queue({
-                    limit: opts.parallel,
-                    worker: function end(id, __cb) {
-                        client.endJob(id, once(__cb));
-                    }
-                });
-
-                subQueue.once('end', _cb);
-                subQueue.once('error', _cb);
-
-                opts.jobIds.forEach(subQueue.push.bind(subQueue));
-                subQueue.close();
-            } else {
-                _cb();
-            }
-        });
-
         queue.close();
+    });
+
+    queue.once('end', function onKeysAdded() {
+        function _cb(err) {
+            client.close();
+            cb(err);
+        }
+
+        if (!opts.open) {
+            var subQueue = new manta.Queue({
+                limit: opts.parallel,
+                worker: function end(id, __cb) {
+                    client.endJob(id, once(__cb));
+                }
+            });
+
+            subQueue.once('end', _cb);
+            subQueue.once('error', _cb);
+
+            opts.jobIds.forEach(subQueue.push.bind(subQueue));
+            subQueue.close();
+        } else {
+            _cb();
+        }
     });
 
     process.stdin.resume();
