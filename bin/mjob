@@ -420,7 +420,7 @@ MJob.prototype.do_create = function create(subcmd, opts, args, cb) {
     if (!assertOpts(this, subcmd, opts, cb))
         return;
 
-    var count = opts['count'];
+    var count = opts.count;
     var job = {
         name: opts.name ? opts.name : undefined,
         phases: []
@@ -430,30 +430,47 @@ MJob.prototype.do_create = function create(subcmd, opts, args, cb) {
         var tmp = fs.readFileSync(path.normalize(opts.file), 'utf8');
         job = JSON.parse(tmp);
     } else if (opts.map || opts.reduce) {
-        (opts.map || []).forEach(function (m) {
-            var p = {
-                exec: m,
-                type: 'map'
-            };
-
-            if (opts.dram)
-                p.memory = opts.dram;
-
-            job.phases.push(p);
+        var next = {};
+        opts._order.forEach(function (o) {
+            switch (o.key) {
+            case 'count':
+                next.count = o.value;
+                break;
+            case 'disk':
+                next.disk = o.value;
+                break;
+            case 'memory':
+                next.memory = o.value;
+                break;
+            case 'init':
+                next.init = o.value;
+                break;
+            case 'map':
+                job.phases.push({
+                    disk: next.disk,
+                    exec: o.value,
+                    init: next.init,
+                    memory: next.memory,
+                    type: 'map'
+                });
+                next = {};
+                break;
+            case 'reduce':
+                job.phases.push({
+                    count: next.count,
+                    disk: next.disk,
+                    exec: o.value,
+                    init: next.init,
+                    memory: next.memory,
+                    type: 'reduce'
+                });
+                next = {};
+                break;
+            default:
+                break;
+            }
         });
 
-        (opts.reduce || []).forEach(function (r) {
-            var p = {
-                exec: r,
-                type: 'reduce'
-            };
-
-            if (opts.dram)
-                p.memory = opts.dram;
-            p.count = count;
-
-            job.phases.push(p);
-        });
     } else if (args.length) {
         var exec = '';
         var type = 'map';
@@ -463,9 +480,6 @@ MJob.prototype.do_create = function create(subcmd, opts, args, cb) {
                 exec: exec,
                 type: type
             };
-
-            if (opts.dram)
-                p.memory = opts.dram;
 
             if (type === 'reduce') {
                 if (count > 1)
@@ -615,9 +629,15 @@ MJob.prototype.do_create.options = manta.DEFAULT_CLI_OPTIONS.concat([
         'default': 1
     },
     {
-        names: ['dram', 'd'],
+        names: ['disk'],
         type: 'positiveInteger',
-        help: 'amount of memory available for all reduce phases',
+        help: 'amount of disk space available for all phases (gigabytes)',
+        helpArg: 'DISK_GB'
+    },
+    {
+        names: ['memory'],
+        type: 'positiveInteger',
+        help: 'amount of memory available for all phases (megabytes)',
         helpArg: 'MEMORY_MB'
     },
     {
@@ -625,6 +645,13 @@ MJob.prototype.do_create.options = manta.DEFAULT_CLI_OPTIONS.concat([
         type: 'string',
         help: 'manifest file to create job from',
         helpArg: 'FILE'
+    },
+    {
+        names: ['init'],
+        type: 'string',
+        type: 'string',
+        help: 'command to run before execution; must be a manta key',
+        helpArg: 'ASSET_PATH'
     },
     {
         names: ['map', 'm'],

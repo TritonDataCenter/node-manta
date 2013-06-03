@@ -68,10 +68,20 @@ following invocation would be a likely example (note the \| to escape the
 
     $ mjob create grep foo ^^ sort \| uniq -c
 
+This is the fastest and most common form of creating jobs, and runs with default
+compute container sizes.
+
 Alternatively, jobs can be specified by using a combination of `-m` and `-r`
 flags; the same pipeline could be specified with:
 
     $ mjob create -m 'grep foo' -r 'sort | uniq -c'
+
+The above form is useful for specifying options to each phase.  For example:
+
+    $ mjob create --memory 2048 -m 'grep foo' --memory 8192 -r 'sort | uniq -c'
+
+Overrides the amount of RAM available in each phase (the `memory`, `disk`,
+`init` and `count` options impact the *next* phase).
 
 Jobs can also be specified using a JSON manifest file, as below (see Manta
 API documentation for the full JSON schema):
@@ -99,15 +109,23 @@ The following options are supported on `create`:
 `-b, --batch size`
   When adding inputs, add them in batches of size.
 
-`-c, --count num_reducers`
+`--count num_reducers`
   Use num_reducers in the reduce phase.
 
-`-d, --dram memory`
-  Override the default reducer OS size, and use the specified amount of DRAM
-  in reduce phases.
+`--disk disk`
+  Override the OS quota, and use the specified amount of disk in the next phase.
+  This option is specified in gigabytes.
+
+`--memory memory`
+  Override the OS size, and use the specified amount of DRAM in the next phase.
+  This option is specified in megabytes.
 
 `-f, --file file`
   Read job description from file.
+
+`--init path`
+  Specifies an asset to make available in the compute zone that runs *before*
+  the exec command.  This is useful for setup, etc.
 
 `-m, --map command`
   Specifies a map phase.
