@@ -162,7 +162,7 @@ function put(client, path, stream, opts, cb) {
  */
 function worker(client, tarball, callback) {
     var entry = 0;
-    var inflight = 0;
+    var inflight = 1;
     var stream = fs.createReadStream(tarball.file);
     var pipe = stream.pipe(tar.Parse());
     var options = tarball.options;
@@ -170,7 +170,7 @@ function worker(client, tarball, callback) {
     callback = once(callback);
 
     function cb() {
-        if (inflight > 0)
+        if (--inflight > 0)
             return;
 
         callback();
@@ -197,7 +197,6 @@ function worker(client, tarball, callback) {
             ifError(err);
 
             console.log(p);
-            inflight--;
             cb();
         });
     });
