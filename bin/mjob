@@ -433,6 +433,10 @@ MJob.prototype.do_create = function create(subcmd, opts, args, cb) {
         var next = {};
         opts._order.forEach(function (o) {
             switch (o.key) {
+            case 'asset':
+                next.assets = next.assets || [];
+                next.assets.push(o.value);
+                break;
             case 'count':
                 next.count = o.value;
                 break;
@@ -450,6 +454,7 @@ MJob.prototype.do_create = function create(subcmd, opts, args, cb) {
                 break;
             case 'map':
                 job.phases.push({
+                    assets: next.assets,
                     disk: next.disk,
                     exec: o.value,
                     image: next.image,
@@ -461,6 +466,7 @@ MJob.prototype.do_create = function create(subcmd, opts, args, cb) {
                 break;
             case 'reduce':
                 job.phases.push({
+                    assets: next.assets,
                     count: next.count,
                     disk: next.disk,
                     exec: o.value,
@@ -518,15 +524,15 @@ MJob.prototype.do_create = function create(subcmd, opts, args, cb) {
         }
         if (exec)
             addPhase();
+
+        if (opts.asset) {
+            job.phases.forEach(function (p) {
+                p.assets = opts.asset;
+            });
+        }
     } else {
         cb(new Error('At least one map or reduce task must be specified'));
         return;
-    }
-
-    if (opts.asset) {
-        job.phases.forEach(function (p) {
-            p.assets = opts.asset;
-        });
     }
 
     var client = createClient(opts);
@@ -573,6 +579,7 @@ MJob.prototype.do_create = function create(subcmd, opts, args, cb) {
                                     return;
                                 }
                                 stream.pipe(process.stdout, {end: false});
+                                stream.once('end', _cb);
                             });
                         }
                     });
@@ -582,11 +589,11 @@ MJob.prototype.do_create = function create(subcmd, opts, args, cb) {
                         cb(get_err);
                     }
 
-                    outQueue.on('end', get_done);
-                    outQueue.on('error', get_done);
+                    outQueue.once('end', get_done);
+                    outQueue.once('error', get_done);
 
                     ee.on('key', outQueue.push.bind(outQueue));
-                    ee.on('key', outQueue.close.bind(outQueue));
+                    ee.once('end', outQueue.close.bind(outQueue));
 
                     jobDataCommon({
                         args: [id],
