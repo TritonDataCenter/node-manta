@@ -12,7 +12,7 @@ with Joyent's Manta system.
 First setup your environment to match your Joyent Manta account:
 
     $ export MANTA_KEY_ID=`ssh-keygen -l -f ~/.ssh/id_rsa.pub | awk '{print $2}' | tr -d '\n'`
-    $ export MANTA_URL=https://manta.us-east.joyentcloud.com
+    $ export MANTA_URL=https://us-east.manta.joyent.com 
     $ export MANTA_USER=mark
 
 Then a code snippet:
@@ -42,7 +42,23 @@ Then a code snippet:
 
 # CLI
 
+Basic commands include:
+
+1. mls - list directory contents, default /:user/stor
+2. mput - uploads data to a Manta object
+3. mget - downloads an object from Manta
+4. mjob - creates and runs a computational job on Manta
+5. mfind - walk a Manta hierarchy to find names of objects by name, size, or type
+
 A full set of commands for interacting with Manta is in `bin`.
+
+# More documentation
+
+Docs can be found here: 
+[http://us-east.manta.joyent.com/docs/public/index.html](http://us-east.manta.joyent.com/docs/public/index.html)
+
+
+
 
 ## License
 
