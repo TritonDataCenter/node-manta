@@ -27,7 +27,6 @@ var LOG = bunyan.createLogger({
     stream: process.stderr,
     serializers: restify.bunyan.serializers
 });
-var MAX_SOCKETS = parseInt(process.env.MANTA_MAX_SOCKETS || 1000, 10);
 
 var OPTIONS_PARSER = dashdash.createParser({
     options: manta.DEFAULT_CLI_OPTIONS.concat([
@@ -117,9 +116,6 @@ function printEntry(opts, obj) {
 
 
 ///--- Mainline
-
-http.globalAgent.maxSockets = MAX_SOCKETS;
-https.globalAgent.maxSockets = MAX_SOCKETS;
 
 (function main() {
     var options = parseOptions();
