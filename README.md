@@ -5,7 +5,7 @@ with Joyent's Manta system.
 
 # Installation
 
-    $ npm install git://github.com/joyent/node-manta.git#master
+    $ npm install -g git://github.com/joyent/node-manta.git#master
 
 # Usage
 
@@ -44,11 +44,11 @@ Then a code snippet:
 
 Basic commands include:
 
-1. mls - list directory contents, default /:user/stor
+1. mls - lists directory contents, default /:user/stor
 2. mput - uploads data to a Manta object
 3. mget - downloads an object from Manta
 4. mjob - creates and runs a computational job on Manta
-5. mfind - walk a Manta hierarchy to find names of objects by name, size, or type
+5. mfind - walks a Manta hierarchy to find names of objects by name, size, or type
 
 A full set of commands for interacting with Manta is in `bin`.
 
