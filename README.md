@@ -55,7 +55,7 @@ A full set of commands for interacting with Manta is in `bin`.
 # More documentation
 
 Docs can be found here: 
-[http://us-east.manta.joyent.com/docs/public/index.html](http://us-east.manta.joyent.com/docs/public/index.html)
+[http://apidocs.joyent.com/manta/](http://apidocs.joyent.com/manta/)
 
 
 
