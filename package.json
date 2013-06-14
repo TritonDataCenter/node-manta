@@ -19,6 +19,7 @@
         "moment": "2.0.0",
         "node-uuid": "1.4.0",
         "once": "1.1.1",
+        "path-platform": "0.0.1",
         "progbar": "0.0.2",
         "readable-stream": "1.0.2",
         "restify": "2.5.0",
