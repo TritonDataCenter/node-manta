@@ -76,9 +76,8 @@ function ls(client, p, options, cb) {
         opts.query.limit = options.limit;
     if (options.marker)
         opts.query.marker = options.marker;
-    if (options.type) {
+    if (options.type)
         opts.query[options.type] = true;
-    }
 
     client.ls(p, opts, function (err, res) {
         ifError(err);
@@ -86,6 +85,7 @@ function ls(client, p, options, cb) {
         function onEntry(e) {
             last = e.name;
             seen++;
+            e.parent = p;
             if (e.name !== options.marker)
                 printEntry(e, options);
         }
@@ -102,11 +102,8 @@ function ls(client, p, options, cb) {
                 return;
             }
 
-            var o = {
-                marker: last,
-                type: options.type
-            };
-            ls(client, p, o, cb);
+            options.marker = last;
+            ls(client, p, options, cb);
         });
     });
 }
@@ -171,10 +168,11 @@ function printEntry(obj, opts) {
             fmt += 'HH:mm';
         }
 
+        var owner = obj.parent.split(/\//)[1];
         var out = sprintf('%srwxr-xr-x 1 %s %13d %s %s',
                           (obj.type === 'directory' ? 'd' : '-'),
-                          opts.user,
-                          (obj.type === 'directory' ? '0' : obj.size),
+                          owner,
+                          (obj.type === 'directory' ? '0' : (obj.size || '0')),
                           d.format(fmt),
                           obj.name);
 
