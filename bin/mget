@@ -81,7 +81,7 @@ function parseOptions() {
             manta.cli_usage(OPTIONS_PARSER, '--remote-name only works with ' +
               'a single object path', 'path...');
         } else {
-            opts.output = path.basename(opts.paths[0]);
+            opts.output = path.posix.basename(opts.paths[0]);
         }
     }
 

@@ -3,7 +3,7 @@
 // Copyright (c) 2013, Joyent, Inc. All rights reserved.
 
 var fs = require('fs');
-var path = require('path');
+var path = require('path-platform');
 var url = require('url');
 
 var bunyan = require('bunyan');
@@ -60,8 +60,8 @@ function parseOptions() {
     if (opts._args.length < 2)
         manta.cli_usage(OPTIONS_PARSER, 'dest required', 'source dest');
 
-    opts.source = path.normalize(opts._args[0]);
-    opts.path = path.normalize(opts._args[1]);
+    opts.source = path.posix.normalize(opts._args[0]);
+    opts.path = path.posix.normalize(opts._args[1]);
 
     return (opts);
 }
