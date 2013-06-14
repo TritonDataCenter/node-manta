@@ -2,7 +2,7 @@
 // -*- mode: js -*-
 // Copyright (c) 2013, Joyent, Inc. All rights reserved.
 
-var path = require('path');
+var path = require('path-platform');
 var url = require('url');
 
 var bunyan = require('bunyan');
@@ -129,7 +129,7 @@ function parseOptions() {
         paths = ['/' + opts.account + '/stor'];
     } else {
         paths = opts._args.slice(0).map(function (p) {
-            var _p = path.normalize(p);
+            var _p = path.posix.normalize(p);
             ifError(manta.assertPath(_p, true));
             return (_p);
         });
