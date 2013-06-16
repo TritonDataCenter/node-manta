@@ -1,0 +1,431 @@
+#!/usr/bin/env node
+// Copyright (c) 2013 Joyent, Inc.  All rights reserved.
+// vim: set syntax=javascript ts=4 sts=4 sw=4 et:
+
+var net = require('net');
+var url = require('url');
+
+var assert = require('assert-plus');
+var bunyan = require('bunyan');
+var dashdash = require('dashdash');
+var uuid = require('node-uuid');
+var vasync = require('vasync');
+
+var manta = require('../lib');
+
+
+
+///--- Globals
+
+var QUIET = false;
+
+var LOG = bunyan.createLogger({
+    name: 'mlogin',
+    level: 'info'
+});
+
+var JOB_POLL_PERIOD = 1000 * 5;
+
+var MANTA_ASSET = '/poseidon/public/medusa/agent.sh';
+
+var OPTIONS_PARSER = dashdash.createParser({
+    options: manta.DEFAULT_CLI_OPTIONS.concat([
+        {
+            names: [ 'command', 'c' ],
+            type: 'string',
+            help: 'command to run instead of default shell',
+            helpArg: 'COMMAND'
+        },
+        {
+            names: [ 'asset', 's' ],
+            type: 'string',
+            help: 'asset(s) to place in zones',
+            helpArg: 'ASSET_PATH'
+        },
+        {
+            names: [ 'quiet', 'q' ],
+            type: 'bool',
+            help: 'disable advisory/progress messages'
+        },
+        {
+            names: [ 'disk' ],
+            type: 'positiveInteger',
+            help: 'amount of disk space available for all phases (gigabytes)',
+            helpArg: 'DISK_GB'
+        },
+        {
+            names: ['memory'],
+            type: 'positiveInteger',
+            help: 'amount of memory available for all phases (megabytes)',
+            helpArg: 'MEMORY_MB'
+        }
+    ])
+});
+
+
+///--- Functions
+
+var endl_sent = false;
+function _endl() {
+    if (endl_sent)
+        return;
+    endl_sent = true;
+    process.stderr.write('\n\n');
+}
+
+function _log(str) {
+    if (QUIET)
+        return;
+    process.stderr.write(' * ' + str + '\n');
+}
+
+function parseOptions() {
+    var opts;
+
+    try {
+        opts = OPTIONS_PARSER.parse(process.argv);
+        manta.checkBinEnv(opts);
+    } catch (e) {
+        manta.cli_usage(OPTIONS_PARSER, e.message, 'path...');
+    }
+
+    manta.cli_logger(opts, LOG);
+
+    if (opts.help)
+        manta.cli_usage(OPTIONS_PARSER, false, 'path...');
+
+    if (opts._args.length > 1)
+        manta.cli_usage(OPTIONS_PARSER, 'path required', 'path...');
+
+    if (opts._args.length === 0) {
+        // Keyless job
+        opts.keyless = true;
+    } else {
+        opts.keyless = false;
+        opts.path = opts._args[0];
+    }
+
+    if (opts.command) {
+        opts.arguments = [ '-c', opts.command ];
+    } else {
+        opts.arguments = [ '--norc' ];
+    }
+    opts.command = '/bin/bash';
+
+    opts.running = true;
+    opts.cancel_job = false;
+
+    if (opts.quiet)
+        QUIET = true;
+
+    opts.config_key = '/' + opts.account + '/stor/medusa-config-' + uuid.v4() +
+        '.json';
+
+    return (opts);
+}
+
+// Create the job in which our interactive agent will run
+function create_job(opts, next) {
+    var the_job = {
+        name: 'interactive compute job',
+        phases: [
+            {
+                exec: '/assets' + MANTA_ASSET,
+                type: opts.keyless ? 'reduce' : 'map',
+                assets: [
+                    MANTA_ASSET,
+                    opts.config_key
+                ]
+            }
+        ]
+    };
+    if (opts.memory)
+        the_job.phases[0].memory = opts.memory;
+    if (opts.disk)
+        the_job.phases[0].disk = opts.disk;
+    opts.mclient.createJob(the_job, function (err, jobid) {
+        if (!err) {
+            _log('created interactive job -- ' + jobid);
+            opts.job_id = jobid;
+            opts.cancel_job = true;
+        }
+        next(err);
+    });
+}
+
+// If this is a map job (on the single key provided as arguments to mlogin)
+// then add it to the job.  Otherwise we are a keyless reduce job, so do
+// nothing.
+function add_job_key(opts, next) {
+    if (opts.keyless) {
+        // This is a reduce job, so skip over this phase.
+        next();
+        return;
+    } else {
+        opts.mclient.addJobKey(opts.job_id, opts.path, next);
+    }
+}
+
+// Complete key input for our job
+function
+end_job(opts, next)
+{
+    opts.mclient.endJob(opts.job_id, next);
+}
+
+// Set up a daemon to poll for Job status and detect completion.
+function poll_for_completion(opts, next) {
+    var poller = function () {
+        opts.poll_timeout = null;
+        opts.mclient.job(opts.job_id, {}, function (err, job) {
+            if (err || job.state !== 'done') {
+                opts.poll_timeout = setTimeout(poller, JOB_POLL_PERIOD);
+            } else {
+                // The job is finished, so trigger a cleanup.
+                _log('Job is now "done"; cleaning up...');
+                opts.cleanup();
+            }
+        });
+    };
+    opts.poll_timeout = setTimeout(poller, JOB_POLL_PERIOD);
+    next();
+}
+
+// Pre-sign a URL for the agent to use in the context of the marlin job
+// to connect back to the public manta endpoint.  NOTE: This function
+// requires job_id to be value, and so must not be run until the job
+// itself has been created, as the job_id is included in the URL.
+function get_signed_url(opts, next) {
+    opts.mclient.signUrl({
+        algorithm: 'RSA-SHA1',
+        expires: Math.floor((new Date().getTime() / 1000) + 300), // 5 Minutes
+        host: url.parse(opts.url).host,
+        keyId: opts.keyId,
+        log: opts.log,
+        method: 'GET',
+        path: '/' + opts.account + '/medusa/attach/' + opts.job_id + '/slave',
+        sign: opts.mclient.sign,
+        user: opts.account
+    }, function (err, res) {
+        if (!err)
+            opts.signed_url = opts.url + res;
+        next(err);
+    });
+}
+
+// Put a short-lived temporary object into Manta that we can pass to the
+// agent via the asset mechanism.
+function put_config_object(opts, next) {
+    assert.string(opts.signed_url, 'opts.signed_url');
+    var putopts = {
+        copies: 1
+    };
+    var obj = {
+        signed_url: opts.signed_url,
+        insecure_tls: opts.insecure ? true : false
+    };
+    var inputstream = new manta.StringStream(JSON.stringify(obj));
+    opts.mclient.put(opts.config_key, inputstream, putopts, next);
+}
+
+function connect_medusa(opts, next) {
+    opts.mclient.medusaAttach(opts.job_id, function (err, shed) {
+        if (err) {
+            next(err);
+            return;
+        }
+        opts.shed = shed;
+
+        var spinner = ['-', '\\', '|', '/'];
+        var waitcount = 0;
+        shed.on('text', function (msg) {
+            var m = msg.match(/^medusa:(.*)$/);
+            if (m) {
+                var o = JSON.parse(m[1]);
+                if (o.type === 'linkup') {
+                    // We don't want the pre-session listeners anymore:
+                    shed.removeAllListeners('text');
+                    shed.removeAllListeners('end');
+
+                    if (waitcount === 0)
+                        _log('session established');
+                    else
+                        process.stderr.write(' established\n');
+
+                    start_session(opts);
+                } else if (o.type === 'wait') {
+                    if (QUIET)
+                        return;
+                    if (waitcount++ === 0)
+                        process.stderr.write(' * waiting for session...  ');
+                    else
+                        process.stderr.write('\b' + spinner[
+                            waitcount % spinner.length]);
+                }
+            }
+        });
+
+        shed.on('end', function (code, reason) {
+            _endl();
+            _log('connection ended unexpectedly (' + code + '/' + reason + ')');
+            opts.cleanup(1);
+        });
+
+        next();
+    });
+}
+
+
+// Once the Medusa reflector informs us that we are attached to the agent
+// running in the marlin job, we send the agent some terminal details and
+// a command and start relaying between the remote agent and the local
+// terminal.
+function start_session(opts) {
+    var shed = opts.shed;
+
+    // Request that the agent start a new process with the command
+    // we want, and the current local terminal configuration.
+    shed.send('mlogin:' + JSON.stringify({
+        type: 'start',
+        cwd: '/',
+        term: process.env.TERM || 'xterm',
+        columns: process.stdout.columns,
+        lines: process.stdout.rows,
+        command: opts.command,
+        arguments: opts.arguments
+    }));
+
+    shed.on('text', function (x) {
+        if (!opts.running) {
+            shed.destroy();
+            return;
+        }
+
+        // Process the incoming message to look for control messages
+        // from the remote agent:
+        var m = x.match(/^mlogin:(.*)$/);
+        if (!m)
+            return;
+        var o = JSON.parse(m[1]);
+        if (o.type === 'started') {
+            process.stdin.setRawMode(true);
+            process.stdin.on('data', function (ch) {
+                var buf = Buffer.isBuffer(ch) ? ch : new Buffer(ch);
+                shed.send(buf);
+            });
+            process.stdin.resume();
+            process.stdout.on('resize', function () {
+                shed.send('mlogin:' + JSON.stringify({
+                    type: 'resize',
+                    columns: process.stdout.columns,
+                    lines: process.stdout.rows
+                }));
+            });
+        } else if (o.type === 'error') {
+            _endl();
+            _log('remote error: ' + o.error);
+            shed.end('aborting');
+            opts.cleanup(1);
+            return;
+        } else if (o.type === 'exit') {
+            _endl();
+            _log('remote process exited');
+            opts.cancel_job = false;
+            shed.end('done');
+            opts.cleanup(0);
+            return;
+        }
+    });
+    shed.on('binary', function (x) {
+        process.stdout.write(x);
+    });
+    shed.on('connectionReset', function () {
+        _endl();
+        _log('connection reset by peer');
+        opts.cleanup(1);
+    });
+    shed.on('end', function (code, reason) {
+        _endl();
+        _log('session complete');
+        opts.cancel_job = false;
+        opts.cleanup(0);
+    });
+}
+
+function wrap_run(func) {
+    return (function () {
+        if (!arguments[0].running) {
+            arguments[1](true);
+            return;
+        }
+        func.apply(this, arguments);
+    });
+}
+
+///--- Mainline
+
+(function main() {
+    var options = parseOptions();
+
+    options.mclient = manta.createBinClient(options);
+
+    var done = function (err) {
+        // If we receive an error at this stage, then attempt to clean up
+        // the job we may have created, and the config key we may have put,
+        // etc.  Otherwise, the job state poller will notice if the job
+        // completes early for some reason, and we'll otherwise clean up
+        // naturally at the end of the session.
+        if (err) {
+            _log('ERROR: ' + err.message);
+            if (options.verbose)
+                _log('       ' + err.stack);
+            options.cleanup(1);
+        }
+    };
+
+    options.running = true;
+    options.cleanup = function (rc) {
+        if (!options.running)
+            return;
+        options.running = false;
+
+        _log('cleaning up resources...');
+
+        var b = vasync.barrier();
+        if (options.mclient) {
+            if (options.cancel_job) {
+                b.start('cancelJob');
+                options.mclient.cancelJob(options.job_id, function (err) {
+                    b.done('cancelJob');
+                });
+            }
+            b.start('unlink');
+            options.mclient.unlink(options.config_key, function (err) {
+                b.done('unlink');
+            });
+        }
+        b.on('drain', function () {
+            process.exit(rc);
+        });
+    };
+
+    // This pipeline sets up the configuration object and the job that
+    // runs out interactive session agent:
+    process.once('SIGINT', function () {
+        _endl();
+        _log('caught interrupt; aborting...');
+        options.cleanup(1);
+    });
+    vasync.pipeline({
+        arg: options,
+        funcs: [
+            wrap_run(create_job),
+            wrap_run(poll_for_completion),
+            wrap_run(connect_medusa),
+            wrap_run(get_signed_url),
+            wrap_run(put_config_object),
+            wrap_run(add_job_key),
+            wrap_run(end_job)
+        ]
+    }, done);
+})();
