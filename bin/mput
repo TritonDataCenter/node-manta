@@ -136,7 +136,7 @@ function printEntry(obj) {
                         console.error('cannot infer name without -f');
                         process.exit(1);
                     } else {
-                        options.path += '/' + options.file;
+                        options.path += '/' + path.basename(options.file);
                     }
                 }
             }
