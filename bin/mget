@@ -3,7 +3,7 @@
 // Copyright (c) 2013, Joyent, Inc. All rights reserved.
 
 var fs = require('fs');
-var path = require('path');
+var path = require('path-platform');
 var url = require('url');
 
 var bunyan = require('bunyan');
