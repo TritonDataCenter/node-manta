@@ -1,9 +1,14 @@
 {
-    "name": "manta",
-    "description": "Manta Client API",
-    "version": "1.0.0",
-    "author": "Joyent (joyent.com)",
     "private": true,
+    "name": "manta",
+    "author": "Joyent (joyent.com)",
+    "description": "Manta Client API",
+    "homepage": "http://apidocs.joyent.com/manta",
+    "repository": {
+        "type": "git",
+        "url": "git://github.com/joyent/node-manta.git"
+    },
+    "version": "1.0.0",
     "main": "./lib/index.js",
     "dependencies": {
         "assert-plus": "0.1.3",
