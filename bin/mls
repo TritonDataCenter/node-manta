@@ -207,6 +207,7 @@ function printEntry(obj, opts) {
             } else if (info.extension === 'directory') {
                 ls(client, p, options, cb);
             } else {
+                info.parent = p;
                 printEntry(info, options);
                 cb();
             }
