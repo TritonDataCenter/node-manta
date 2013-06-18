@@ -41,7 +41,7 @@ include ./tools/mk/Makefile.defs
 #
 
 MAN_PAGES       := $(shell ls docs/man)
-MAN_OUTDIR      := man
+MAN_OUTDIR      := man/man1
 MAN_OUTPAGES=$(MAN_PAGES:%.md=$(MAN_OUTDIR)/%.1)
 MAN_ROOT        := docs/man
 

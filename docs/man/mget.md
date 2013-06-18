@@ -30,6 +30,11 @@ Retrieves the given object, with a progress indicator.
 
     $ mget /$MANTA_USER/stor/README.md > /tmp/README.md
 
+Retrieves the given object, with a progress indicator, and stores it in the
+file README.md in the current directory.
+
+    $ mget -O /$MANTA_USER/stor/README.md
+
 Finds and fetches a set of Javascript files, and pipes them to less.
 
     $ mfind -t o -n '.js$' /$MANTA_USER/stor/foo | xargs mget -q | less
@@ -51,6 +56,13 @@ OPTIONS
 `-k, --key fingerprint`
   Authenticate using the SSH key described by FINGERPRINT.  The key must
   either be in `~/.ssh` or loaded in the SSH agent via `ssh-add`.
+
+`-o, --output file`
+  Write output to &lt;file&gt; instead of stdout.
+
+`-O, --remote-name`
+  Write output to a file using the requested object's name (i.e. the last
+  element of the full object path) instead of stdout.
 
 `-q, --quiet`
   Do not display a progress meter.

@@ -39,7 +39,7 @@
     "directories": {
         "bin": "./bin",
         "lib": "./lib",
-        "man": "./man"
+        "man": "./man/man1"
     },
     "engines": {
         "node": ">=0.8.14"

@@ -64,6 +64,9 @@ $ mjob create grep foo ^^ sort \\| uniq -c
 .fi
 .RE
 .PP
+This is the fastest and most common form of creating jobs, and runs with default
+compute container sizes.
+.PP
 Alternatively, jobs can be specified by using a combination of \fB\fC-m\fR and \fB\fC-r\fR
 flags; the same pipeline could be specified with:
 .PP
@@ -72,6 +75,17 @@ flags; the same pipeline could be specified with:
 $ mjob create -m 'grep foo' -r 'sort | uniq -c'
 .fi
 .RE
+.PP
+The above form is useful for specifying options to each phase.  For example:
+.PP
+.RS
+.nf
+$ mjob create --memory 2048 -m 'grep foo' --memory 8192 -r 'sort | uniq -c'
+.fi
+.RE
+.PP
+Overrides the amount of RAM available in each phase (the \fB\fCmemory\fR, \fB\fCdisk\fR,
+\fB\fCinit\fR and \fB\fCcount\fR options impact the \fInext\fP phase).
 .PP
 Jobs can also be specified using a JSON manifest file, as below (see Manta
 API documentation for the full JSON schema):
@@ -107,15 +121,27 @@ The following options are supported on \fB\fCcreate\fR:
 \fB\fC-b, --batch size\fR
 When adding inputs, add them in batches of size.
 .TP
-\fB\fC-c, --count num_reducers\fR
+\fB\fC--count num_reducers\fR
 Use num_reducers in the reduce phase.
 .TP
-\fB\fC-d, --dram memory\fR
-Override the default reducer OS size, and use the specified amount of DRAM
-in reduce phases.
+\fB\fC--disk disk\fR
+Override the OS quota, and use the specified amount of disk in the next phase.
+This option is specified in gigabytes.
+.TP
+\fB\fC--memory memory\fR
+Override the OS size, and use the specified amount of DRAM in the next phase.
+This option is specified in megabytes.
 .TP
 \fB\fC-f, --file file\fR
 Read job description from file.
+.TP
+\fB\fC--image version\fR
+Specifies an image version semver to use in job phases.  Must be specified as
+a semver string (default is ~1.0).
+.TP
+\fB\fC--init path\fR
+Specifies an asset to make available in the compute zone that runs \fIbefore\fP
+the exec command.  This is useful for setup, etc.
 .TP
 \fB\fC-m, --map command\fR
 Specifies a map phase.

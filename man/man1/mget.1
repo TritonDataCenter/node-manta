@@ -1,25 +1,48 @@
-.TH mls 1 "May 2013" Manta "Manta Commands"
+.TH mget 1 "May 2013" Manta "Manta Commands"
 .SH NAME
 .PP
-mls \- list directory contents.
+mget \- download an object from Manta.
 .SH SYNOPSIS
 .PP
-\fB\fCmls\fR [OPTION...] [FILE]...
+\fB\fCmget\fR [OPTION...] PATH...
 .SH DESCRIPTION
 .PP
-List information about the FILEs (\fB\fC/:login/stor\fR by default, where \fB\fC:login\fR is
-either the login specified by \fB\fC-a\fR or \fB\fC$MANTA_USER\fR).  Entries are sorted by
-creation time.  Note that \fB\fCdirectories\fR will appear to have a trailing \fB\fC/\fR after
-them, while objects will be just the name (unless \fB\fC-l\fR is specified).
+Retrieves the content of 
+.BR object (s) 
+specified by 
+.BR PATH (s), 
+and dumps them to
+stdout.  Note that mget does not perform incremental/resumable downloads, so any
+network\-level errors that occur during transfer will result in an incomplete
+and/or corrupt output.  You should check for an exit status of 0 to know that
+the request was successful.
+.PP
+Note that mget by default will emit a progress meter on stderr.  You can
+disable this with \fB\fC-q\fR.
 .SH EXAMPLES
+.PP
+Retrieves the given object, with a progress indicator.
 .PP
 .RS
 .nf
-$ mls /$MANTA_USER/stor
-foo
-home/
-README.md
-tmp/
+$ mget /$MANTA_USER/stor/README.md > /tmp/README.md
+.fi
+.RE
+.PP
+Retrieves the given object, with a progress indicator, and stores it in the
+file README.md in the current directory.
+.PP
+.RS
+.nf
+$ mget -O /$MANTA_USER/stor/README.md
+.fi
+.RE
+.PP
+Finds and fetches a set of Javascript files, and pipes them to less.
+.PP
+.RS
+.nf
+$ mfind -t o -n '.js$' /$MANTA_USER/stor/foo | xargs mget -q | less
 .fi
 .RE
 .SH OPTIONS
@@ -35,19 +58,19 @@ This option explicitly allows "insecure" SSL connections and transfers.  All
 SSL connections are attempted to be made secure by using the CA certificate
 bundle installed by default.
 .TP
-\fB\fC-j, --json\fR
-Output records in JSON, as opposed to human readable form.
-.TP
 \fB\fC-k, --key fingerprint\fR
 Authenticate using the SSH key described by FINGERPRINT.  The key must
 either be in \fB\fC~/.ssh\fR or loaded in the SSH agent via \fB\fCssh-add\fR.
 .TP
-\fB\fC-l, --long\fR
-Use a long listing format. Note that as Manta does not have group information,
-this is like \fB\fCls -o\fR, not \fB\fCls -l\fR, in a traditional shell.
+\fB\fC-o, --output file\fR
+Write output to <file> instead of stdout.
 .TP
-\fB\fC-m, --marker name\fR
-Start listing at name NAME.  Useful to paginate through large listings.
+\fB\fC-O, --remote-name\fR
+Write output to a file using the requested object's name (i.e. the last
+element of the full object path) instead of stdout.
+.TP
+\fB\fC-q, --quiet\fR
+Do not display a progress meter.
 .PP
 \fB\fC-u, --url url\fR
   Manta base URL (such as 
@@ -77,7 +100,7 @@ try:
 .PP
 .RS
 .nf
-$ mls -vv /$MANTA_USER/stor 2>&1 | bunyan
+$ mget -vv /$MANTA_USER/stor/foo 2>&1 | bunyan
 .fi
 .RE
 .SH BUGS
