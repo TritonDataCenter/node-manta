@@ -173,6 +173,21 @@ end_job(opts, next)
     opts.mclient.endJob(opts.job_id, next);
 }
 
+// Poll every 15 seconds to keep the connection alive.
+function start_server_pinger(opts) {
+    var pinger = function () {
+        if (!opts.running)
+            return;
+
+        if (opts.shed) {
+            opts.shed.send('ping');
+        }
+
+        setTimeout(pinger, 15 * 1000);
+    };
+    pinger();
+}
+
 // Set up a daemon to poll for Job status and detect completion.
 function poll_for_completion(opts, next) {
     var poller = function () {
@@ -294,6 +309,8 @@ function start_session(opts) {
         command: opts.command,
         arguments: opts.arguments
     }));
+
+    start_server_pinger(opts);
 
     shed.on('text', function (x) {
         if (!opts.running) {
