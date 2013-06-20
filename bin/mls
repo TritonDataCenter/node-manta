@@ -44,10 +44,20 @@ var OPTIONS_PARSER = dashdash.createParser({
             helpArg: 'MARKER'
         },
         {
-            names: ['type', 't'],
+            names: ['reverse', 'r'],
+            type: 'bool',
+            help: 'reverse order while sorting'
+        },
+        {
+            names: ['type'],
             type: 'string',
             help: 'only return names of type <type> d=directory, o=object',
             helpArg: 'd|o'
+        },
+        {
+            names: ['time', 't'],
+            type: 'bool',
+            help: 'Sort listing by modification time, newest first'
         }
     ])
 });
@@ -76,6 +86,10 @@ function ls(client, p, options, cb) {
         opts.query.limit = options.limit;
     if (options.marker)
         opts.query.marker = options.marker;
+    if (options.time)
+        opts.query.sort = 'mtime';
+    if (options.reverse)
+        opts.query.sort_order = 'reverse';
     if (options.type)
         opts.query[options.type] = true;
 

@@ -56,6 +56,12 @@ OPTIONS
 `-m, --marker name`
   Start listing at name NAME.  Useful to paginate through large listings.
 
+`-r, --reverse`
+  reverse order while sorting
+
+`-t, --time`
+  sort by modification time, newest first
+
 `-u, --url url`
   Manta base URL (such as https://manta.us-east.joyent.com).
 
