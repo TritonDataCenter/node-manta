@@ -6,8 +6,10 @@ var fs = require('fs');
 var path = require('path');
 var url = require('url');
 
+var backoff = require('backoff');
 var bunyan = require('bunyan');
 var dashdash = require('dashdash');
+var once = require('once');
 var restify = require('restify');
 var uuid = require('node-uuid');
 
@@ -126,10 +128,14 @@ function printEntry(obj) {
         headers: options.headers
     };
 
-    function put(stream, stats) {
+    function put(stream, stats, cb) {
         client.info(options.path, function (info_err, info) {
             if (info_err && info_err.statusCode !== 404) {
-                ifError(info_err);
+                    if (cb) {
+                        cb(info_err);
+                    } else {
+                        ifError(info_err);
+                    }
             } else if (info) {
                 if (info.type === 'application/x-json-stream; type=directory') {
                     if (!options.file) {
@@ -156,8 +162,16 @@ function printEntry(obj) {
             }
 
             client.put(options.path, stream, opts, function (err) {
-                ifError(err);
+                if (err) {
+                    if (cb) {
+                        cb(err);
+                    } else {
+                        ifError(err);
+                    }
+                }
                 client.close();
+                if (cb)
+                    cb();
             });
         });
     }
@@ -172,11 +186,30 @@ function printEntry(obj) {
             }
 
             opts.size = stats.size;
-            var fstream = fs.createReadStream(options.file);
-            fstream.pause();
-            fstream.on('open', function () {
-                put(fstream, stats);
+
+            function write(_, cb) {
+                cb = once(cb);
+                var fstream = fs.createReadStream(options.file);
+                fstream.pause();
+                fstream.on('open', function () {
+                    put(fstream, stats, cb);
+                });
+            }
+
+            var retry = backoff.call(write, null, ifError);
+            retry.setStrategy(new backoff.ExponentialStrategy({
+                initialDelay: 1000,
+                maxDelay: 10000
+            }));
+            retry.failAfter(3);
+            retry.on('backoff', function (num, delay, error) {
+                LOG.debug({
+                    err: error,
+                    num: num,
+                    delay: delay
+                }, 'request failed. %s', num === 3 ? 'fail' : 'retrying');
             });
+            retry.start();
         });
     } else {
         put(process.stdin);
