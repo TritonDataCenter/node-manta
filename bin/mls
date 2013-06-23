@@ -8,6 +8,7 @@ var url = require('url');
 var bunyan = require('bunyan');
 var dashdash = require('dashdash');
 var moment = require('moment');
+var once = require('once');
 var restify = require('restify');
 var sprintf = require('extsprintf').sprintf;
 var uuid = require('node-uuid');
@@ -75,11 +76,14 @@ function ifError(err) {
 
 
 function ls(client, p, options, cb) {
+    cb = once(cb);
+
     var last;
     var opts = {
         log: LOG,
         query: {}
     };
+    var rss;
     var seen = 0;
 
     if (options.limit)
@@ -93,33 +97,45 @@ function ls(client, p, options, cb) {
     if (options.type)
         opts.query[options.type] = true;
 
-    client.ls(p, opts, function (err, res) {
-        ifError(err);
+    (function _ls() {
+        client.ls(p, opts, function (err, res) {
+            ifError(err);
 
-        function onEntry(e) {
-            last = e.name;
-            seen++;
-            e.parent = p;
-            if (e.name !== options.marker)
+            function onEntry(e) {
+                if (options.time && (e.mtime === (last ? last.mtime : last))) {
+                        return;
+                } else if (e.name === (last ? last.name : last)) {
+                        return;
+                }
+
+                seen++;
+                last = e;
+                e.parent = p;
                 printEntry(e, options);
-        }
-
-        res.on('directory', onEntry);
-        res.on('object', onEntry);
-        res.once('error', cb);
-        res.once('end', function (http_res) {
-            var rss = parseInt(http_res.headers['result-set-size'],
-                               10);
-            if (options.limit !== undefined ||
-                seen >= rss || !last) {
-                cb(null);
-                return;
             }
 
-            options.marker = last;
-            ls(client, p, options, cb);
+            res.on('directory', onEntry);
+            res.on('object', onEntry);
+            res.once('error', cb);
+            res.once('end', function (http_res) {
+                rss = rss || parseInt(http_res.headers['result-set-size'],
+                                      10);
+                if (options.limit !== undefined ||
+                    seen >= rss || !last) {
+                    cb(null);
+                    return;
+                }
+
+                if (options.time) {
+                    opts.query.marker = last.mtime;
+                } else {
+                    opts.query.marker = last.name;
+                }
+
+                _ls();
+            });
         });
-    });
+    })();
 }
 
 
