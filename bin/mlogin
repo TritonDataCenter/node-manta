@@ -38,7 +38,7 @@ var OPTIONS_PARSER = dashdash.createParser({
         },
         {
             names: [ 'asset', 's' ],
-            type: 'string',
+            type: 'arrayOfString',
             help: 'asset(s) to place in zones',
             helpArg: 'ASSET_PATH'
         },
@@ -143,6 +143,11 @@ function create_job(opts, next) {
         the_job.phases[0].memory = opts.memory;
     if (opts.disk)
         the_job.phases[0].disk = opts.disk;
+    if (opts.asset) {
+        opts.asset.forEach(function (asset) {
+            the_job.phases[0].assets.push(asset);
+        });
+    }
     opts.mclient.createJob(the_job, function (err, jobid) {
         if (!err) {
             _log('created interactive job -- ' + jobid);
