@@ -48,7 +48,7 @@ OPTIONS
   Remove directories and their contents recursively.
 
 `-u, --url url`
-  Manta base URL (such as https://manta.us-east.joyent.com).
+  Manta base URL (such as `https://manta.us-east.joyent.com`).
 
 `-v, --verbose`
   Print debug output to stderr.  Repeat option to increase verbosity.
