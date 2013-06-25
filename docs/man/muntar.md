@@ -69,12 +69,8 @@ OPTIONS
   Authenticate using the SSH key described by FINGERPRINT.  The key must
   either be in `~/.ssh` or loaded in the SSH agent via `ssh-add`.
 
-
 `-p concurrency, --parallel=oncurrency`
   Limit concurrent operations to CONCURRENCY.  Default is 20.
-
-`-s, --size SIZE`
-  Only list objects that are greater than SIZE bytes.
 
 `-t, --type type`
   Specify `d` for directories, and `o` for objects.  If specified, only names of
