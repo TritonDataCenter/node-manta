@@ -18,7 +18,7 @@ First setup your environment to match your Joyent Manta account:
 Then a code snippet:
 
     var assert = require('assert');
-    var fs = require('fs);
+    var fs = require('fs');
 
     var client = manta.createClient({
         sign: manta.privateKeySigner({
