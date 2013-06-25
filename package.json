@@ -1,5 +1,4 @@
 {
-    "private": true,
     "name": "manta",
     "author": "Joyent (joyent.com)",
     "description": "Manta Client API",
