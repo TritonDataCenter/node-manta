@@ -19,6 +19,7 @@ Then a code snippet:
 
     var assert = require('assert');
     var fs = require('fs');
+    var manta = require('manta');
 
     var client = manta.createClient({
         sign: manta.privateKeySigner({
