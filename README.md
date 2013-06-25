@@ -5,7 +5,7 @@ with Joyent's Manta system.
 
 # Installation
 
-    $ npm install -g git+ssh://git@github.com:joyent/node-manta.git#master
+    $ npm install manta -g
 
 # Usage
 
