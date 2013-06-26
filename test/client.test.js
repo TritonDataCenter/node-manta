@@ -130,6 +130,27 @@ test('put MD5 mismatch', function (t) {
 });
 
 
+test('GH-72 content-length: undefined', function (t) {
+    var opts = {
+        headers: {
+            'content-length': undefined
+        }
+    };
+    var text = 'The lazy brown fox \nsomething \nsomething foo';
+    var stream = new MemoryStream();
+
+    this.client.put(CHILD1, stream, opts, function (err) {
+        t.ifError(err);
+        t.end();
+    });
+
+    process.nextTick(function () {
+        stream.write(text);
+        stream.end();
+    });
+});
+
+
 test('ls', function (t) {
     t.expect(5);
     this.client.ls(SUBDIR1, function (err, res) {
