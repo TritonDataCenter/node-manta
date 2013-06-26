@@ -241,7 +241,7 @@ Lists all jobs for a user (note, this can also be done with a normal `mls`
 call).  Optionally takes a `-s`, that can be used to filter down to only
 `running` jobs.
 
-    $ mjob -s running
+    $ mjob list -s running
 
 `-s, --state state`
   Only list jobs in the given state.
