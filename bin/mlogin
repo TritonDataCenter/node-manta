@@ -387,6 +387,18 @@ function wrap_run(func) {
 ///--- Mainline
 
 (function main() {
+    // As this is an interactive process, if we are not attached to
+    // a controlling terminal then we cannot usefully run.  Bail out
+    // up front, rather than fail later.  If node could be coerced to
+    // open("/dev/tty"), we could grab the controlling TTY even if the
+    // standard descriptors have been redirected, a la SSH, etc.
+    [ 'stdin', 'stdout', 'stderr' ].forEach(function (ttyname) {
+        if (!Boolean(process[ttyname].isTTY)) {
+            _log('ERROR: ' + ttyname + ' is not a TTY; aborting.');
+            process.exit(1);
+        }
+    });
+
     var options = parseOptions();
 
     options.mclient = manta.createBinClient(options);
