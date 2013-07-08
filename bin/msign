@@ -23,7 +23,7 @@ var LOG = bunyan.createLogger({
     stream: process.stderr,
     serializers: restify.bunyan.serializers
 });
-var METHODS = ['GET', 'HEAD', 'PUT', 'POST', 'DELETE'];
+var METHODS = ['GET', 'HEAD', 'PUT', 'POST', 'DELETE', 'OPTIONS'];
 
 var OPTIONS_PARSER = dashdash.createParser({
     options: manta.DEFAULT_CLI_OPTIONS.concat([
@@ -50,9 +50,9 @@ var OPTIONS_PARSER = dashdash.createParser({
         },
         {
             names: ['method', 'm'],
-            type: 'string',
+            type: 'arrayOfString',
             help: 'HTTP method to support',
-            'default': 'GET',
+            'default': ['GET'],
             helpArg: 'METHOD'
         }
     ])
@@ -85,12 +85,15 @@ function parseOptions() {
     if (opts.help)
         manta.cli_usage(OPTIONS_PARSER, false, 'path...');
 
-    opts.method = opts.method.toUpperCase();
-    if (opts.method && METHODS.indexOf(opts.method) === -1) {
-        manta.cli_usage(OPTIONS_PARSER,
-                        'method invalid: ' + opts.method,
-                        'path...');
-    }
+    opts.method = opts.method.map(function (m) {
+        m = m.toUpperCase();
+        if (METHODS.indexOf(m) === -1) {
+            manta.cli_usage(OPTIONS_PARSER,
+                            'method invalid: ' + m,
+                            'path...');
+        }
+        return (m);
+    });
 
     if (opts._args.length < 1)
         manta.cli_usage(OPTIONS_PARSER, 'path required', 'path...');
