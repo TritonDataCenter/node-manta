@@ -67,6 +67,8 @@ function ifError(err) {
         err.name === 'OperationNotAllowedOnDirectoryError') {
         console.error('mput: Cannot write to a directory; ' +
                       'specify full object path');
+    } else if (err.name === 'PreconditionFailedError') {
+        console.error('mput: Cannot write because HTTP precondition not met.');
     } else {
         console.error('mput: ' + err.toString());
     }
@@ -203,6 +205,10 @@ function printEntry(obj) {
             }));
             retry.failAfter(3);
             retry.on('backoff', function (num, delay, error) {
+                // If we set a HTTP/1.1 Conditional PUT header and the
+                // precondition was not met, then bail out without retrying:
+                if (error && error.name === 'PreconditionFailedError')
+                    ifError(error);
                 LOG.debug({
                     err: error,
                     num: num,
