@@ -1,4 +1,4 @@
-msign 1 "May 2013" Manta "Manta Commands"
+msign 1 "July 2013" Manta "Manta Commands"
 =======================================
 
 NAME
@@ -19,11 +19,11 @@ the environment (whether environment variables or command line switches) creates
 time-expiring URLs that can be shared with others.  This is useful to generate
 HTML links, for example.
 
-The default expiration for URLs is 5 minutes from `now`, but this can be changed
+The default expiration for URLs is 1 hour from `now`, but this can be changed
 with the `expires` option.  The expires option is designed to be used in
 conjunction with the UNIX date command.  In general, you should use the date
 command with a modifier (the syntax is different between BSD and GNU forms), and
-format the output to epoch time.
+format the output to epoch time or use an ISO 8601 format.
 
 EXAMPLES
 --------
@@ -32,6 +32,10 @@ Assuming the GNU date command, generate a signed URL that expires in one month:
 
     $ msign -e $(date -d "1 month" "+%s") /$MANTA_USER/stor/tmp
 
+or use an ISO 8601 format:
+
+    $ msign -e $(date +%Y-%m-%dT%H:%M:%S.000Z) /$MANTA_USER/stor/tmp
+
 OPTIONS
 -------
 
@@ -39,8 +43,8 @@ OPTIONS
   Authenticate as account (login name).
 
 `-e, --expires expiration`
-  Signed URL should last until EXPIRATION (seconds since epoch).  Default is 300
-  seconds from `now`.
+  Signed URL should last until EXPIRATION (ISO 8601 DateTime string or
+  seconds since epoch).  Default is 1 hour from `now`.
 
 `-h, --help`
   Print a help message and exit.

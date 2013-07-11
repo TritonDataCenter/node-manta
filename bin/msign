@@ -29,9 +29,10 @@ var OPTIONS_PARSER = dashdash.createParser({
     options: manta.DEFAULT_CLI_OPTIONS.concat([
         {
             names: ['expires', 'e'],
-            type: 'positiveInteger',
-            help: 'expiration time (epoch). Default is 1hr from now.',
-            'default': Math.floor((new Date().getTime() / 1000) + 3600),
+            type: 'string',
+            help: 'expiration time (ISO 8601 DateTimeString or time since' +
+               ' the epoch in seconds). Default is 1hr from now.',
+            'default': null,
             helpArg: 'EXPIRATION'
         },
         {
@@ -103,6 +104,31 @@ function parseOptions() {
     return (opts);
 }
 
+function validateDate(dateString) {
+    var num_reg =/^\d+$/;
+    var iso_reg =/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
+    var rtn;
+
+    if (dateString === null) {
+        return Math.floor((Date.now() / 1000) + 3600);
+    }
+
+    if (num_reg.test(dateString)) {
+        rtn = parseInt(dateString);
+    }
+    else if (iso_reg.test(dateString)) {
+        date = new Date(dateString);
+        if (isNaN(date.valueOf())) {
+            ifError(date);
+        }
+        rtn = Math.floor(date.getTime() / 1000);
+    }
+    else {
+        ifError('Inproper Date format');
+    }
+
+    return (rtn);
+}
 
 
 ///--- Mainline
@@ -122,7 +148,7 @@ function parseOptions() {
 
         var _opts = {
             algorithm: opts.algorithm,
-            expires: opts.expires,
+            expires: validateDate(opts.expires),
             host: url.parse(opts.url).host,
             keyId: opts.keyId,
             log: opts.log,
