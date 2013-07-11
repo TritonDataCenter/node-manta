@@ -147,7 +147,8 @@ The following options are supported on `create`:
   Specifies a reduce phase.
 
 `-s, --assets path`
-  Specifies an asset to make available in the compute zone.
+  Specifies an asset to make available in the compute zone that runs in 
+  the next map or reduce phase.
 
 `-w, --watch`
   Wait for job to finish (only use when adding inputs at create time).
