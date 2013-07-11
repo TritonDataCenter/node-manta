@@ -7,8 +7,8 @@ apisections: Directories, Objects, Links
 # Node.js SDK for Joyent Manta
 
 This is the reference documentation for the Manta [Node.js](http://nodejs.org/)
-SDK.Manta is Joyent's Object Storage Service, which enables you to store data in
-the cloud and process that data using a built-in compute facility.
+SDK.  Manta is Joyent's Object Storage Service, which enables you to store data
+in the cloud and process that data using a built-in compute facility.
 
 This doucment explains the Node.js API interface and describes the various
 operations, structures and error codes.
@@ -33,7 +33,7 @@ First, install the SDK as usual via [npm](http://npmjs.org/); the package name
 in npm is `manta`.  You may optionally want to install the package globally with
 the `-g` flag to npm, as this should place the node-manta CLI in your `$PATH`.
 
-    $ npm install git+ssh://git@github.com:joyent/node-manta.git
+    $ npm install manta
 
 Once you've installed the npm package, there a few environment variables that
 are useful to set if you plan to work with the CLI; these environment variables
@@ -238,7 +238,7 @@ complete list of `manta` error names is:
 Create or overwrite a directory at `path`. `mkdir` is really a `PUT` operation,
 so it's slightly different semantics than `mkdir(2)` in POSIX (meaning, you
 can call mkdir on the same path twice).  There is no return value besides a
-potentinal error.
+potential error.
 
         client.mkdir('/jill/stor/foo', function (err) {
             assert.ifError(err);
@@ -427,7 +427,7 @@ Creates a new link (key) to the source object.
 
 ||**Name**||**JS Type**||**Description**||
 ||source||String||*(required)* Full path to the original object. ||
-||path||String||*(required)* Full path to the new link. || 
+||path||String||*(required)* Full path to the new link. ||
 ||options||Object||*(optional)* overrides for this request||
 ||callback||Function||*(required)* callback of the form `fn(err, stream)`||
 
