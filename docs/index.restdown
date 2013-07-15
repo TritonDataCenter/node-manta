@@ -10,7 +10,7 @@ This is the reference documentation for the Manta [Node.js](http://nodejs.org/)
 SDK.  Manta is Joyent's Object Storage Service, which enables you to store data
 in the cloud and process that data using a built-in compute facility.
 
-This doucment explains the Node.js API interface and describes the various
+This document explains the Node.js API interface and describes the various
 operations, structures and error codes.
 
 ## Conventions
