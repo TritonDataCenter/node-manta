@@ -157,7 +157,8 @@ Do not output any informative messages.
 Specifies a reduce phase.
 .TP
 \fB\fC-s, --assets path\fR
-Specifies an asset to make available in the compute zone.
+Specifies an asset to make available in the compute zone that runs in 
+the next map or reduce phase.
 .TP
 \fB\fC-w, --watch\fR
 Wait for job to finish (only use when adding inputs at create time).
@@ -267,7 +268,7 @@ call).  Optionally takes a \fB\fC-s\fR, that can be used to filter down to only
 .PP
 .RS
 .nf
-$ mjob -s running
+$ mjob list -s running
 .fi
 .RE
 .TP
