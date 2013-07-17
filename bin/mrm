@@ -98,26 +98,27 @@ function printEntry(obj) {
             return;
         }
 
-        if (options.recursive) {
-            client.rmr(p, options, rm);
-        } else {
-            client.info(p, function (err, info) {
-                if (err) {
-                    client.get(p, function (err2) {
-                        ifError(err2);
-                        // We *shouldn't* ever hit this...
-                        ifError(err);
-                    });
-                    return;
-                }
+        client.info(p, function (err, info) {
+            if (err) {
+                client.get(p, function (err2) {
+                    ifError(err2);
+                    // We *shouldn't* ever hit this...
+                    ifError(err);
+                });
+                return;
+            }
 
-                if (info.extension === 'directory') {
+            if (info.extension === 'directory') {
+                if (options.recursive) {
+                    client.rmr(p, options, rm);
+                } else {
                     console.error(p + ' is not an object');
                     process.exit(1);
                 }
+                return;
+            }
 
-                client.unlink(p, rm);
-            });
-        }
+            client.unlink(p, rm);
+        });
     })();
 })();
