@@ -95,7 +95,8 @@ function parseOptions() {
     if (opts._args.length < 1)
         manta.cli_usage(OPTIONS_PARSER, 'path required', 'path...');
 
-    opts.path = opts._args[0];
+    ifError(manta.assertPath(opts._args[0], true));
+    opts.path = manta.path(opts._args[0]);
 
     opts.headers = {};
     (opts.header || []).forEach(function (h) {

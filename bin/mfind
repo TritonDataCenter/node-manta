@@ -70,7 +70,8 @@ var OPTIONS_PARSER = dashdash.createParser({
 
 function ifError(err) {
     if (err) {
-        console.error('mfind: ' + err.toString());
+        console.error('mfind: ' +
+                      (process.env.DEBUG === '1' ? err.stack : err.toString()));
         process.exit(1);
     }
 }
@@ -94,7 +95,11 @@ function parseOptions() {
     if (opts.name)
         opts.name = new RegExp(opts.name);
 
-    opts.path = opts._args.pop() || '/' + opts.account + '/stor';
+    if (!opts._args.length) {
+        opts.paths = ['/' + opts.account + '/stor'];
+    } else {
+        opts.paths = opts._args;
+    }
 
     return (opts);
 }
@@ -119,8 +124,6 @@ function printEntry(opts, obj) {
 
 (function main() {
     var options = parseOptions();
-    ifError(manta.assertPath(options.path, true));
-
     var client = manta.createBinClient(options);
 
     var queue = new manta.Queue({
@@ -181,25 +184,37 @@ function printEntry(opts, obj) {
         }
     });
 
-    client.info(options.path, function (err, info) {
-        if (err) {
-            client.get(options.path, function (err2) {
-                ifError(err2);
-                // We *shouldn't* ever hit this...
-                ifError(err);
-            });
-            return;
-        }
+    var startQ = new manta.Queue({
+        limit: 1,
+        worker: function (p, cb) {
+            var _opts = clone(options);
+            _opts.path = p;
+            client.info(p, function (err, info) {
+                if (err) {
+                    client.get(p, function (err2) {
+                        ifError(err2);
+                        ifError(err);
+                    });
+                    return;
+                }
 
-        if (info.extension === 'directory') {
-            queue.push(options);
-        } else {
-            printEntry(options, {});
-            process.exit(1);
+                if (info.extension === 'directory') {
+                    queue.push(_opts);
+                } else {
+                    printEntry(_opts, {});
+                }
+                cb();
+            });
         }
     });
 
-    queue.once('drain', function () {
+    options.paths.forEach(function (p) {
+        ifError(manta.assertPath(p, true));
+        startQ.push(manta.path(p));
+    });
+    startQ.close();
+
+    startQ.once('end', function () {
         queue.once('end', client.close.bind(client));
         queue.close();
     });

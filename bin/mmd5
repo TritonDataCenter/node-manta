@@ -109,7 +109,8 @@ function printError(p, err) {
     });
 
     options.paths.forEach(function (p) {
-        queue.push(p);
+        ifError(manta.assertPath(p, true));
+        queue.push(manta.path(p));
     });
 
     queue.close();
