@@ -63,6 +63,7 @@ var OPTIONS_PARSER = dashdash.createParser({
         }
     ])
 });
+var TOTAL_ENTRIES = 0;
 
 
 
@@ -116,6 +117,8 @@ function printEntry(opts, obj) {
         return;
 
     console.log(opts.path + (obj.name ? ('/' + obj.name) : ''));
+    if (opts.limit && (++TOTAL_ENTRIES >= opts.limit))
+        process.exit(0);
 }
 
 
