@@ -17,7 +17,7 @@
 #
 # Tools
 #
-MD2MAN                  := md2man
+MD2MAN                  := md2man-roff
 NODEUNIT		:= ./node_modules/.bin/nodeunit
 NPM			:= npm
 

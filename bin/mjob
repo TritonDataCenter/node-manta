@@ -129,7 +129,7 @@ function addInputsFromStdin(client, opts, cb) {
             cb(err);
         }
 
-        if (!opts.open) {
+        if (!opts.open || opts.close) {
             var subQueue = new manta.Queue({
                 limit: opts.parallel,
                 worker: function end(id, __cb) {
@@ -613,7 +613,14 @@ MJob.prototype.do_create = function create(subcmd, opts, args, cb) {
             console.log(id);
 
         if (process.stdin.isTTY) {
-            wait();
+            if (!opts.close && !opts.open)
+                console.error('mjob: warning: input stream left open');
+
+            if (opts.close) {
+                client.endJob(id, wait);
+            } else {
+                wait();
+            }
         } else {
             opts.jobIds = [id];
             addInputsFromStdin(client, opts, wait);
@@ -633,6 +640,11 @@ MJob.prototype.do_create.options = manta.DEFAULT_CLI_OPTIONS.concat([
         names: ['cat-outputs', 'o'],
         type: 'bool',
         help: 'wait for job to complete, then fetch outputs'
+    },
+    {
+        names: ['close'],
+        type: 'bool',
+        help: 'do not leave job waiting for inputs'
     },
     {
         names: ['count'],
@@ -1139,6 +1151,59 @@ MJob.prototype.do_watch.help = (
         '\n' +
         'Usage:\n' +
         '     mjob watch [OPTIONS] JobId...\n' +
+        '\n' +
+        '{{options}}'
+);
+
+
+
+//-- Close
+
+MJob.prototype.do_close = function do_close(subcmd, opts, args, cb) {
+    cb = once(cb);
+
+    if (!assertOpts(this, subcmd, opts, cb))
+        return;
+
+    if (args.length < 1) {
+        cb(new Error('At least one JobId must be specified'));
+        return;
+    }
+
+    var client = createClient(opts);
+
+    var queue = new manta.Queue({
+        limit: opts.parallel,
+        worker: client.endJob.bind(client)
+    });
+
+    queue.once('error', cb);
+    queue.once('end', function () {
+        client.close();
+        cb();
+    });
+
+    args.forEach(queue.push.bind(queue));
+    queue.close();
+};
+
+MJob.prototype.do_close.options = manta.DEFAULT_CLI_OPTIONS.concat([
+    {
+        names: ['parallel', 'p'],
+        type: 'positiveInteger',
+        help: 'limit concurrent operations',
+        'default': 100,
+        helpArg: 'CONCURRENCY'
+    }
+]);
+
+MJob.prototype.do_close.help = (
+    'End input for a job.\n' +
+        'Example:\n' +
+        '    mjob close b19e0925-4c85-4fe9-ab47-8cc9dcfec81a\n' +
+        '\n' +
+        'Usage:\n' +
+        '     mjob close [OPTIONS] JobId...\n' +
         '\n' +
         '{{options}}'
 );

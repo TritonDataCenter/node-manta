@@ -109,6 +109,9 @@ The following options are supported on `create`:
 `-b, --batch size`
   When adding inputs, add them in batches of size.
 
+`--close`
+  End the input stream once the job is created.
+
 `--count num_reducers`
   Use num_reducers in the reduce phase.
 
@@ -170,6 +173,11 @@ and by default closes input when done.  For example:
 `-o, --open`
   When adding inputs, do not close input, but leave job open.
 
+### close JOB ###
+
+Closes input for a given job.
+
+    $ mjob close 3ec32136-b125-11e2-8487-1b418dd6974b
 
 ### get JOB... ###
 
