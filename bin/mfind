@@ -213,7 +213,7 @@ function printEntry(opts, obj) {
 
     options.paths.forEach(function (p) {
         ifError(manta.assertPath(p, true));
-        startQ.push(manta.path(p));
+        startQ.push(manta.path(p, true));
     });
     startQ.close();
 

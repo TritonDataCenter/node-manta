@@ -98,10 +98,7 @@ function parseOptions() {
     if (opts._args.length < 1)
         manta.cli_usage(OPTIONS_PARSER, 'path required', 'path...');
 
-    opts.paths = opts._args.map(function (p) {
-        ifError(manta.assertPath(p, true));
-        return (manta.path(p));
-    });
+    opts.paths = opts._args;
 
     return (opts);
 }
@@ -118,8 +115,9 @@ function parseOptions() {
     } catch (e) {
         ifError(e);
     }
-
     opts.paths.forEach(function (p) {
+        ifError(manta.assertPath(p, true));
+
         var _opts = {
             algorithm: opts.algorithm,
             expires: opts.expires,
@@ -127,7 +125,7 @@ function parseOptions() {
             keyId: opts.keyId,
             log: opts.log,
             method: opts.method,
-            path: p,
+            path: manta.path(p),
             sign: client.sign,
             user: opts.account
         };

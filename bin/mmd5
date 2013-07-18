@@ -110,7 +110,7 @@ function printError(p, err) {
 
     options.paths.forEach(function (p) {
         ifError(manta.assertPath(p, true));
-        queue.push(manta.path(p));
+        queue.push(manta.path(p, true));
     });
 
     queue.close();
