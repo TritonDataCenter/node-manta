@@ -179,9 +179,7 @@ function add_job_key(opts, next) {
 }
 
 // Complete key input for our job
-function
-end_job(opts, next)
-{
+function end_job(opts, next) {
     opts.mclient.endJob(opts.job_id, next);
 }
 
@@ -223,16 +221,10 @@ function poll_for_completion(opts, next) {
 // requires job_id to be value, and so must not be run until the job
 // itself has been created, as the job_id is included in the URL.
 function get_signed_url(opts, next) {
-    opts.mclient.signUrl({
-        algorithm: 'RSA-SHA1',
+    opts.mclient.signURL({
         expires: Math.floor((new Date().getTime() / 1000) + 300), // 5 Minutes
-        host: url.parse(opts.url).host,
-        keyId: opts.keyId,
-        log: opts.log,
         method: 'GET',
-        path: '/' + opts.account + '/medusa/attach/' + opts.job_id + '/slave',
-        sign: opts.mclient.sign,
-        user: opts.account
+        path: '/' + opts.account + '/medusa/attach/' + opts.job_id + '/slave'
     }, function (err, res) {
         if (!err)
             opts.signed_url = opts.url + res;
