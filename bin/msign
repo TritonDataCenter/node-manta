@@ -134,7 +134,10 @@ function parseOptions() {
         };
         client.signUrl(_opts, function (err, resource) {
             ifError(err);
-            console.log(opts.url + resource);
+            // Remove trailing slashes from MANTA_URL before combining with
+            // the signed path:
+            var uu = opts.url.replace(/\/*$/, '');
+            console.log(uu + resource);
         });
     });
 

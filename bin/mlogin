@@ -226,8 +226,12 @@ function get_signed_url(opts, next) {
         method: 'GET',
         path: '/' + opts.account + '/medusa/attach/' + opts.job_id + '/slave'
     }, function (err, res) {
-        if (!err)
-            opts.signed_url = opts.url + res;
+        if (!err) {
+            // Remove trailing slashes from MANTA_URL before combining with
+            // the signed path:
+            var uu = opts.url.replace(/\/*$/, '');
+            opts.signed_url = uu + res;
+        }
         next(err);
     });
 }
