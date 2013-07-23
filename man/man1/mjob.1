@@ -1,0 +1,319 @@
+.TH mjob 1 "May 2013" Manta "Manta Commands"
+.SH NAME
+.PP
+mjob \- manage manta jobs
+.SH SYNOPSIS
+.PP
+\fB\fCmjob\fR [OPTION...] command [command\-specific arguments]
+.SH DESCRIPTION
+.PP
+mjob allows you to interact with jobs in Manta. Jobs allow you to specify
+arbitrary compute that operates on manta objects, with Map/Reduce supported
+as a first\-class citizen.  Using mjob, you can create, read, monitor and cancel
+jobs.
+.PP
+The primary reference for a job is its UUID.  Most commands operate on jobs by
+UUID.
+.SH COMMON OPTIONS
+.PP
+The following options are supported in all commands:
+.TP
+\fB\fC-a, --account login\fR
+Authenticate as account (login name).
+.TP
+\fB\fC-h, --help\fR
+Print a help message and exit.
+.TP
+\fB\fC-i, --insecure\fR
+This option explicitly allows "insecure" SSL connections and transfers.  All
+SSL connections are attempted to be made secure by using the CA certificate
+.TP
+bundle installed by default.
+\fB\fC-k, --key fingerprint\fR
+Authenticate using the SSH key described by \fB\fCfingerprint\fR.  The key must
+either be in \fB\fC~/.ssh\fR or loaded in the SSH agent via \fB\fCssh-add\fR.
+.TP
+\fB\fC-p, --parallel concurrency\fR
+Limit concurrent operations to CONCURRENCY.  Default is 50.
+.TP
+\fB\fC-u, --url url\fR
+Manta base URL (such as \fB\fChttps://manta.us-east.joyent.com\fR).
+.TP
+\fB\fC-v, --verbose\fR
+Print debug output to stderr.  Repeat option to increase verbosity.
+.SH COMMANDS
+.PP
+The following commands and options are supported:
+.SS create [OPTIONS...] expression
+.PP
+Creates a job that executes the commands against keys that will be specified
+via \fB\fCaddinputs\fR.  \fB\fCexpression\fR can specify an arbitrary UNIX pipeline, with
+map/reduce \fIphases\fP separated by the \fB\fC^\fR or \fB\fC^^\fR 
+.BR character (s), 
+respectively.
+.PP
+For example, to specify a simple \fB\fCgrep | sort | uniq\fR job in Manta, the
+following invocation would be a likely example (note the | to escape the
+\fB\fC|\fR character):
+.PP
+.RS
+.nf
+$ mjob create grep foo ^^ sort \\| uniq -c
+.fi
+.RE
+.PP
+This is the fastest and most common form of creating jobs, and runs with default
+compute container sizes.
+.PP
+Alternatively, jobs can be specified by using a combination of \fB\fC-m\fR and \fB\fC-r\fR
+flags; the same pipeline could be specified with:
+.PP
+.RS
+.nf
+$ mjob create -m 'grep foo' -r 'sort | uniq -c'
+.fi
+.RE
+.PP
+The above form is useful for specifying options to each phase.  For example:
+.PP
+.RS
+.nf
+$ mjob create --memory 2048 -m 'grep foo' --memory 8192 -r 'sort | uniq -c'
+.fi
+.RE
+.PP
+Overrides the amount of RAM available in each phase (the \fB\fCmemory\fR, \fB\fCdisk\fR,
+\fB\fCinit\fR and \fB\fCcount\fR options impact the \fInext\fP phase).
+.PP
+Jobs can also be specified using a JSON manifest file, as below (see Manta
+API documentation for the full JSON schema):
+.PP
+.RS
+.nf
+$ cat job.json
+{
+  "phases": [{
+    "exec": "grep ..."
+  }, {
+    "exec": "maggr sum | sort",
+    "type": "reduce"
+  }]
+}
+$ mjob create -f job.json
+.fi
+.RE
+.PP
+Lastly, \fB\fCmjob create\fR can "one line" the use of create, addinputs, watch and
+get like the example below; this would print no diagnostics, and would wait
+for the job to complete, then dump the output to stdout (as if you had run
+\fB\fCfind | grep | sort | uniq\fR locally):
+.PP
+.RS
+.nf
+$ mfind /$MANTA_USER/stor | mjob create -q -o grep foo ^^ sort \\| uniq -c
+.fi
+.RE
+.PP
+The following options are supported on \fB\fCcreate\fR:
+.TP
+\fB\fC-b, --batch size\fR
+When adding inputs, add them in batches of size.
+.TP
+\fB\fC--close\fR
+End the input stream once the job is created.
+.TP
+\fB\fC--count num_reducers\fR
+Use num_reducers in the reduce phase.
+.TP
+\fB\fC--disk disk\fR
+Override the OS quota, and use the specified amount of disk in the next phase.
+This option is specified in gigabytes.
+.TP
+\fB\fC--memory memory\fR
+Override the OS size, and use the specified amount of DRAM in the next phase.
+This option is specified in megabytes.
+.TP
+\fB\fC-f, --file file\fR
+Read job description from file.
+.TP
+\fB\fC--image version\fR
+Specifies an image version semver to use in job phases.  Must be specified as
+a semver string (default is ~1.0).
+.TP
+\fB\fC--init path\fR
+Specifies an asset to make available in the compute zone that runs \fIbefore\fP
+the exec command.  This is useful for setup, etc.
+.TP
+\fB\fC-m, --map command\fR
+Specifies a map phase.
+.TP
+\fB\fC-o, --cat-outputs\fR
+Wait for job to complete, then fetch and concatenate outputs.
+.TP
+\fB\fC--open\fR
+When adding inputs, do not close input, but leave job open.
+.TP
+\fB\fC-q, --quiet\fR
+Do not output any informative messages.
+.TP
+\fB\fC-r, --reduce command\fR
+Specifies a reduce phase.
+.TP
+\fB\fC-s, --assets path\fR
+Specifies an asset to make available in the compute zone that runs in 
+the next map or reduce phase.
+.TP
+\fB\fC-w, --watch\fR
+Wait for job to finish (only use when adding inputs at create time).
+.SS addinputs [\-b batch] [\-o] JOB...
+.PP
+The addinputs command feeds input names from stdin to a list of JobIDs,
+and by default closes input when done.  For example:
+.PP
+.RS
+.nf
+$ cat inputs.txt
+/$MANTA_USER/stor/foo
+/$MANTA_USER/stor/bar
+$ cat inputs.txt | mjob addinputs $job
+.fi
+.RE
+.TP
+\fB\fC-b, --batch size\fR
+When adding inputs, add them in batches of size.
+.TP
+\fB\fC-o, --open\fR
+When adding inputs, do not close input, but leave job open.
+.SS close JOB
+.PP
+Closes input for a given job.
+.PP
+.RS
+.nf
+$ mjob close 3ec32136-b125-11e2-8487-1b418dd6974b
+.fi
+.RE
+.SS get JOB...
+.PP
+Returns the \fB\fCstatus\fR JSON document for a job.
+.PP
+.RS
+.nf
+$ mjob get 3ec32136-b125-11e2-8487-1b418dd6974b
+.fi
+.RE
+.SS watch JOB
+.PP
+Waits for a given job to reach the \fB\fCdone\fR state.
+.PP
+.RS
+.nf
+$ mjob watch 3ec32136-b125-11e2-8487-1b418dd6974b
+.fi
+.RE
+.SS cancel JOB...
+.PP
+Cancels a currently running job.
+.PP
+.RS
+.nf
+$ mjob cancel 3ec32136-b125-11e2-8487-1b418dd6974b
+.fi
+.RE
+.SS outputs JOB...
+.PP
+Returns the list of outputs for a job, as \fB\fC\\n\fR separated names.  Note that while
+a job is specifically \fInot archived\fP, the list of names is not guaranteed to
+be complete or consistent between calls (in particular when there are a large
+number of outputs).  Once a job is archived, the entire set of names are read
+back in a contiguous stream.
+.PP
+.RS
+.nf
+$ mjob outputs 3ec32136-b125-11e2-8487-1b418dd6974b
+.fi
+.RE
+.SS inputs JOB...
+.PP
+Returns the list of inputs for a job, as \fB\fC\\n\fR separated names.  Note that while
+a job is specifically \fInot archived\fP, the list of names is not guaranteed to
+be complete or consistent between calls (in particular when there are a large
+number of outputs).  Once a job is archived, the entire set of names are read
+back in a contiguous stream.
+.PP
+.RS
+.nf
+$ mjob inputs 3ec32136-b125-11e2-8487-1b418dd6974b
+.fi
+.RE
+.SS errors JOB...
+.PP
+Returns the list of errors for a job, as \fB\fC\\n\fR separated JSON objects.  Note that
+while a job is specifically \fInot archived\fP, the list of errors is not guaranteed
+to be complete or consistent between calls (in particular when there are a large
+number of outputs).  Once a job is archived, the entire set of errors are read
+back in a contiguous stream.
+.PP
+.RS
+.nf
+$ mjob errors 3ec32136-b125-11e2-8487-1b418dd6974b
+.fi
+.RE
+.SS failures JOB...
+.PP
+Returns the list of failed inputs for a job, as \fB\fC\\n\fR separated names.  Note that
+while a job is specifically \fInot archived\fP, the list of names is not guaranteed
+to be complete or consistent between calls (in particular when there are a large
+number of outputs).  Once a job is archived, the entire set of names are read
+back in a contiguous stream.
+.PP
+.RS
+.nf
+$ mjob failures 3ec32136-b125-11e2-8487-1b418dd6974b
+.fi
+.RE
+.SS list [\-s state]
+.PP
+Lists all jobs for a user (note, this can also be done with a normal \fB\fCmls\fR
+call).  Optionally takes a \fB\fC-s\fR, that can be used to filter down to only
+\fB\fCrunning\fR jobs.
+.PP
+.RS
+.nf
+$ mjob list -s running
+.fi
+.RE
+.TP
+\fB\fC-s, --state state\fR
+Only list jobs in the given state.
+.SH ENVIRONMENT
+.TP
+\fB\fCMANTA_USER\fR
+In place of \fB\fC-a, --account\fR
+.TP
+\fB\fCMANTA_KEY_ID\fR
+In place of \fB\fC-k, --key\fR.
+.TP
+\fB\fCMANTA_URL\fR
+In place of \fB\fC-u, --url\fR.
+.TP
+\fB\fCMANTA_TLS_INSECURE\fR
+In place of \fB\fC-i, --insecure\fR.
+.SH DIAGNOSTICS
+.PP
+When using the \fB\fC-v\fR option, diagnostics will be sent to stderr in bunyan
+output format.  As an example of tracing all information about a request,
+try:
+.PP
+.RS
+.nf
+$ mjob -vv /$MANTA_USER/stor/foo 2>&1 | bunyan
+.fi
+.RE
+.SH BUGS
+.PP
+DSA keys do not work when loaded via the SSH agent.
+.PP
+Report bugs at Github
+.UR https://github.com/joyent/node-manta/issues
+.UE
