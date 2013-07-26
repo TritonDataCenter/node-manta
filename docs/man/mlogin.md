@@ -76,6 +76,11 @@ The options are supported:
 `-h, --help`
   Print a help message and exit.
 
+`--init command`
+  Specifies a command to execute in the compute zone.  This command will be
+  executed prior to starting the interactive job.  This is useful for setup,
+  etc.
+
 `-i, --insecure`
   This option explicitly allows "insecure" SSL connections and transfers.  All
   SSL connections are attempted to be made secure by using the CA certificate

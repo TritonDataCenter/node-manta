@@ -680,9 +680,8 @@ MJob.prototype.do_create.options = manta.DEFAULT_CLI_OPTIONS.concat([
     {
         names: ['init'],
         type: 'string',
-        type: 'string',
-        help: 'command to run before execution; must be a manta key',
-        helpArg: 'ASSET_PATH'
+        help: 'command to run before execution; must be valid bash script',
+        helpArg: 'INIT_COMMAND'
     },
     {
         names: ['map', 'm'],

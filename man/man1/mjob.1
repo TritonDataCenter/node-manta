@@ -140,9 +140,10 @@ Read job description from file.
 Specifies an image version semver to use in job phases.  Must be specified as
 a semver string (default is ~1.0).
 .TP
-\fB\fC--init path\fR
-Specifies an asset to make available in the compute zone that runs \fIbefore\fP
-the exec command.  This is useful for setup, etc.
+\fB\fC--init command\fR
+Specifies a command to execute in the compute zone for the next map or
+reduce phase.  This command will be executed \fIonce\fP per zone, and will
+run \fIbefore\fP the exec command for the phase.  This is useful for setup, etc.
 .TP
 \fB\fC-m, --map command\fR
 Specifies a map phase.

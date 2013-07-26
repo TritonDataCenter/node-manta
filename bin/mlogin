@@ -56,10 +56,16 @@ var OPTIONS_PARSER = dashdash.createParser({
             helpArg: 'DISK_GB'
         },
         {
-            names: ['memory'],
+            names: [ 'memory' ],
             type: 'positiveInteger',
             help: 'amount of memory available for all phases (megabytes)',
             helpArg: 'MEMORY_MB'
+        },
+        {
+            names: [ 'init' ],
+            type: 'string',
+            help: 'command to run before execution; must be valid bash script',
+            helpArg: 'INIT_COMMAND'
         }
     ])
 });
@@ -150,6 +156,8 @@ function create_job(opts, next) {
         the_job.phases[0].memory = opts.memory;
     if (opts.disk)
         the_job.phases[0].disk = opts.disk;
+    if (opts.init)
+        the_job.phases[0].init = opts.init;
     if (opts.asset) {
         opts.asset.forEach(function (asset) {
             the_job.phases[0].assets.push(asset);

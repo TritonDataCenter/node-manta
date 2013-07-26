@@ -73,6 +73,11 @@ you provide a script or program to run via \fB\fC--assets\fR.
 \fB\fC-h, --help\fR
 Print a help message and exit.
 .TP
+\fB\fC--init command\fR
+Specifies a command to execute in the compute zone.  This command will be
+executed prior to starting the interactive job.  This is useful for setup,
+etc.
+.TP
 \fB\fC-i, --insecure\fR
 This option explicitly allows "insecure" SSL connections and transfers.  All
 SSL connections are attempted to be made secure by using the CA certificate

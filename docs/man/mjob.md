@@ -130,9 +130,10 @@ The following options are supported on `create`:
   Specifies an image version semver to use in job phases.  Must be specified as
   a semver string (default is ~1.0).
 
-`--init path`
-  Specifies an asset to make available in the compute zone that runs *before*
-  the exec command.  This is useful for setup, etc.
+`--init command`
+  Specifies a command to execute in the compute zone for the next map or
+  reduce phase.  This command will be executed *once* per zone, and will
+  run *before* the exec command for the phase.  This is useful for setup, etc.
 
 `-m, --map command`
   Specifies a map phase.
