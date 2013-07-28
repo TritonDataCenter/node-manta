@@ -40,7 +40,13 @@ Then a code snippet:
             console.log(chunk);
         });
     });
+    
+If your paths begin with `'~~/'` then manta will automatically fill in the current manta user, which helps
+you write more generic code since you get rid of the hardcoded user name. The following two rows are identical:
 
+    client.get('/mark/stor/foo', function (err, stream) {});
+    client.get('~~/stor/foo', function (err, stream) {});
+    
 # CLI
 
 Basic commands include:
