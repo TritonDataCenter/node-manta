@@ -12,7 +12,7 @@ the environment (whether environment variables or command line switches) creates
 time\-expiring URLs that can be shared with others.  This is useful to generate
 HTML links, for example.
 .PP
-The default expiration for URLs is 5 minutes from \fB\fCnow\fR, but this can be changed
+The default expiration for URLs is 1 hour from \fB\fCnow\fR, but this can be changed
 with the \fB\fCexpires\fR option.  The expires option is designed to be used in
 conjunction with the UNIX date command.  In general, you should use the date
 command with a modifier (the syntax is different between BSD and GNU forms), and
@@ -32,8 +32,8 @@ $ msign -e $(date -d "1 month" "+%s") /$MANTA_USER/stor/tmp
 Authenticate as account (login name).
 .TP
 \fB\fC-e, --expires expiration\fR
-Signed URL should last until EXPIRATION (seconds since epoch).  Default is 300
-seconds from \fB\fCnow\fR.
+Signed URL should last until EXPIRATION (seconds since epoch).  Default is 1
+hour from \fB\fCnow\fR.
 .TP
 \fB\fC-h, --help\fR
 Print a help message and exit.

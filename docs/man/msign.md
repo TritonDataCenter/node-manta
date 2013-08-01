@@ -19,7 +19,7 @@ the environment (whether environment variables or command line switches) creates
 time-expiring URLs that can be shared with others.  This is useful to generate
 HTML links, for example.
 
-The default expiration for URLs is 5 minutes from `now`, but this can be changed
+The default expiration for URLs is 1 hour from `now`, but this can be changed
 with the `expires` option.  The expires option is designed to be used in
 conjunction with the UNIX date command.  In general, you should use the date
 command with a modifier (the syntax is different between BSD and GNU forms), and
@@ -39,8 +39,8 @@ OPTIONS
   Authenticate as account (login name).
 
 `-e, --expires expiration`
-  Signed URL should last until EXPIRATION (seconds since epoch).  Default is 300
-  seconds from `now`.
+  Signed URL should last until EXPIRATION (seconds since epoch).  Default is 1
+  hour from `now`.
 
 `-h, --help`
   Print a help message and exit.
