@@ -136,6 +136,7 @@ function parseOptions() {
             ifError(err);
             // Remove trailing slashes from MANTA_URL before combining with
             // the signed path:
+            /* JSSTYLED */
             var uu = opts.url.replace(/\/*$/, '');
             console.log(uu + resource);
         });

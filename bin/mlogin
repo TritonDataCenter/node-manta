@@ -237,6 +237,7 @@ function get_signed_url(opts, next) {
         if (!err) {
             // Remove trailing slashes from MANTA_URL before combining with
             // the signed path:
+            /* JSSTYLED */
             var uu = opts.url.replace(/\/*$/, '');
             opts.signed_url = uu + res;
         }
