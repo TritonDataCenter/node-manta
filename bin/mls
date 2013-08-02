@@ -160,7 +160,7 @@ function parseOptions() {
     } else {
         opts.paths = opts._args.slice(0).map(function (p) {
             p = path.posix.normalize(p);
-            if (!/^\//.test(p))
+            if (!/^\//.test(p) && !/^~/.test(p))
                 p = '/' + opts.account + '/stor/' + p;
 
             ifError(manta.assertPath(p, true));
