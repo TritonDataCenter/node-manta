@@ -1,6 +1,6 @@
 # Manta client tools
 
-[manta](http://joyent.github.com/node-manta) is a Node.js SDK for interacting
+[manta](http://apidocs.joyent.com/manta/nodesdk.html) is a Node.js SDK for interacting
 with Joyent's Manta system.
 
 # Installation
