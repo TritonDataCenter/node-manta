@@ -73,17 +73,18 @@ var OPTIONS_PARSER = dashdash.createParser({
 
 ///--- Functions
 
-var endl_sent = false;
+var endl_needed = false;
 function _endl() {
-    if (endl_sent)
+    if (!endl_needed)
         return;
-    endl_sent = true;
+    endl_needed = false;
     process.stderr.write('\n\n');
 }
 
 function _log(str) {
     if (QUIET)
         return;
+    _endl();
     process.stderr.write(' * ' + str + '\n');
 }
 
@@ -283,25 +284,57 @@ function connect_medusa(opts, next) {
                         _log('session established');
                     else
                         process.stderr.write(' established\n');
+                    endl_needed = false;
 
                     start_session(opts);
                 } else if (o.type === 'wait') {
                     if (QUIET)
                         return;
-                    if (waitcount++ === 0)
+                    endl_needed = true;
+                    if (waitcount++ === 0) {
                         process.stderr.write(' * waiting for session...  ');
-                    else
+                    } else {
                         process.stderr.write('\b' + spinner[
                             waitcount % spinner.length]);
+                    }
                 }
             }
         });
 
         shed.on('end', function (code, reason) {
-            _endl();
             _log('connection ended unexpectedly (' + code + '/' + reason + ')');
             opts.cleanup(1);
         });
+
+        next();
+    });
+}
+
+// Do some initial sanity checks to ensure the path we are passed on the
+// command line is valid -- i.e. an extant object.
+function check_path(opts, next) {
+    if (opts.keyless) {
+        // We don't have a path, so there is nothing to check.
+        next();
+        return;
+    }
+
+    opts.mclient.info(opts.path, function (err, info) {
+        if (err) {
+            if (err.code === 'NotFoundError') {
+                err = new Error('object not found in Manta');
+            } else if (err.code === 'ForbiddenError') {
+                err = new Error('you do not have permission to operate ' +
+                    'on that object.');
+            }
+            next(err);
+            return;
+        }
+
+        if (info.extension === 'directory') {
+            next(new Error('mlogin only works on objects, not directories'));
+            return;
+        }
 
         next();
     });
@@ -342,6 +375,7 @@ function start_session(opts) {
             return;
         var o = JSON.parse(m[1]);
         if (o.type === 'started') {
+            endl_needed = true;
             process.stdin.setRawMode(true);
             process.stdin.on('data', function (ch) {
                 var buf = Buffer.isBuffer(ch) ? ch : new Buffer(ch);
@@ -356,13 +390,11 @@ function start_session(opts) {
                 }));
             });
         } else if (o.type === 'error') {
-            _endl();
             _log('remote error: ' + o.error);
             shed.end('aborting');
             opts.cleanup(1);
             return;
         } else if (o.type === 'exit') {
-            _endl();
             _log('remote process exited');
             opts.cancel_job = false;
             shed.end('done');
@@ -374,12 +406,10 @@ function start_session(opts) {
         process.stdout.write(x);
     });
     shed.on('connectionReset', function () {
-        _endl();
         _log('connection reset by peer');
         opts.cleanup(1);
     });
     shed.on('end', function (code, reason) {
-        _endl();
         _log('session complete');
         opts.cancel_job = false;
         opts.cleanup(0);
@@ -422,7 +452,7 @@ function wrap_run(func) {
         // completes early for some reason, and we'll otherwise clean up
         // naturally at the end of the session.
         if (err) {
-            _log('ERROR: ' + err.message);
+            _log('ERROR: ' + (err.message || err.code || 'Unknown Error'));
             if (options.verbose)
                 _log('       ' + err.stack);
             options.cleanup(1);
@@ -458,13 +488,13 @@ function wrap_run(func) {
     // This pipeline sets up the configuration object and the job that
     // runs out interactive session agent:
     process.once('SIGINT', function () {
-        _endl();
         _log('caught interrupt; aborting...');
         options.cleanup(1);
     });
     vasync.pipeline({
         arg: options,
         funcs: [
+            wrap_run(check_path),
             wrap_run(create_job),
             wrap_run(poll_for_completion),
             wrap_run(connect_medusa),
