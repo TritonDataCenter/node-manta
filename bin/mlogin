@@ -207,6 +207,23 @@ function start_server_pinger(opts) {
     pinger();
 }
 
+// Try and print out some minimal extra information from the errors
+// the job generated, if any:
+function print_job_error_messages(opts, callback) {
+    opts.mclient.jobErrors(opts.job_id, function (err, res) {
+        if (err) {
+            callback();
+            return;
+        }
+        res.on('err', function (e) {
+            _log('IN-JOB ERROR: ' + e.code + ': ' + e.message);
+        });
+        res.once('end', function () {
+            callback();
+        });
+    });
+}
+
 // Set up a daemon to poll for Job status and detect completion.
 function poll_for_completion(opts, next) {
     var poller = function () {
@@ -215,9 +232,23 @@ function poll_for_completion(opts, next) {
             if (err || job.state !== 'done') {
                 opts.poll_timeout = setTimeout(poller, JOB_POLL_PERIOD);
             } else {
+                var stats = job.stats || {};
+                var retries = stats.retries || 0;
+                var errors = stats.errors || 0;
                 // The job is finished, so trigger a cleanup.
-                _log('Job is now "done"; cleaning up...');
-                opts.cleanup();
+                if (retries > 0) {
+                    _log('Job experienced transient failures in the ' +
+                        'Manta compute engine.  Please try mlogin again.');
+                    opts.cleanup();
+                } else if (errors > 0) {
+                    _log('Error during job run; please check errors.');
+                    print_job_error_messages(opts, function () {
+                        opts.cleanup();
+                    });
+                } else {
+                    _log('Job is now "done"; cleaning up...');
+                    opts.cleanup();
+                }
             }
         });
     };
