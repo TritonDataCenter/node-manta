@@ -184,13 +184,13 @@ function worker(client, tarball, callback) {
         callback();
     }
 
-    function done(path, e, entry) {
+    function done(path, e, _entry) {
         return (function (err) {
             if (!err) {
                 console.log(path);
 
-                if (tarball.retry[entry])
-                    delete tarball.retry[entry];
+                if (tarball.retry[_entry])
+                    delete tarball.retry[_entry];
             } else {
                 if (!err.statusCode || err.statusCode < 500)
                     ifError(err);
@@ -201,16 +201,16 @@ function worker(client, tarball, callback) {
                  * this entry the maximum number of times, in which case we'll
                  * abort.
                  */
-                if (!tarball.retry[entry])
-                    tarball.retry[entry] = 0;
+                if (!tarball.retry[_entry])
+                    tarball.retry[_entry] = 0;
 
-                if (tarball.retry[entry]++ >= tarball.options.retries) {
-                    LOG.debug({ err: err, num: tarball.retry[entry] },
+                if (tarball.retry[_entry]++ >= tarball.options.retries) {
+                    LOG.debug({ err: err, num: tarball.retry[_entry] },
                         'put to ' + path + ' failed; aborting');
                     ifError(err);
                 }
 
-                LOG.debug({ err: err, num: tarball.retry[entry] },
+                LOG.debug({ err: err, num: tarball.retry[_entry] },
                     'put to ' + path + ' failed; retrying');
                 e.resume();
             }
