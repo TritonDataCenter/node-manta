@@ -32,6 +32,11 @@ Assuming the GNU date command, generate a signed URL that expires in one month:
 
     $ msign -e $(date -d "1 month" "+%s") /$MANTA_USER/stor/tmp
 
+On OS X, you would sign this way:
+
+    $ msign -e $(date -v+1 "+%s") /$MANTA_USER/stor/tmp
+
+
 OPTIONS
 -------
 
