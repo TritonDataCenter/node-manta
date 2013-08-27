@@ -273,6 +273,29 @@ back in a contiguous stream.
 $ mjob failures 3ec32136-b125-11e2-8487-1b418dd6974b
 .fi
 .RE
+.SS share JOB
+.PP
+Generates and uploads a self\-contained HTML page that describes the job,
+including its phases, the list of input and output objects, the contents of
+input and output objects, error details, and so on.
+.PP
+\fBBy default, this HTML page is uploaded to /$MANTA_USER/public/jobshares,
+meaning that it will be publicly accessible.  This includes the contents of
+input and output objects.\fP  If you just want to generate the HTML content
+without uploading it, use the "\-s" option and save the output to a file.
+.PP
+.RS
+.nf
+$ mjob share 3ec32136-b125-11e2-8487-1b418dd6974b
+.fi
+.RE
+.TP
+\fB\fC-r, --readme README_FILE\fR
+Insert the rendered contents of \fB\fCREADME_FILE\fR (a Markdown file) directly into
+the generated HTML page.
+.TP
+\fB\fC-s, --stdout\fR
+Emit the HTML output to stdout and do not upload it to Manta.
 .SS list [\-s state]
 .PP
 Lists all jobs for a user (note, this can also be done with a normal \fB\fCmls\fR
