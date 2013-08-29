@@ -1,0 +1,223 @@
+<!DOCTYPE HTML>
+<meta charset="utf-8">
+<head>
+<title>Manta job {{jobid}}</title>
+<script type="text/javascript">
+
+/* BEGIN contents of highlight.pack.js (distributed under the BSD license) */
+{{{asset_content_highlightpackjs}}}
+/* END contents of highlight.pack.js */
+
+hljs.initHighlightingOnLoad();
+
+function jShowHide(key)
+{
+	var link = document.getElementById(key + '_link');
+	var contents = document.getElementById(key + '_contents');
+	if (contents.style.display == 'none') {
+		contents.style.display = 'block';
+		link.innerHTML = '(hide)';
+	} else {
+		contents.style.display = 'none';
+		link.innerHTML = '(show)';
+	}
+}
+</script>
+<style>
+body {
+	font-family: "Helvetica Neue", Helvetica, sans-serif;
+}
+
+a {
+	color: steelblue;
+}
+
+h1 {
+	font-size: x-large;
+}
+
+h2 {
+	font-size: large;
+}
+
+div.jHeader {
+	background: url('data:image/png;base64,{{{asset_content_bg_graphpng}}}');
+	box-shadow: 0px 1px 3px #888;
+	overflow: hidden;
+
+	height: 35px;
+	position: absolute;
+	left: 0;
+	right: 0;
+	top: 0;
+
+	color: white;
+	font-size: x-large;
+	padding-left: 20px;
+	padding-top: 10px;
+}
+
+div.jBody {
+	margin-top: 75px;
+	margin-left: 10%;
+	margin-right: 10%;
+}
+
+.jWarning {
+	color: #b20000;
+}
+
+.jNotes {
+	font-size: small;
+	margin-top: -15px;
+	color: #999999;
+}
+
+.jAnnotation {
+	font-size: small;
+	margin-top: -15px;
+	color: #999999;
+}
+
+.jShowHideLink {
+	font-size: small;
+	color: #999999;
+}
+
+.jSectionBody {
+	margin-left: 50px;
+}
+
+.jObjectContents {
+	font-family: monospace;
+	min-width: 600px;
+	min-height: 1em;
+	margin-top: 10px;
+	margin-bottom: 10px;
+	margin-left: 10px;
+}
+
+.jObjectContents > * > * {
+	overflow-x: auto;
+}
+
+.jErrorCode {
+	width: 150px;
+	font-family: monospace;
+}
+
+.jErrorWhat {
+	font-size: small;
+}
+
+.jErrorMessage {
+	font-size: small;
+}
+
+.jErrorTable tr td {
+	vertical-align: top;
+}
+
+/*
+ * BEGIN contents of github.css, distributed with highlight.js, licensed under
+ * the BSD license.
+ */
+{{{asset_content_githubcss}}}
+/* END contents of github.css */
+</style>
+</title>
+</head>
+<body>
+
+<div class="jHeader">Joyent Manta</div>
+<div class="jBody">
+
+{{#readme}}
+<div class="jReadme">
+{{{readme}}}
+</div>
+{{/readme}}
+{{^readme}}
+{{#name}}
+<h1>{{name}}</h1>
+{{/name}}
+{{^name}}
+<h1>{{jobid}}</h1>
+{{/name}}
+
+<p class="jNotes">
+{{#name}}
+Job {{jobid}}<br />
+{{/name}}
+Started at {{timeCreated}}<br />
+{{#timeDone}}Finished at {{timeDone}}</br>{{/timeDone}}
+</p>
+
+{{#warnings}}
+<p class="jWarning">Warning: {{msg}}</p>
+{{/warnings}}
+
+
+{{/readme}}
+
+<h2>Job body</h2>
+<div class="jSectionBody jObjectContents">
+<pre><code>{{body_summary}}</code></pre>
+</div>
+
+<h2>Input summary</h2>
+<div class="jSectionBody">
+{{#inputs}}
+<a class="jShowHideLink" id="{{key}}_link" href="javascript:jShowHide('{{key}}');">(show)</a>
+<a href="{{manta_url}}{{name}}">{{name}}</a>
+<br />
+{{#contents}}
+<div id="{{key}}_contents" style="display: none" class="jObjectContents"><pre><code>{{contents}}</code></pre></div>
+{{/contents}}
+{{/inputs}}
+</div>
+
+<h2>Output summary</h2>
+<div class="jAnnotation">{{noutputs}} total outputs</div>
+<div class="jSectionBody">
+{{#outputs}}
+<a class="jShowHideLink" id="{{key}}_link" href="javascript:jShowHide('{{key}}');">(show)</a>
+<a href="{{manta_url}}{{name}}">{{name}}</a>
+<br />
+{{#contents}}
+<div style="display: none" id="{{key}}_contents" class="jObjectContents"><pre><code>{{contents}}</code></pre></div>
+{{/contents}}
+{{/outputs}}
+</div>
+
+<h2>Error summary</h2>
+<div class="jAnnotation">{{nerrors}} total errors</div>
+<div class="jSectionBody">
+<table class="jErrorTable">
+{{#errors}}
+<tr>
+    <td class="jErrorCode">{{code}}</td>
+    <td class="jErrorMessage">{{message}}</td>
+</tr>
+<tr>
+    <td>&nbsp;</td><td class="jErrorWhat">{{what}}</td>
+</tr>
+{{#stderr}}
+<tr>
+    <td>&nbsp;</td><td class="jErrorWhat">stderr (from {{stderr}}):</td>
+</tr>
+<tr>
+    <td>&nbsp;</td>
+    <td class="jErrorWhat"><div class="jObjectContents">
+    <pre><code>{{stderr_contents}}</code></pre>
+    </div>
+    </td>
+</tr>
+{{/stderr}}
+{{/errors}}
+</table>
+</div>
+
+</div>
+</body>
+</html>
