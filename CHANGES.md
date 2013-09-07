@@ -2,6 +2,8 @@
 
 ## Not Yet Released
 
+- #114: sshAgentSigner had a null deref (@wpreul)
+
 ## v1.1.0
 
 - #119: "mjob share" subcommand
