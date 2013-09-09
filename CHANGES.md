@@ -1,7 +1,10 @@
 # node-manta Changelog
 
-## Not Yet Released
+## not yet released
 
+## v1.1.1
+
+- #122: `mjob share` broken without README
 - #114: sshAgentSigner had a null deref (@wpreul)
 
 ## v1.1.0
