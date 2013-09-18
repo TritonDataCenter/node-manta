@@ -2,6 +2,8 @@
 
 ## not yet released
 
+- version bump of "carrier" (pgte/carrier#17)
+
 ## v1.1.1
 
 - #122: `mjob share` broken without README
