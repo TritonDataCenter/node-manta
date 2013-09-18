@@ -1,7 +1,13 @@
 <!DOCTYPE HTML>
 <meta charset="utf-8">
 <head>
+{{#name}}
+<title>{{name}}</title>
+{{/name}}
+{{^name}}
 <title>Manta job {{jobid}}</title>
+{{/name}}
+
 <script type="text/javascript">
 
 /* BEGIN contents of highlight.pack.js (distributed under the BSD license) */
@@ -118,6 +124,11 @@ div.jBody {
 	vertical-align: top;
 }
 
+.jHeaderRight {
+	float: right;
+	margin-right: 100px;
+}
+
 /*
  * BEGIN contents of github.css, distributed with highlight.js, licensed under
  * the BSD license.
@@ -125,11 +136,17 @@ div.jBody {
 {{{asset_content_githubcss}}}
 /* END contents of github.css */
 </style>
-</title>
 </head>
 <body>
 
-<div class="jHeader">Joyent Manta</div>
+<div class="jHeader">Joyent Manta
+<div class="jHeaderRight">
+<a href="https://twitter.com/share" class="twitter-share-button"
+data-via="joyent" data-size="large" data-count="none" data-hashtags="manta"
+data-dnt="true">Tweet</a>
+<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+</div>
+</div>
 <div class="jBody">
 
 {{#readme}}
