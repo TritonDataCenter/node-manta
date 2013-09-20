@@ -1257,7 +1257,7 @@ MJob.prototype.do_share = function do_share(subcmd, opts, args, cb) {
 
             var tmp = path.join(dir, 'index.html');
             var stream = new manta.StringStream(share.html);
-            options = { 'size': share.html.length };
+            options = { 'size': Buffer.byteLength(share.html, 'utf8') };
             client.put(tmp, stream, options, function (err3) {
                 if (err3) {
                     cb(err3);
