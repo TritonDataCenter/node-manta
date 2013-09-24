@@ -1,6 +1,8 @@
 # node-manta Changelog
 
-## not yet released
+## Not yet released
+
+## v1.1.2
 
 - version bump of "carrier" (pgte/carrier#17)
 - "mjob share" style improvements and bug fixes
