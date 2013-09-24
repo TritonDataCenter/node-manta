@@ -3,6 +3,7 @@
 ## not yet released
 
 - version bump of "carrier" (pgte/carrier#17)
+- "mjob share" style improvements and bug fixes
 
 ## v1.1.1
 
