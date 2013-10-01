@@ -57,6 +57,13 @@ var OPTIONS_PARSER = dashdash.createParser({
             help: 'limit concurrent operations (default 20)',
             'default': 20,
             helpArg: 'CONCURRENCY'
+        },
+        {
+            names: ['retries', 'r'],
+            type: 'positiveInteger',
+            help: 'number of retries on error (default 3)',
+            'default': 3,
+            helpArg: 'RETRIES'
         }
     ])
 });
@@ -177,15 +184,53 @@ function worker(client, tarball, callback) {
         callback();
     }
 
+    function done(path, e, _entry) {
+        return (function (err) {
+            if (!err) {
+                console.log(path);
+
+                if (tarball.retry[_entry])
+                    delete tarball.retry[_entry];
+            } else {
+                if (!err.statusCode || err.statusCode < 500)
+                    ifError(err);
+
+                /*
+                 * If we've had an internal error (500), indicate that this
+                 * entry needs to be retried -- unless we've already retried
+                 * this entry the maximum number of times, in which case we'll
+                 * abort.
+                 */
+                if (!tarball.retry[_entry])
+                    tarball.retry[_entry] = 0;
+
+                if (tarball.retry[_entry]++ >= tarball.options.retries) {
+                    LOG.debug({ err: err, num: tarball.retry[_entry] },
+                        'put to ' + path + ' failed; aborting');
+                    ifError(err);
+                }
+
+                LOG.debug({ err: err, num: tarball.retry[_entry] },
+                    'put to ' + path + ' failed; retrying');
+                e.resume();
+            }
+
+            cb();
+        });
+    }
+
     pipe.once('end', cb);
     pipe.on('entry', function (e) {
         if (e.props.size === 0)
             return;
 
-        if (entry++ < tarball.next)
-            return;
+        if (entry++ < tarball.next) {
+            if (!tarball.needretry[entry])
+                return;
+        } else {
+            tarball.next = entry;
+        }
 
-        tarball.next = entry;
         e.pause();
 
         var p = options.path + '/' + e.props.path;
@@ -194,12 +239,7 @@ function worker(client, tarball, callback) {
             size: e.props.size
         };
         inflight++;
-        put(client, p, e, o, function (err) {
-            ifError(err);
-
-            console.log(p);
-            cb();
-        });
+        put(client, p, e, o, done(p, e, entry));
     });
 }
 
@@ -218,12 +258,30 @@ function worker(client, tarball, callback) {
     var tarball = {
         file: options.file,
         options: options,
-        next: 0
+        next: 0,
+        needretry: {},
+        retry: {}
     };
 
-    function cb() {
-        if (++done === options.parallel)
+    function lastdone() {
+        /*
+         * Once all workers are done, we will have a final worker keep
+         * reprocessing the stream and pick up any failed entries until we
+         * have nothing left to retry.
+         */
+        if (Object.keys(tarball.retry).length === 0) {
             client.close();
+            return;
+        }
+
+        worker(client, tarball, lastdone);
+    }
+
+    function cb() {
+        if (++done === options.parallel) {
+            tarball.needretry = tarball.retry;
+            lastdone();
+        }
     }
 
     for (var i = 0; i < options.parallel; i++)

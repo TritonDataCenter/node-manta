@@ -109,6 +109,44 @@ test('put', function (t) {
 });
 
 
+test('streams', function (t) {
+    var client = this.client;
+    var stream = new MemoryStream();
+    var text = 'The lazy brown fox streamed some text';
+    var w = client.createWriteStream(CHILD1, {type: 'text/plain'});
+
+    stream.pipe(w);
+    stream.end(text);
+
+    w.once('error', function (err) {
+        t.ifError(err);
+        t.end();
+    });
+    w.once('close', function (res) {
+        t.ok(res);
+        t.equal(res.statusCode, 204);
+        var r = client.createReadStream(CHILD1);
+        var s = new MemoryStream();
+        var str = '';
+
+        s.setEncoding('utf8');
+        s.on('data', function (chunk) {
+            str += chunk;
+        });
+        r.once('end', function () {
+            t.equal(str, text);
+        });
+
+        r.pipe(s);
+
+        r.once('close', function (res2) {
+            t.equal(res2.statusCode, 200);
+            t.end();
+        });
+    });
+});
+
+
 test('put MD5 mismatch', function (t) {
     var text = 'The lazy brown fox \nsomething \nsomething foo';
     var size = Buffer.byteLength(text);

@@ -154,18 +154,19 @@ function parseOptions() {
     if (opts.help)
         manta.cli_usage(OPTIONS_PARSER, false, '[PATH]...');
 
-    var paths;
+    opts.paths = [];
     if (opts._args.length < 1) {
-        paths = ['/' + opts.account + '/stor'];
+        opts.paths = ['/' + opts.account + '/stor'];
     } else {
-        paths = opts._args.slice(0).map(function (p) {
-            var _p = path.posix.normalize(p);
-            ifError(manta.assertPath(_p, true));
-            return (_p);
+        opts.paths = opts._args.slice(0).map(function (p) {
+            p = path.posix.normalize(p);
+            if (!/^\//.test(p) && !/^~/.test(p))
+                p = '/' + opts.account + '/stor/' + p;
+
+            ifError(manta.assertPath(p, true));
+            return (p);
         });
     }
-
-    opts.paths = paths;
 
     if (opts.type) {
         if (opts.type === 'o') {

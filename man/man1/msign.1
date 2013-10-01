@@ -27,11 +27,11 @@ $ msign -e $(date -d "1 month" "+%s") /$MANTA_USER/stor/tmp
 .fi
 .RE
 .PP
-or use an ISO 8601 format:
+On OS X, you would sign this way:
 .PP
 .RS
 .nf
-$ msign -e $(date +%Y-%m-%dT%H:%M:%S.000Z) /$MANTA_USER/stor/tmp
+$ msign -e $(date -v+1 "+%s") /$MANTA_USER/stor/tmp
 .fi
 .RE
 .SH OPTIONS
@@ -40,8 +40,8 @@ $ msign -e $(date +%Y-%m-%dT%H:%M:%S.000Z) /$MANTA_USER/stor/tmp
 Authenticate as account (login name).
 .TP
 \fB\fC-e, --expires expiration\fR
-Signed URL should last until EXPIRATION (ISO 8601 DateTime string or
-seconds since epoch).  Default is 1 hour from \fB\fCnow\fR.
+Signed URL should last until EXPIRATION (seconds since epoch).  Default is 1
+hour from \fB\fCnow\fR.
 .TP
 \fB\fC-h, --help\fR
 Print a help message and exit.

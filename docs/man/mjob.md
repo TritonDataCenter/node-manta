@@ -130,9 +130,10 @@ The following options are supported on `create`:
   Specifies an image version semver to use in job phases.  Must be specified as
   a semver string (default is ~1.0).
 
-`--init path`
-  Specifies an asset to make available in the compute zone that runs *before*
-  the exec command.  This is useful for setup, etc.
+`--init command`
+  Specifies a command to execute in the compute zone for the next map or
+  reduce phase.  This command will be executed *once* per zone, and will
+  run *before* the exec command for the phase.  This is useful for setup, etc.
 
 `-m, --map command`
   Specifies a map phase.
@@ -242,6 +243,27 @@ number of outputs).  Once a job is archived, the entire set of names are read
 back in a contiguous stream.
 
     $ mjob failures 3ec32136-b125-11e2-8487-1b418dd6974b
+
+
+### share JOB ###
+
+Generates and uploads a self-contained HTML page that describes the job,
+including its phases, the list of input and output objects, the contents of
+input and output objects, error details, and so on.
+
+**By default, this HTML page is uploaded to /$MANTA_USER/public/jobshares,
+meaning that it will be publicly accessible.  This includes the contents of
+input and output objects.**  If you just want to generate the HTML content
+without uploading it, use the "-s" option and save the output to a file.
+
+    $ mjob share 3ec32136-b125-11e2-8487-1b418dd6974b
+
+`-r, --readme README_FILE`
+  Insert the rendered contents of `README_FILE` (a Markdown file) directly into
+  the generated HTML page.
+
+`-s, --stdout`
+  Emit the HTML output to stdout and do not upload it to Manta.
 
 
 ### list [-s state] ###

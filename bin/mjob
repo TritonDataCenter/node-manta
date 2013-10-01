@@ -105,12 +105,19 @@ function addInputsFromStdin(client, opts, cb) {
             subQueue.close();
         }
     });
+    var paused = false;
     var tmp = [];
 
     carry.on('line', function onLine(l) {
         tmp.push(l);
         if (tmp.length === opts.batch) {
-            queue.push(tmp.slice(0));
+            if (!queue.push(tmp.slice(0)) && !paused) {
+                queue.once('drain', function () {
+                    process.stdin.resume();
+                });
+                paused = true;
+                process.stdin.pause();
+            }
             tmp.length = 0;
         }
     });
@@ -335,7 +342,7 @@ MJob.prototype.do_addinputs.options = manta.DEFAULT_CLI_OPTIONS.concat([
         names: ['parallel', 'p'],
         type: 'positiveInteger',
         help: 'limit concurrent operations',
-        'default': 100,
+        'default': 25,
         helpArg: 'CONCURRENCY'
     },
     {
@@ -680,9 +687,8 @@ MJob.prototype.do_create.options = manta.DEFAULT_CLI_OPTIONS.concat([
     {
         names: ['init'],
         type: 'string',
-        type: 'string',
-        help: 'command to run before execution; must be a manta key',
-        helpArg: 'ASSET_PATH'
+        help: 'command to run before execution; must be valid bash script',
+        helpArg: 'INIT_COMMAND'
     },
     {
         names: ['map', 'm'],
@@ -706,7 +712,7 @@ MJob.prototype.do_create.options = manta.DEFAULT_CLI_OPTIONS.concat([
         names: ['parallel', 'p'],
         type: 'positiveInteger',
         help: 'limit concurrent operations',
-        'default': 50,
+        'default': 25,
         helpArg: 'CONCURRENCY'
     },
     {
@@ -1209,6 +1215,89 @@ MJob.prototype.do_close.help = (
 );
 
 
+
+//-- ShareJob
+
+MJob.prototype.do_share = function do_share(subcmd, opts, args, cb) {
+    cb = once(cb);
+
+    if (!assertOpts(this, subcmd, opts, cb))
+        return;
+
+    if (args.length != 1) {
+        cb(new Error('Exactly one JobId must be specified'));
+        return;
+    }
+
+    var client = createClient(opts);
+    var options = {};
+    if (opts.readme)
+        options.readme = opts.readme;
+
+    client.jobShare(args[0], options, function (err, share) {
+        if (err) {
+            cb(err);
+            return;
+        }
+
+        if (opts.stdout) {
+            console.log(share.html);
+            client.close();
+            cb();
+            return;
+        }
+
+        var dir = path.join('/', opts.user, 'public/jobshares',
+            path.basename(args[0]));
+        client.mkdirp(dir, function (err2) {
+            if (err2) {
+                cb(err2);
+                return;
+            }
+
+            var tmp = path.join(dir, 'index.html');
+            var stream = new manta.StringStream(share.html);
+            options = { 'size': Buffer.byteLength(share.html, 'utf8') };
+            client.put(tmp, stream, options, function (err3) {
+                if (err3) {
+                    cb(err3);
+                    return;
+                }
+
+                var u = opts.url;
+                console.log('%s',
+                    u + (u[u.length - 1] == '/' ? tmp.substr(1) : tmp));
+                client.close();
+            });
+        });
+    });
+};
+
+MJob.prototype.do_share.options = manta.DEFAULT_CLI_OPTIONS.concat([
+    {
+        names: [ 'stdout', 's' ],
+        type: 'bool',
+        'default': false,
+        help: 'emit HTML to stdout instead of saving it to Manta'
+    },
+    {
+        names: [ 'readme', 'r' ],
+        type: 'string',
+        help: 'Optional Markdown file to be rendered into the HTML output',
+        helpArg: 'README'
+    }
+]);
+
+MJob.prototype.do_share.help = (
+    'Generate and upload an HTML page describing the job.\n' +
+    'Example:\n' +
+    '    mjob share b19e0925-4c85-4fe9-ab47-8cc9dcfec81a\n' +
+    '\n' +
+    'Usage:\n' +
+    '    mjob share [OPTIONS] JobId\n' +
+    '\n' +
+    '{{options}}'
+);
 
 ///--- Mainline
 

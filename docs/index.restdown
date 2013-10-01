@@ -383,10 +383,56 @@ Note: The example below uses the `memorystream` module from NPM.
 ### Inputs
 
 ||**Name**||**JS Type**||**Description**||
-||directory||String||*(required)* A full Manta path to read||
+||path||String||*(required)* A full Manta path to write to||
 ||stream||Stream||*(required)* An instance of a `ReadableStream`||
 ||options||Object||*(required)* overrides for this request; must include `size`||
 ||callback||Function||*(required)* callback of the form `fn(err, res)`||
+
+
+## client.createWriteStream(path, options)
+
+Essentially the same API/logic as `client.put`, but idiomatic to node the node
+streams model.  `path` and `options` are the same as `put`, but this API takes
+no callback, and instead returns an instance of
+[stream.Writable](http://nodejs.org/api/stream.html#stream_class_stream_writable).
+
+Note that standard node stream semantics don't line up to when Manta has
+actually committed data, so the stream returned by this API emits a `close`
+event that also has the
+[http.Response](http://nodejs.org/api/http.html#http_http_incomingmessage)
+object.
+
+Note: The example below uses the `memorystream` module from NPM.
+
+    var MemoryStream = require('memorystream');
+
+    var message = 'Hello World'
+    var opts = {
+        copies: 3,
+        headers: {
+            'access-control-allow-origin': '*',
+            'access-control-allow-methods': 'GET'
+        },
+        md5: crypto.createHash('md5').update(message).digest('base64'),
+        size: Buffer.byteLength(message),
+        type: 'text/plain'
+    };
+    var stream = new MemoryStream();
+    var w = client.createWriteStream('/jill/stor/hello_world.txt', opts);
+
+    stream.pipe(w);
+
+    w.once('close', function (res) {
+        console.log('all done');
+    });
+
+    stream.end(message);
+
+### Inputs
+
+||**Name**||**JS Type**||**Description**||
+||path||String||*(required)* A full Manta path to write to||
+||options||Object||*(required)* overrides for this request; must include `size`||
 
 
 ## client.get(path, [options], callback)
@@ -411,9 +457,29 @@ not match, the stream will emit an error.
 ### Inputs
 
 ||**Name**||**JS Type**||**Description**||
-||directory||String||*(required)* A full Manta path to create an object as||
+||path||String||*(required)* A full Manta path to fetch||
 ||options||Object||*(optional)* overrides for this request||
 ||callback||Function||*(required)* callback of the form `fn(err, stream)`||
+
+
+## client.createReadStream(path, [options])
+
+Fetches an object as a ReadableStream; this API is basically identical to `get`,
+except it's idiomatic to node streaming.  Additionally, the returned stream will
+emit `close` at the end of request data along with the HTTP Response object.
+
+    var stream = client.get('/jill/stor/hello_world.txt');
+    stream.pipe(stdout);
+    stream.once('close', function (res) {
+        console.error(res.statusCode);
+    });
+
+
+### Inputs
+
+||**Name**||**JS Type**||**Description**||
+||path||String||*(required)* A full Manta path to read||
+||options||Object||*(optional)* overrides for this request||
 
 
 # Links
