@@ -745,10 +745,10 @@ MJob.prototype.do_create.help = (
         /* JSSTYLED */
         'You can create a job, feed inputs and wait for completion like this:\n' +
         'Example:\n' +
-        '    mfind -t o /user/stor | mjob create grep foo \|\| true ^^ cat\n' +
+        '    mfind -t o /user/stor | mjob create "grep foo \|\| true" ^^ cat\n' +
         '\n' +
         'Usage:\n' +
-        '     mjob create [OPTIONS] [map ^ reduce]\n' +
+        '     mjob create [OPTIONS] [map [^ map] [^^ reduce]]\n' +
         '\n' +
         '{{options}}'
 );
