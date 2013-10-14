@@ -659,7 +659,7 @@ user.  Currently you can filter on state by passing `state` into `options`.
 Output is an EventEmitter; listen for `job`, `error` and `end`.
 
 
-## client.addJobKeys(jobId, key, [options], callback)
+## client.addJobKey(jobId, key, [options], callback)
 
 Submits job key(s) to an existing job in Manta.
 `key` can be either a single key or an array of keys.
@@ -670,7 +670,7 @@ The keys should be fully specified paths to manta objects:
         '/mark/stor/foo',
         '/dave/stor/bar'
     ];
-    client.addJobKeys('d095fd4a-3a3d-11e2-b5f1-7be876f9c2b5', keys, function (err) {
+    client.addJobKey('d095fd4a-3a3d-11e2-b5f1-7be876f9c2b5', keys, function (err) {
 	    assert.ifError(err);
     });
 
