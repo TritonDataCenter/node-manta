@@ -2,6 +2,8 @@
 
 ## Not yet released
 
+- #86: option to create parent directories on PUT
+
 ## v1.1.2
 
 - version bump of "carrier" (pgte/carrier#17)
