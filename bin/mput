@@ -48,6 +48,11 @@ var OPTIONS_PARSER = dashdash.createParser({
             helpArg: 'HEADER'
         },
         {
+            names: ['parents', 'p'],
+            type: 'bool',
+            help: 'create parent directories as needed'
+        },
+        {
             names: ['quiet', 'q'],
             type: 'bool',
             help: 'disable the progress bar'
@@ -128,7 +133,8 @@ function printEntry(obj) {
     var client = manta.createBinClient(options);
     var opts = {
         copies: options.copies,
-        headers: options.headers
+        headers: options.headers,
+        mkdirs: options.parents
     };
 
     function put(stream, stats, cb) {

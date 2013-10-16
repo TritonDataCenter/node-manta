@@ -26,6 +26,8 @@ var SUBDIR1 = ROOT + '/' + uuid();
 var SUBDIR2 = SUBDIR1 + '/' + uuid(); // directory
 var CHILD1 = SUBDIR1 + '/' + uuid(); // object
 var CHILD2 = SUBDIR2 + '/' + uuid(); // link
+var NOENTSUB1 = SUBDIR1 + '/a/b/c';
+var NOENTSUB2 = SUBDIR1 + '/d/e/f';
 
 
 
@@ -108,6 +110,40 @@ test('put', function (t) {
     });
 });
 
+test('put without mkdirp', function (t) {
+    var text = 'Don\'t mind if I don\'t!';
+    var size = Buffer.byteLength(text);
+    var stream = new MemoryStream();
+
+    this.client.put(NOENTSUB1, stream, { size: size }, function (err) {
+        t.ok(err);
+        t.end();
+    });
+
+    process.nextTick(function () {
+        stream.write(text);
+        stream.end();
+    });
+});
+
+test('put with mkdirp', function (t) {
+    var text = 'Don\'t mind if I do!';
+    var size = Buffer.byteLength(text);
+    var stream = new MemoryStream();
+
+    this.client.put(NOENTSUB2, stream, {
+        size: size,
+        mkdirs: true
+    }, function (err) {
+        t.ifError(err);
+        t.end();
+    });
+
+    process.nextTick(function () {
+        stream.write(text);
+        stream.end();
+    });
+});
 
 test('streams', function (t) {
     var client = this.client;

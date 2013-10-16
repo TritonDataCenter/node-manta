@@ -741,8 +741,8 @@ MJob.prototype.do_create.options = manta.DEFAULT_CLI_OPTIONS.concat([
 ]);
 
 MJob.prototype.do_create.help = (
+    /* BEGIN JSSTYLED */
     'Creates a Manta Job.\n' +
-        /* JSSTYLED */
         'You can create a job, feed inputs and wait for completion like this:\n' +
         'Example:\n' +
         '    mfind -t o /user/stor | mjob create "grep foo \|\| true" ^^ cat\n' +
@@ -751,6 +751,7 @@ MJob.prototype.do_create.help = (
         '     mjob create [OPTIONS] [map [^ map] [^^ reduce]]\n' +
         '\n' +
         '{{options}}'
+    /* END JSSTYLED */
 );
 
 
