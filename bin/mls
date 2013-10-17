@@ -34,6 +34,11 @@ var OPTIONS_PARSER = dashdash.createParser({
             help: 'output in JSON'
         },
         {
+            names: ['fulljson'],
+            type: 'bool',
+            help: 'JSON output, and display the HTTP headers if available'
+        },
+        {
             names: ['long', 'l'],
             type: 'bool',
             help: 'use a long listing format'
@@ -183,10 +188,9 @@ function parseOptions() {
 
 
 function printEntry(obj, opts) {
-    if (obj.headers)
-        delete obj.headers;
-
-    if (opts.json) {
+    if (opts.json || opts.fulljson) {
+        if (obj.headers && !opts.fulljson)
+            delete obj.headers;
         console.log('%j', obj);
     } else if (opts['long']) {
         var d = moment(obj.mtime);

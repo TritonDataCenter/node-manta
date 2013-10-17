@@ -4,6 +4,7 @@
 
 - #128: support `MANTA_DEFAULT_CONTENT_TYPE` for mput
 - #117: mfind: support `--maxdepth` and `--mindepth`
+- #103: mls: support `mls --fulljson` (shows HTTP headers)
 - #86: option to create parent directories on PUT
 
 ## v1.1.2
