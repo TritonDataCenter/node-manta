@@ -65,6 +65,12 @@ OPTIONS
   Specify `d` for directories, and `o` for objects.  If specified, only names of
   that type will be returned.
 
+`--maxdepth`
+  Only print items items less than this depth
+
+`--mindepth`
+  Only print items with at least this depth
+
 `-u, --url url`
   Manta base URL (such as `https://manta.us-east.joyent.com`).
 
