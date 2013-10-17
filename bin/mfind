@@ -65,14 +65,14 @@ var OPTIONS_PARSER = dashdash.createParser({
             names: ['mindepth'],
             type: 'positiveInteger',
             help: 'only return items with at least this depth',
-            helpArg: 'DEPTH',
+            helpArg: 'DEPTH'
         },
         {
             names: ['maxdepth'],
             type: 'positiveInteger',
             help: 'only return items less than this depth',
-            helpArg: 'DEPTH',
-        },
+            helpArg: 'DEPTH'
+        }
     ])
 });
 var TOTAL_ENTRIES = 0;
@@ -181,7 +181,7 @@ function printEntry(opts, obj) {
                         type: options.type,
                         depth: opts.depth + 1,
                         mindepth: options.mindepth,
-                        maxdepth: options.maxdepth,
+                        maxdepth: options.maxdepth
                     });
                 });
 
@@ -204,7 +204,7 @@ function printEntry(opts, obj) {
                             type: options.type,
                             depth: opts.depth,
                             mindepth: options.mindepth,
-                            maxdepth: options.maxdepth,
+                            maxdepth: options.maxdepth
                         });
                     }
                     cb();

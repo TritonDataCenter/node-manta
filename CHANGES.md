@@ -3,6 +3,7 @@
 ## Not yet released
 
 - #128: support `MANTA_DEFAULT_CONTENT_TYPE` for mput
+- #117: mfind: support `--maxdepth` and `--mindepth`
 - #86: option to create parent directories on PUT
 
 ## v1.1.2
