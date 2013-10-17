@@ -60,7 +60,19 @@ var OPTIONS_PARSER = dashdash.createParser({
             type: 'string',
             help: 'only return names of type <type> d=directory, o=object',
             helpArg: 'd|o'
-        }
+        },
+        {
+            names: ['mindepth'],
+            type: 'positiveInteger',
+            help: 'only return items with at least this depth',
+            helpArg: 'DEPTH',
+        },
+        {
+            names: ['maxdepth'],
+            type: 'positiveInteger',
+            help: 'only return items less than this depth',
+            helpArg: 'DEPTH',
+        },
     ])
 });
 var TOTAL_ENTRIES = 0;
@@ -115,6 +127,11 @@ function printEntry(opts, obj) {
         return;
     if (opts.type && opts.type === 'o' && obj.type !== 'object')
         return;
+    if (opts.maxdepth && opts.depth > opts.maxdepth)
+        return;
+    if (opts.mindepth && opts.depth < opts.mindepth)
+        return;
+
 
     console.log(opts.path + (obj.name ? ('/' + obj.name) : ''));
     if (opts.limit && (++TOTAL_ENTRIES >= opts.limit))
@@ -151,6 +168,9 @@ function printEntry(opts, obj) {
 
                     printEntry(opts, dir);
 
+                    if (opts.maxdepth && opts.depth >= opts.maxdepth)
+                        return;
+
                     var p = opts.path + '/' + dir.name;
                     last = dir.name;
                     queue.push({
@@ -158,7 +178,10 @@ function printEntry(opts, obj) {
                         name: options.name,
                         path: p,
                         size: options.size,
-                        type: options.type
+                        type: options.type,
+                        depth: opts.depth + 1,
+                        mindepth: options.mindepth,
+                        maxdepth: options.maxdepth,
                     });
                 });
 
@@ -178,7 +201,10 @@ function printEntry(opts, obj) {
                             marker: last,
                             name: options.name,
                             path: opts.path,
-                            type: options.type
+                            type: options.type,
+                            depth: opts.depth,
+                            mindepth: options.mindepth,
+                            maxdepth: options.maxdepth,
                         });
                     }
                     cb();
@@ -191,6 +217,7 @@ function printEntry(opts, obj) {
         limit: 1,
         worker: function (p, cb) {
             var _opts = clone(options);
+            _opts.depth = 1;
             _opts.path = p;
             client.info(p, function (err, info) {
                 if (err) {
