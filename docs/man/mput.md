@@ -15,11 +15,12 @@ DESCRIPTION
 -----------
 
 mput creates an object specified at the name OBJECT with the contents either
-coming from stdin, or from the file specified with `-f`.  When using the `-f`
-form, mput will attempt to set the HTTP Content-Type from the file extension,
-unless Content-Type is specified as an HTTP header.  When using the stdin form
-the content-type will be (default) application/octet-stream, so you will likely
-want to set it manually.
+coming from stdin, or from the file specified with `-f`.  mput will attempt to
+set the HTTP Content-Type based on the extension on the object, unless
+Content-Type is specified as an HTTP header.  If mput cannot determine the type
+based on the extension the default content-type is usually
+`application/octet-stream`, but this can be overriden by setting the environment
+variable `MANTA_DEFAULT_CONTENT_TYPE` (or passing `-H`).
 
 By default, mput creates two copies of an object; this can be overridden with
 `-c`.  Lastly, mput also draws a progress meter by default; this can be disabled
