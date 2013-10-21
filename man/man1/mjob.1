@@ -30,8 +30,8 @@ SSL connections are attempted to be made secure by using the CA certificate
 .TP
 bundle installed by default.
 \fB\fC-k, --key fingerprint\fR
-Authenticate using the SSH key described by \fB\fCfingerprint\fR.  The key must
-either be in \fB\fC~/.ssh\fR or loaded in the SSH agent via \fB\fCssh-add\fR.
+Authenticate using the SSH key described by \fB\fCfingerprint\fR\&.  The key must
+either be in \fB\fC~/.ssh\fR or loaded in the SSH agent via \fB\fCssh-add\fR\&.
 .TP
 \fB\fC-p, --parallel concurrency\fR
 Limit concurrent operations to CONCURRENCY.  Default is 50.
@@ -47,7 +47,7 @@ The following commands and options are supported:
 .SS create [OPTIONS...] expression
 .PP
 Creates a job that executes the commands against keys that will be specified
-via \fB\fCaddinputs\fR.  \fB\fCexpression\fR can specify an arbitrary UNIX pipeline, with
+via \fB\fCaddinputs\fR\&.  \fB\fCexpression\fR can specify an arbitrary UNIX pipeline, with
 map/reduce \fIphases\fP separated by the \fB\fC^\fR or \fB\fC^^\fR 
 .BR character (s), 
 respectively.
@@ -310,19 +310,31 @@ $ mjob list -s running
 .TP
 \fB\fC-s, --state state\fR
 Only list jobs in the given state.
+.SS cost JOB
+.PP
+Estimates the cost in USD of a job by creating a Manta job and adding as inputs
+compute usage reports from /:login/reports/usage/compute. Assets are pulled from
+/manta/public/jobs/jobcost. Note that usage reports are generated
+asynchronously, so mjob cost may fail when estimating the cost of jobs that
+were running recently.**
+.IP
+$ mjob cost 3ec32136\-b125\-11e2\-8487\-1b418dd6974b
+.TP
+\fB\fC-q, --quiet\fR
+Do not output any informative messages.
 .SH ENVIRONMENT
 .TP
 \fB\fCMANTA_USER\fR
 In place of \fB\fC-a, --account\fR
 .TP
 \fB\fCMANTA_KEY_ID\fR
-In place of \fB\fC-k, --key\fR.
+In place of \fB\fC-k, --key\fR\&.
 .TP
 \fB\fCMANTA_URL\fR
-In place of \fB\fC-u, --url\fR.
+In place of \fB\fC-u, --url\fR\&.
 .TP
 \fB\fCMANTA_TLS_INSECURE\fR
-In place of \fB\fC-i, --insecure\fR.
+In place of \fB\fC-i, --insecure\fR\&.
 .SH DIAGNOSTICS
 .PP
 When using the \fB\fC-v\fR option, diagnostics will be sent to stderr in bunyan

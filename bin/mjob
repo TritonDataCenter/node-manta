@@ -252,6 +252,76 @@ function jobDataCommon(opts, callback) {
 }
 
 
+function jobWait(opts, cb) {
+    assert.object(opts, 'options');
+    assert.object(opts.client, 'options.client');
+    assert.string(opts.id, 'options.id');
+    assert.object(opts.opts, 'options.opts');
+    assert.optionalFunc(cb, 'callback');
+
+    if (!opts.opts.watch && !opts.opts.cat_outputs) {
+        cb();
+        return;
+    }
+
+    jobWatch({client: opts.client, job: opts.id}, function (err, job) {
+        if (err) {
+            cb(err);
+            return;
+        }
+
+        var s = job.stats;
+        if (s.errors > 0) {
+            var msg = sprintf('job %s had %d error%s', opts.id, s.errors,
+                              s.errors > 1 ? 's' : '');
+            cb(new Error(msg));
+            return;
+        }
+        if (!opts.opts.cat_outputs) {
+            cb();
+        } else {
+            var ee = new EventEmitter();
+            var outQueue = new manta.Queue({
+                limit: 1,
+                worker: function get(k, _cb) {
+                    _cb = once(_cb);
+                    opts.client.get(k, function (get_err, stream) {
+                        if (get_err) {
+                            _cb(get_err);
+                            return;
+                        }
+                        stream.pipe(process.stdout, {end: false});
+                        stream.once('end', _cb);
+                    });
+                }
+            });
+
+            function get_done(get_err) {
+                opts.client.close();
+                cb(get_err);
+            }
+
+            outQueue.once('end', get_done);
+            outQueue.once('error', get_done);
+
+            ee.on('key', outQueue.push.bind(outQueue));
+            ee.once('end', outQueue.close.bind(outQueue));
+
+            jobDataCommon({
+                args: [opts.id],
+                client: opts.client,
+                emit: ee,
+                func: 'jobOutput',
+                parallel: opts.opts.parallel,
+                type: 'out',
+                user: opts.opts.account,
+                watch: 'key'
+            });
+        }
+    });
+}
+
+
 function jobWatch(opts, cb) {
     assert.object(opts);
     assert.string(opts.job, 'job');
@@ -624,13 +694,38 @@ MJob.prototype.do_create = function create(subcmd, opts, args, cb) {
                 console.error('mjob: warning: input stream left open');
 
             if (opts.close) {
-                client.endJob(id, wait);
+                client.endJob(id, function onEndJob(err2) {
+                    if (err2) {
+                        cb(err2);
+                        return;
+                    }
+
+                    jobWait({
+                        client: client,
+                        id: id,
+                        opts: opts
+                    }, cb);
+                });
             } else {
-                wait();
+                jobWait({
+                    client: client,
+                    id: id,
+                    opts: opts
+                }, cb);
             }
         } else {
             opts.jobIds = [id];
-            addInputsFromStdin(client, opts, wait);
+            addInputsFromStdin(client, opts, function (err2) {
+                if (err2) {
+                    cb(err2);
+                    return;
+                }
+                jobWait({
+                    client: client,
+                    id: id,
+                    opts: opts
+                }, cb);
+            });
         }
     });
 };
@@ -1296,6 +1391,188 @@ MJob.prototype.do_share.help = (
     '\n' +
     'Usage:\n' +
     '    mjob share [OPTIONS] JobId\n' +
+    '\n' +
+    '{{options}}'
+);
+
+
+
+//-- JobCost
+
+MJob.prototype.do_cost = function do_cost(subcmd, opts, args, cb) {
+    cb = once(cb);
+
+    if (!assertOpts(this, subcmd, opts, cb))
+        return;
+
+    if (args.length != 1) {
+        cb(new Error('Exactly one JobId must be specified'));
+        return;
+    }
+
+    var client = createClient(opts);
+    var jobManifest = {
+        name: opts.name || 'mjobcost ' + args[0],
+        phases: [
+            {
+                type: 'map',
+                assets: [
+                    '/manta/public/jobs/jobcost/billingComputeTable.json',
+                    '/manta/public/jobs/jobcost/carrier.js',
+                    '/manta/public/jobs/jobcost/pricing.json',
+                    '/manta/public/jobs/jobcost/jobcost.js'
+                ],
+                exec: '/assets/manta/public/jobs/jobcost/jobcost.js ' + args[0]
+            },
+            {
+                type: 'reduce',
+                exec: 'paste -sd+ | bc'
+            }
+        ]
+    };
+
+    function msToHour(ms) {
+        return (Math.floor(ms / 3600000) * 3600000);
+    }
+
+    function constructPath(epochms) {
+        function pad(n) {
+            return (n < 10 ? '0' + n : n);
+        }
+        var d = new Date(epochms);
+        var y = d.getUTCFullYear();
+        var m = pad(d.getUTCMonth() + 1); // 0 = Jan, 11 = Dec
+        var date = pad(d.getUTCDate());
+        var h = pad(d.getUTCHours());
+        return ('/' + opts.user + '/reports/usage/compute/' +
+            y + '/' + m + '/' + date + '/' + h + '/h' + h + '.json');
+    }
+
+
+    function getJob(id, _cb) {
+        _cb = once(_cb);
+        client.job(id, function (err, job) {
+            if (err) {
+                if (err.statusCode !== 404) {
+                    _cb(err);
+                } else {
+                    var p = '/' + opts.user + '/jobs/' + id + '/job.json';
+                    client.get(p, function (_err, stream) {
+                        if (_err) {
+                            _cb(_err);
+                        } else {
+                            var body = '';
+                            stream.setEncoding('utf8');
+                            stream.on('data', function (chunk) {
+                                body += chunk;
+                            });
+                            stream.once('end', function () {
+                                _cb(null, JSON.parse(body));
+                            });
+                        }
+                    });
+                }
+            } else {
+                _cb(null, job);
+            }
+        });
+    }
+
+    getJob(args[0], function onJob(err, jobInfo) {
+        if (err) {
+            cb(err);
+            return;
+        }
+
+        var start = msToHour(new Date(jobInfo.timeCreated).getTime());
+        var end;
+        var keys = [];
+
+        if (!jobInfo.timeDone) {
+            end = msToHour(Date.now());
+        } else {
+            end = msToHour(new Date(jobInfo.timeDone).getTime());
+        }
+
+        if (!opts.quiet && (end + 7200000 > Date.now())) {
+            console.error('Warning: job was running in the past couple of ' +
+                'hours. Compute usage reports may be missing for all ' +
+                'or part of this job.');
+        }
+
+        while (start <= end) {
+            keys.push(constructPath(start));
+            start += 3600000;
+        }
+
+        client.createJob(jobManifest, function onCreateJob(err2, jobId) {
+            if (err2) {
+                cb(err2);
+                return;
+            }
+
+            if (!opts.quiet)
+                console.error(jobId);
+
+            client.addJobKey(jobId, keys, function onAddKeys(err3, _job) {
+                if (err3) {
+                    cb(err3);
+                    return;
+                }
+
+                console.error('added %d input%s to %s',
+                              keys.length,
+                              keys.length > 1 ? 's' : '',
+                              jobId);
+
+                client.endJob(jobId, function (err4) {
+                    if (err4) {
+                        cb(err4);
+                        return;
+                    }
+                    opts.cat_outputs = true;
+                    jobWait({
+                        client: client,
+                        id: jobId,
+                        opts: opts
+                    }, cb);
+                });
+            });
+        });
+
+    });
+};
+
+MJob.prototype.do_cost.options = manta.DEFAULT_CLI_OPTIONS.concat([
+    {
+        names: ['name', 'n'],
+        type: 'string',
+        help: 'job name',
+        helpArg: 'NAME'
+    },
+    {
+        names: ['parallel', 'p'],
+        type: 'positiveInteger',
+        help: 'limit concurrent operations',
+        'default': 25,
+        helpArg: 'CONCURRENCY'
+    },
+    {
+        names: ['quiet', 'q'],
+        type: 'bool',
+        help: 'do not output verbose information',
+        'default': false
+    }
+]);
+
+MJob.prototype.do_cost.help = (
+    'Estimate the cost of a job.\n' +
+    '\n' +
+    'Example:\n' +
+    '   mjob cost f6e1391b-584d-4722-bbdf-4506621148c7\n' +
+    '\n' +
+    'Usage:\n' +
+    '   mjob cost [OPTIONS] JobId\n' +
     '\n' +
     '{{options}}'
 );
