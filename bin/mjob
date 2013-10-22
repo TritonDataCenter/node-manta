@@ -257,6 +257,8 @@ function jobWait(opts, cb) {
     assert.object(opts.client, 'options.client');
     assert.string(opts.id, 'options.id');
     assert.object(opts.opts, 'options.opts');
+    assert.optionalObject(opts.baropts, 'options.baropts');
+    assert.optionalBool(opts.ignoreErrors, 'options.ignoreErrors');
     assert.optionalFunc(cb, 'callback');
 
     if (!opts.opts.watch && !opts.opts.cat_outputs) {
@@ -264,7 +266,11 @@ function jobWait(opts, cb) {
         return;
     }
 
-    jobWatch({client: opts.client, job: opts.id}, function (err, job) {
+    jobWatch({
+        client: opts.client,
+        job: opts.id,
+        baropts: opts.baropts
+    }, function (err, job) {
         if (err) {
             cb(err);
             return;
@@ -326,6 +332,7 @@ function jobWatch(opts, cb) {
     assert.object(opts);
     assert.string(opts.job, 'job');
     assert.object(opts.client, 'client');
+    assert.optionalObject(opts.baropts, 'options.baropts');
     assert.func(cb, 'callback');
 
     cb = once(cb);
@@ -335,8 +342,15 @@ function jobWatch(opts, cb) {
 
     var monitor = backoff.exponential({
         initialDelay: 100,
-        maxDelay: 10000
+        maxDelay: opts.baropts ? 101 : 10000
     });
+
+    var bar;
+    var tasksDone;
+    if (opts.baropts) {
+        bar = new manta.ProgressBar(opts.baropts);
+        tasksDone = 0;
+    }
 
     monitor.on('ready', function onReady(attempts, delayms) {
         client.job(job, function onJob(err, status) {
@@ -347,8 +361,15 @@ function jobWatch(opts, cb) {
                 cb(err);
             } else if (status.state !== 'done' &&
                 status.state !== 'archiving') {
+                if (bar) {
+                    bar.advance(status.stats.tasksDone - tasksDone);
+                    tasksDone = status.stats.tasksDone;
+                }
                 monitor.backoff();
             } else {
+                if (bar) {
+                    bar.advance(status.stats.tasksDone - tasksDone);
+                }
                 monitor.reset(); // stop monitoring
                 monitor.removeAllListeners('fail');
                 monitor.removeAllListeners('ready');
@@ -364,6 +385,41 @@ function jobWatch(opts, cb) {
     monitor.backoff();
 }
 
+
+function getJobInfo(opts, cb) {
+    assert.object(opts, 'options');
+    assert.object(opts.client, 'options.client');
+    assert.string(opts.id, 'options.id');
+    assert.string(opts.user, 'options.user');
+    assert.optionalFunc(cb, 'callback');
+
+    cb = once(cb);
+    opts.client.job(opts.id, function (err, job) {
+        if (err) {
+            if (err.statusCode !== 404) {
+                cb(err);
+            } else {
+                var p = '/' + opts.user + '/jobs/' + opts.id + '/job.json';
+                opts.client.get(p, function (_err, stream) {
+                    if (_err) {
+                        cb(_err);
+                    } else {
+                        var body = '';
+                        stream.setEncoding('utf8');
+                        stream.on('data', function (chunk) {
+                            body += chunk;
+                        });
+                        stream.once('end', function () {
+                            cb(null, JSON.parse(body));
+                        });
+                    }
+                });
+            }
+        } else {
+            cb(null, job);
+        }
+    });
+}
 
 
 ///--- CLI
@@ -619,73 +675,6 @@ MJob.prototype.do_create = function create(subcmd, opts, args, cb) {
             return;
         }
 
-        function wait(err2) {
-            if (err2) {
-                cb(err2);
-                return;
-            } else if (!opts.watch && !opts.cat_outputs) {
-                cb();
-                return;
-            }
-
-            jobWatch({client: client, job: id}, function (err3, _job) {
-                if (err3) {
-                    cb(err3);
-                    return;
-                }
-
-                var _s = _job.stats;
-                if (_s.errors > 0) {
-                    var msg = sprintf('job %s had %d error%s', id, _s.errors,
-                                      _s.errors > 1 ? 's' : '');
-                    cb(new Error(msg));
-                    return;
-                }
-
-                if (!opts.cat_outputs) {
-                    cb();
-                } else {
-                    var ee = new EventEmitter();
-                    var outQueue = new manta.Queue({
-                        limit: 1,
-                        worker: function get(k, _cb) {
-                            _cb = once(_cb);
-                            client.get(k, function (get_err, stream) {
-                                if (get_err) {
-                                    _cb(get_err);
-                                    return;
-                                }
-                                stream.pipe(process.stdout, {end: false});
-                                stream.once('end', _cb);
-                            });
-                        }
-                    });
-
-                    function get_done(get_err) {
-                        client.close();
-                        cb(get_err);
-                    }
-
-                    outQueue.once('end', get_done);
-                    outQueue.once('error', get_done);
-
-                    ee.on('key', outQueue.push.bind(outQueue));
-                    ee.once('end', outQueue.close.bind(outQueue));
-
-                    jobDataCommon({
-                        args: [id],
-                        client: client,
-                        emit: ee,
-                        func: 'jobOutput',
-                        parallel: opts.parallel,
-                        type: 'out',
-                        user: opts.account,
-                        watch: 'key'
-                    });
-                }
-            });
-        }
-
         if (!opts.cat_outputs)
             console.log(id);
 
@@ -866,35 +855,17 @@ MJob.prototype.do_get = function do_get(subcmd, opts, args, cb) {
     var queue = new manta.Queue({
         limit: opts.parallel,
         worker: function getJob(id, _cb) {
-            _cb = once(_cb);
-            client.job(id, function (err, job) {
+            getJobInfo({
+                client: client,
+                id: id,
+                user: opts.user
+            }, function (err, job) {
                 if (err) {
-                    if (err.statusCode !== 404) {
-                        _cb(err);
-                    } else {
-                        var p = '/' + opts.user + '/jobs/' + id + '/job.json';
-                        client.get(p, function (_err, stream) {
-                            if (_err) {
-                                _cb(_err);
-                            } else {
-                                var body = '';
-                                stream.setEncoding('utf8');
-                                stream.on('data', function (chunk) {
-                                    body += chunk;
-                                });
-                                stream.once('end', function () {
-                                    var tmp = JSON.parse(body);
-                                    console.log('%s',
-                                                JSON.stringify(tmp, null, 2));
-                                    _cb();
-                                });
-                            }
-                        });
-                    }
-                } else {
-                    console.log('%s', JSON.stringify(job, null, 2));
-                    _cb();
+                    _cb(err);
+                    return;
                 }
+                console.log('%s', JSON.stringify(job, null, 2));
+                _cb();
             });
         }
     });
@@ -1418,7 +1389,6 @@ MJob.prototype.do_cost = function do_cost(subcmd, opts, args, cb) {
                 type: 'map',
                 assets: [
                     '/manta/public/jobs/jobcost/billingComputeTable.json',
-                    '/manta/public/jobs/jobcost/carrier.js',
                     '/manta/public/jobs/jobcost/pricing.json',
                     '/manta/public/jobs/jobcost/jobcost.js'
                 ],
@@ -1444,49 +1414,33 @@ MJob.prototype.do_cost = function do_cost(subcmd, opts, args, cb) {
         var m = pad(d.getUTCMonth() + 1); // 0 = Jan, 11 = Dec
         var date = pad(d.getUTCDate());
         var h = pad(d.getUTCHours());
-        return ('/' + opts.user + '/reports/usage/compute/' +
-            y + '/' + m + '/' + date + '/' + h + '/h' + h + '.json');
+        return (sprintf('/%s/reports/usage/compute/%s/%s/%s/%s/h%s.json',
+            opts.user, y, m, date, h, h));
     }
 
 
-    function getJob(id, _cb) {
-        _cb = once(_cb);
-        client.job(id, function (err, job) {
-            if (err) {
-                if (err.statusCode !== 404) {
-                    _cb(err);
-                } else {
-                    var p = '/' + opts.user + '/jobs/' + id + '/job.json';
-                    client.get(p, function (_err, stream) {
-                        if (_err) {
-                            _cb(_err);
-                        } else {
-                            var body = '';
-                            stream.setEncoding('utf8');
-                            stream.on('data', function (chunk) {
-                                body += chunk;
-                            });
-                            stream.once('end', function () {
-                                _cb(null, JSON.parse(body));
-                            });
-                        }
-                    });
-                }
-            } else {
-                _cb(null, job);
-            }
-        });
-    }
-
-    getJob(args[0], function onJob(err, jobInfo) {
+    getJobInfo({
+        client: client,
+        id: args[0],
+        user: opts.user
+    }, function onJob(err, jobInfo) {
         if (err) {
             cb(err);
+            return;
+        }
+
+        if (jobInfo.stats.tasks === 0) {
+            if (!opts.quiet)
+                console.error('No tasks ran for ths job.');
+            console.log('0');
+            cb();
             return;
         }
 
         var start = msToHour(new Date(jobInfo.timeCreated).getTime());
         var end;
         var keys = [];
+        var baropts;
 
         if (!jobInfo.timeDone) {
             end = msToHour(Date.now());
@@ -1495,14 +1449,21 @@ MJob.prototype.do_cost = function do_cost(subcmd, opts, args, cb) {
         }
 
         if (!opts.quiet && (end + 7200000 > Date.now())) {
-            console.error('Warning: job was running in the past couple of ' +
-                'hours. Compute usage reports may be missing for all ' +
+            console.error('Warning: job was running in the past two hours. ' +
+                'Compute usage reports may be missing for all ' +
                 'or part of this job.');
         }
 
         while (start <= end) {
             keys.push(constructPath(start));
             start += 3600000;
+        }
+
+        if (!opts.quiet) {
+            baropts = {
+                filename: 'mjob cost ' + args[0],
+                size: keys.length + 1
+            };
         }
 
         client.createJob(jobManifest, function onCreateJob(err2, jobId) {
@@ -1520,10 +1481,12 @@ MJob.prototype.do_cost = function do_cost(subcmd, opts, args, cb) {
                     return;
                 }
 
-                console.error('added %d input%s to %s',
-                              keys.length,
-                              keys.length > 1 ? 's' : '',
-                              jobId);
+                if (!opts.quiet) {
+                    console.error('added %d input%s to %s',
+                                  keys.length,
+                                  keys.length > 1 ? 's' : '',
+                                  jobId);
+                }
 
                 client.endJob(jobId, function (err4) {
                     if (err4) {
@@ -1534,7 +1497,9 @@ MJob.prototype.do_cost = function do_cost(subcmd, opts, args, cb) {
                     jobWait({
                         client: client,
                         id: jobId,
-                        opts: opts
+                        opts: opts,
+                        baropts: baropts,
+                        ignoreErrors: true
                     }, cb);
                 });
             });
