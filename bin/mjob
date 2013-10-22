@@ -258,7 +258,6 @@ function jobWait(opts, cb) {
     assert.string(opts.id, 'options.id');
     assert.object(opts.opts, 'options.opts');
     assert.optionalObject(opts.baropts, 'options.baropts');
-    assert.optionalBool(opts.ignoreErrors, 'options.ignoreErrors');
     assert.optionalFunc(cb, 'callback');
 
     if (!opts.opts.watch && !opts.opts.cat_outputs) {
@@ -1498,8 +1497,7 @@ MJob.prototype.do_cost = function do_cost(subcmd, opts, args, cb) {
                         client: client,
                         id: jobId,
                         opts: opts,
-                        baropts: baropts,
-                        ignoreErrors: true
+                        baropts: baropts
                     }, cb);
                 });
             });
