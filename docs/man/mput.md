@@ -68,6 +68,9 @@ OPTIONS
   Authenticate using the SSH key described by FINGERPRINT.  The key must
   either be in `~/.ssh` or loaded in the SSH agent via `ssh-add`.
 
+`-q, --quiet`
+  Do not display a progress meter.
+
 `-u, --url url`
   Manta base URL (such as `https://manta.us-east.joyent.com`).
 
