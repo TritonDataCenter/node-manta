@@ -2,6 +2,7 @@
 
 ## Not yet released
 
+- #132: mput needs to handle files that are still being appended to
 - #131: `mjob cost` subcommand
 - #128: support `MANTA_DEFAULT_CONTENT_TYPE` for mput
 - #117: mfind: support `--maxdepth` and `--mindepth`

@@ -198,7 +198,11 @@ function printEntry(obj) {
 
             function write(_, cb) {
                 cb = once(cb);
-                var fstream = fs.createReadStream(options.file);
+                var f_opts = {
+                    start: 0,
+                    end: stats.size - 1
+                };
+                var fstream = fs.createReadStream(options.file, f_opts);
                 fstream.pause();
                 fstream.on('open', function () {
                     put(fstream, stats, cb);
