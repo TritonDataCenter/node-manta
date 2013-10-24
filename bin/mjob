@@ -258,6 +258,7 @@ function jobWait(opts, cb) {
     assert.string(opts.id, 'options.id');
     assert.object(opts.opts, 'options.opts');
     assert.optionalObject(opts.baropts, 'options.baropts');
+    assert.optionalBool(opts.catOutputOnError, 'options.catOutputOnError');
     assert.optionalFunc(cb, 'callback');
 
     if (!opts.opts.watch && !opts.opts.cat_outputs) {
@@ -276,15 +277,19 @@ function jobWait(opts, cb) {
         }
 
         var s = job.stats;
+        var job_error;
         if (s.errors > 0) {
             var msg = sprintf('job %s had %d error%s', opts.id, s.errors,
                               s.errors > 1 ? 's' : '');
-            cb(new Error(msg));
-            return;
+            job_error = new Error(msg);
         }
         if (!opts.opts.cat_outputs) {
-            cb();
+            cb(job_error);
         } else {
+            if (!opts.catOutputOnError) {
+                cb(job_error);
+                return;
+            }
             var ee = new EventEmitter();
             var outQueue = new manta.Queue({
                 limit: 1,
@@ -303,7 +308,7 @@ function jobWait(opts, cb) {
 
             function get_done(get_err) {
                 opts.client.close();
-                cb(get_err);
+                cb(get_err || job_error);
             }
 
             outQueue.once('end', get_done);
@@ -398,7 +403,7 @@ function getJobInfo(opts, cb) {
             if (err.statusCode !== 404) {
                 cb(err);
             } else {
-                var p = '/' + opts.user + '/jobs/' + opts.id + '/job.json';
+                var p = manta.jobPath(opts.id, opts.user) + '/job.json';
                 opts.client.get(p, function (_err, stream) {
                     if (_err) {
                         cb(_err);
@@ -1383,6 +1388,9 @@ MJob.prototype.do_cost = function do_cost(subcmd, opts, args, cb) {
     var version = '1.0.0';
     var assetsPath = '/manta/public/jobs/mjob-cost/' + version;
     var client = createClient(opts);
+    var parts = manta.jobPath(args[0], opts.user).split('/');
+    var user = parts[1];
+    var id = parts[3];
     var jobManifest = {
         name: opts.name || 'mjobcost ' + args[0],
         phases: [
@@ -1393,7 +1401,7 @@ MJob.prototype.do_cost = function do_cost(subcmd, opts, args, cb) {
                     assetsPath + '/pricing.json',
                     assetsPath + '/jobcost.js'
                 ],
-                exec: sprintf('/assets%s/jobcost.js %s', assetsPath, args[0])
+                exec: sprintf('/assets%s/jobcost.js %s', assetsPath, id)
             },
             {
                 type: 'reduce',
@@ -1416,14 +1424,14 @@ MJob.prototype.do_cost = function do_cost(subcmd, opts, args, cb) {
         var date = pad(d.getUTCDate());
         var h = pad(d.getUTCHours());
         return (sprintf('/%s/reports/usage/compute/%s/%s/%s/%s/h%s.json',
-            opts.user, y, m, date, h, h));
+            user, y, m, date, h, h));
     }
 
 
     getJobInfo({
         client: client,
-        id: args[0],
-        user: opts.user
+        id: id,
+        user: user
     }, function onJob(err, jobInfo) {
         if (err) {
             cb(err);
@@ -1490,7 +1498,15 @@ MJob.prototype.do_cost = function do_cost(subcmd, opts, args, cb) {
                     jobWait({
                         client: client,
                         id: jobId,
-                        opts: opts
+                        opts: opts,
+
+                        // Sometimes the timeCreated-timeDone range includes
+                        // time that the job was not actually running. This
+                        // happens most often when a job is created but no
+                        // input keys are added until later.
+                        // In this case, we still want to print whatever cost
+                        // that we got.
+                        catOutputOnError: true
                     }, cb);
                 });
             });
