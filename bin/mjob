@@ -1380,6 +1380,8 @@ MJob.prototype.do_cost = function do_cost(subcmd, opts, args, cb) {
         return;
     }
 
+    var version = '1.0.0';
+    var assetsPath = '/manta/public/jobs/mjob-cost/' + version;
     var client = createClient(opts);
     var jobManifest = {
         name: opts.name || 'mjobcost ' + args[0],
@@ -1387,11 +1389,11 @@ MJob.prototype.do_cost = function do_cost(subcmd, opts, args, cb) {
             {
                 type: 'map',
                 assets: [
-                    '/manta/public/jobs/jobcost/billingComputeTable.json',
-                    '/manta/public/jobs/jobcost/pricing.json',
-                    '/manta/public/jobs/jobcost/jobcost.js'
+                    assetsPath + '/billingComputeTable.json',
+                    assetsPath + '/pricing.json',
+                    assetsPath + '/jobcost.js'
                 ],
-                exec: '/assets/manta/public/jobs/jobcost/jobcost.js ' + args[0]
+                exec: sprintf('/assets%s/jobcost.js %s', assetsPath, args[0])
             },
             {
                 type: 'reduce',
@@ -1439,7 +1441,6 @@ MJob.prototype.do_cost = function do_cost(subcmd, opts, args, cb) {
         var start = msToHour(new Date(jobInfo.timeCreated).getTime());
         var end;
         var keys = [];
-        var baropts;
 
         if (!jobInfo.timeDone) {
             end = msToHour(Date.now());
@@ -1456,13 +1457,6 @@ MJob.prototype.do_cost = function do_cost(subcmd, opts, args, cb) {
         while (start <= end) {
             keys.push(constructPath(start));
             start += 3600000;
-        }
-
-        if (!opts.quiet) {
-            baropts = {
-                filename: 'mjob cost ' + args[0],
-                size: keys.length + 1
-            };
         }
 
         client.createJob(jobManifest, function onCreateJob(err2, jobId) {
@@ -1496,8 +1490,7 @@ MJob.prototype.do_cost = function do_cost(subcmd, opts, args, cb) {
                     jobWait({
                         client: client,
                         id: jobId,
-                        opts: opts,
-                        baropts: baropts
+                        opts: opts
                     }, cb);
                 });
             });
