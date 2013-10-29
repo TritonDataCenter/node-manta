@@ -189,8 +189,13 @@ function parseOptions() {
 
 function printEntry(obj, opts) {
     if (opts.json || opts.fulljson) {
-        if (obj.headers && !opts.fulljson)
-            delete obj.headers;
+        if (!opts.fulljson) {
+            if (obj.headers) {
+                obj.durability = obj.headers['durability-level'];
+                obj.mtime = obj.headers['last-modified'];
+                delete obj.headers;
+            }
+        }
         console.log('%j', obj);
     } else if (opts['long']) {
         var d = moment(obj.mtime);
