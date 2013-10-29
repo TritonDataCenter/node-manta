@@ -11,7 +11,6 @@ var moment = require('moment');
 var once = require('once');
 var restify = require('restify');
 var sprintf = require('extsprintf').sprintf;
-var uuid = require('node-uuid');
 
 var manta = require('../lib');
 

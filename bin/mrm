@@ -8,7 +8,6 @@ var url = require('url');
 var bunyan = require('bunyan');
 var dashdash = require('dashdash');
 var restify = require('restify');
-var uuid = require('node-uuid');
 
 var manta = require('../lib');
 

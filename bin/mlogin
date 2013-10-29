@@ -10,7 +10,7 @@ var url = require('url');
 var assert = require('assert-plus');
 var bunyan = require('bunyan');
 var dashdash = require('dashdash');
-var uuid = require('node-uuid');
+var libuuid = require('libuuid');
 var vasync = require('vasync');
 
 var manta = require('../lib');
@@ -132,8 +132,8 @@ function parseOptions() {
     if (opts.quiet)
         QUIET = true;
 
-    opts.config_key = '/' + opts.account + '/stor/medusa-config-' + uuid.v4() +
-        '.json';
+    opts.config_key = '/' + opts.account + '/stor/medusa-config-' +
+        libuuid.create() + '.json';
 
     return (opts);
 }

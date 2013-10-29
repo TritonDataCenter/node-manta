@@ -9,10 +9,8 @@ var url = require('url');
 
 var assert = require('assert-plus');
 var bunyan = require('bunyan');
-var clone = require('clone');
 var dashdash = require('dashdash');
 var restify = require('restify');
-var uuid = require('node-uuid');
 
 var manta = require('../lib');
 
@@ -216,7 +214,7 @@ function printEntry(opts, obj) {
     var startQ = new manta.Queue({
         limit: 1,
         worker: function (p, cb) {
-            var _opts = clone(options);
+            var _opts = manta.cloneOptions(options);
             _opts.depth = 1;
             _opts.path = p;
             client.info(p, function (err, info) {

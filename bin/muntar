@@ -11,7 +11,6 @@ var bunyan = require('bunyan');
 var dashdash = require('dashdash');
 var once = require('once');
 var restify = require('restify');
-var uuid = require('node-uuid');
 
 var manta = require('../lib');
 

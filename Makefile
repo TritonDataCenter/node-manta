@@ -17,6 +17,7 @@
 #
 # Tools
 #
+# Get md2man-roff from <https://github.com/sunaku/md2man>
 MD2MAN                  := md2man-roff
 NODEUNIT		:= ./node_modules/.bin/nodeunit
 NPM			:= npm
@@ -48,7 +49,6 @@ MAN_ROOT        := docs/man
 #
 # Repo-specific targets
 #
-.PHONY: all
 .PHONY: all
 all: $(SMF_MANIFESTS) deps
 

@@ -11,12 +11,11 @@ var util = require('util');
 var assert = require('assert-plus');
 var backoff = require('backoff');
 var bunyan = require('bunyan');
-var carrier = require('carrier');
 var cmdln = require('cmdln');
+var LineStream = require('lstream');
 var moment = require('moment');
 var once = require('once');
 var restify = require('restify');
-var uuid = require('node-uuid');
 
 var manta = require('../lib');
 
@@ -68,9 +67,9 @@ function addInputsFromStdin(client, opts, cb) {
     assert.optionalBool(opts.open, 'options.open');
     assert.func(cb, 'callback');
 
-    process.stdin.setEncoding('utf8');
-
-    var carry = carrier.carry(process.stdin);
+    var lstream = new LineStream({
+        encoding: 'utf8'
+    });
     var queue = new manta.Queue({
         limit: opts.parallel,
         worker: function submit(keys, _cb) {
@@ -108,27 +107,32 @@ function addInputsFromStdin(client, opts, cb) {
     var paused = false;
     var tmp = [];
 
-    carry.on('line', function onLine(l) {
+    lstream.on('data', function onLine(l) {
+        if (!l)
+            return;
+
         tmp.push(l);
         if (tmp.length === opts.batch) {
             if (!queue.push(tmp.slice(0)) && !paused) {
                 queue.once('drain', function () {
-                    process.stdin.resume();
+                    lstream.resume();
                 });
                 paused = true;
-                process.stdin.pause();
+                lstream.pause();
             }
             tmp.length = 0;
         }
     });
 
-    carry.once('end', function onInputEnd() {
+    lstream.once('end', function onInputEnd() {
         if (tmp.length > 0)
             queue.push(tmp.slice(0));
         tmp.length = 0;
 
         queue.close();
     });
+
+    process.stdin.pipe(lstream);
 
     queue.once('end', function onKeysAdded() {
         function _cb(err) {
