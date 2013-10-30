@@ -79,70 +79,6 @@ function ifError(err) {
 }
 
 
-function ls(client, p, options, cb) {
-    cb = once(cb);
-
-    var last;
-    var opts = {
-        log: LOG,
-        query: {}
-    };
-    var rss;
-    var seen = 0;
-
-    if (options.limit)
-        opts.query.limit = options.limit;
-    if (options.marker)
-        opts.query.marker = options.marker;
-    if (options.time)
-        opts.query.sort = 'mtime';
-    if (options.reverse)
-        opts.query.sort_order = 'reverse';
-    if (options.type)
-        opts.query[options.type] = true;
-
-    (function _ls() {
-        client.ls(p, opts, function (err, res) {
-            ifError(err);
-
-            function onEntry(e) {
-                if (options.time && (e.mtime === (last ? last.mtime : last))) {
-                        return;
-                } else if (e.name === (last ? last.name : last)) {
-                        return;
-                }
-
-                seen++;
-                last = e;
-                e.parent = p;
-                printEntry(e, options);
-            }
-
-            res.on('directory', onEntry);
-            res.on('object', onEntry);
-            res.once('error', cb);
-            res.once('end', function (http_res) {
-                rss = rss || parseInt(http_res.headers['result-set-size'],
-                                      10);
-                if (options.limit !== undefined ||
-                    seen >= rss || !last) {
-                    cb(null);
-                    return;
-                }
-
-                if (options.time) {
-                    opts.query.marker = last.mtime;
-                } else {
-                    opts.query.marker = last.name;
-                }
-
-                _ls();
-            });
-        });
-    })();
-}
-
-
 function parseOptions() {
     var opts;
 
@@ -186,7 +122,7 @@ function parseOptions() {
 }
 
 
-function printEntry(obj, opts) {
+function printEntry(opts, obj) {
     if (opts.json || opts.fulljson) {
         if (!opts.fulljson) {
             if (obj.headers) {
@@ -239,17 +175,28 @@ function printEntry(obj, opts) {
             client.close();
     }
 
+    if (options.type) {
+        options.query = options.query || {};
+        options.query[options.type] = true;
+    }
+
     options.paths.forEach(function (p) {
-        client.info(p, function (info_err, info) {
-            if (info_err) {
-                client.get(p, cb);
-            } else if (info.extension === 'directory') {
-                ls(client, p, options, cb);
-            } else {
-                info.parent = p;
-                printEntry(info, options);
-                cb();
+        client.ls(p, options, function (err, res) {
+            if (err) {
+                if (err.name === 'InvalidDirectoryError') {
+                    printEntry(options, err.info);
+                    cb();
+                } else {
+                    client.get(p, cb);
+                }
+                return;
             }
+
+            var print = printEntry.bind(null, options);
+            res.on('directory', print);
+            res.on('object', print);
+            res.once('error', cb);
+            res.once('end', cb);
         });
     });
 })();
