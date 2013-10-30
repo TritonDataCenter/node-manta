@@ -68,6 +68,10 @@ OPTIONS
   Authenticate using the SSH key described by FINGERPRINT.  The key must
   either be in `~/.ssh` or loaded in the SSH agent via `ssh-add`.
 
+`-m, --md5`
+  When using `--file`, this switch instructs mput to first compute the MD5 of
+  the file and send it in `content-md5`.
+
 `-q, --quiet`
   Do not display a progress meter.
 

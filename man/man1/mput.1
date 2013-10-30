@@ -69,6 +69,13 @@ bundle installed by default.
 Authenticate using the SSH key described by FINGERPRINT.  The key must
 either be in \fB\fC~/.ssh\fR or loaded in the SSH agent via \fB\fCssh-add\fR.
 .TP
+\fB\fC-m, --md5\fR
+When using \fB\fC--file\fR, this switch instructs mput to first compute the MD5 of
+the file and send it in \fB\fCcontent-md5\fR.
+.TP
+\fB\fC-q, --quiet\fR
+Do not display a progress meter.
+.TP
 \fB\fC-u, --url url\fR
 Manta base URL (such as \fB\fChttps://manta.us-east.joyent.com\fR).
 .TP
