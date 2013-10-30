@@ -2,6 +2,7 @@
 // -*- mode: js -*-
 // Copyright (c) 2013, Joyent, Inc. All rights reserved.
 
+var crypto = require('crypto');
 var fs = require('fs');
 var path = require('path');
 var url = require('url');
@@ -45,6 +46,11 @@ var OPTIONS_PARSER = dashdash.createParser({
             type: 'arrayOfString',
             help: 'HTTP headers to include',
             helpArg: 'HEADER'
+        },
+        {
+            names: ['md5', 'm'],
+            type: 'bool',
+            help: 'calculate MD5 and then upload (requires -f/--file)'
         },
         {
             names: ['parents', 'p'],
@@ -95,6 +101,9 @@ function parseOptions() {
 
     if (opts.help)
         manta.cli_usage(OPTIONS_PARSER, false, 'path...');
+
+    if (opts.md5 && !opts.file)
+        manta.cli_usage(OPTIONS_PARSER, false, '--md5 requires --file');
 
     if (opts._args.length < 1)
         manta.cli_usage(OPTIONS_PARSER, 'path required', 'path...');
@@ -208,24 +217,47 @@ function printEntry(obj) {
                 });
             }
 
-            var retry = backoff.call(write, null, ifError);
-            retry.setStrategy(new backoff.ExponentialStrategy({
-                initialDelay: 1000,
-                maxDelay: 10000
-            }));
-            retry.failAfter(3);
-            retry.on('backoff', function (num, delay, error) {
-                // If we set a HTTP/1.1 Conditional PUT header and the
-                // precondition was not met, then bail out without retrying:
-                if (error && error.name === 'PreconditionFailedError')
-                    ifError(error);
-                LOG.debug({
-                    err: error,
-                    num: num,
-                    delay: delay
-                }, 'request failed. %s', num === 3 ? 'fail' : 'retrying');
-            });
-            retry.start();
+            function md5() {
+                var f_opts = {
+                    start: 0,
+                    end: stats.size - 1
+                };
+                var fstream = fs.createReadStream(options.file, f_opts);
+                var hash = crypto.createHash('md5');
+
+                fstream.on('data', hash.update.bind(hash));
+                fstream.once('end', function () {
+                    opts.headers['Content-MD5'] = hash.digest('base64');
+                    upload();
+                });
+            }
+
+            function upload() {
+                var retry = backoff.call(write, null, ifError);
+                retry.setStrategy(new backoff.ExponentialStrategy({
+                    initialDelay: 1000,
+                    maxDelay: 10000
+                }));
+                retry.failAfter(3);
+                retry.on('backoff', function (num, delay, error) {
+                    // If we set a HTTP/1.1 Conditional PUT header and the
+                    // precondition was not met, then bail out without retrying:
+                    if (error && error.name === 'PreconditionFailedError')
+                        ifError(error);
+                    LOG.debug({
+                        err: error,
+                        num: num,
+                        delay: delay
+                    }, 'request failed. %s', num === 3 ? 'fail' : 'retrying');
+                });
+                retry.start();
+            }
+
+            if (options.md5) {
+                md5();
+            } else {
+                upload();
+            }
         });
     } else {
         put(process.stdin);

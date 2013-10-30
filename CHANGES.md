@@ -5,6 +5,7 @@
 - #140: SSH Agent Signer not caching in some race scenarios
 - #132: mput needs to handle files that are still being appended to
 - #131: `mjob cost` subcommand
+- #130: `mput --md5` option to send `content-md5`
 - #128: support `MANTA_DEFAULT_CONTENT_TYPE` for mput
 - #117: mfind: support `--maxdepth` and `--mindepth`
 - #106: `client.ls()` now handles all pagination, sorting, etc.
