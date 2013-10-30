@@ -111,7 +111,7 @@ function addInputsFromStdin(client, opts, cb) {
         if (!l)
             return;
 
-        tmp.push(l);
+        tmp.push(manta.path(l));
         if (tmp.length === opts.batch) {
             if (!queue.push(tmp.slice(0)) && !paused) {
                 queue.once('drain', function () {
@@ -157,8 +157,6 @@ function addInputsFromStdin(client, opts, cb) {
             _cb();
         }
     });
-
-    process.stdin.resume();
 }
 
 
@@ -287,10 +285,11 @@ function jobWait(opts, cb) {
                               s.errors > 1 ? 's' : '');
             job_error = new Error(msg);
         }
+
         if (!opts.opts.cat_outputs) {
             cb(job_error);
         } else {
-            if (!opts.catOutputOnError) {
+            if (job_error && !opts.catOutputOnError) {
                 cb(job_error);
                 return;
             }
@@ -576,7 +575,7 @@ MJob.prototype.do_create = function create(subcmd, opts, args, cb) {
             switch (o.key) {
             case 'asset':
                 next.assets = next.assets || [];
-                next.assets.push(o.value);
+                next.assets.push(manta.path(o.value));
                 break;
             case 'count':
                 next.count = o.value;
@@ -667,8 +666,11 @@ MJob.prototype.do_create = function create(subcmd, opts, args, cb) {
             addPhase();
 
         if (opts.asset) {
+            var _assets = opts.asset.map(function (a) {
+                return (manta.path(a));
+            });
             job.phases.forEach(function (p) {
-                p.assets = opts.asset;
+                p.assets = _assets;
             });
         }
     } else {

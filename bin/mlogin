@@ -161,7 +161,7 @@ function create_job(opts, next) {
         the_job.phases[0].init = opts.init;
     if (opts.asset) {
         opts.asset.forEach(function (asset) {
-            the_job.phases[0].assets.push(asset);
+            the_job.phases[0].assets.push(manta.path(asset));
         });
     }
     opts.mclient.createJob(the_job, function (err, jobid) {
