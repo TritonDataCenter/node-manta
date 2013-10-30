@@ -30,7 +30,7 @@
         "readable-stream": "1.1.9",
         "restify": "2.6.0",
         "showdown": "0.3.1",
-        "ssh-agent": "0.2.1",
+        "ssh-agent": "0.2.2",
         "tar": "0.1.18",
         "vasync": "1.4.0",
         "verror": "1.3.6",
