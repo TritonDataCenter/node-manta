@@ -11,6 +11,7 @@ var assert = require('assert-plus');
 var bunyan = require('bunyan');
 var dashdash = require('dashdash');
 var restify = require('restify');
+var vasync = require('vasync');
 
 var manta = require('../lib');
 
@@ -117,21 +118,7 @@ function parseOptions() {
 
 
 function printEntry(opts, obj) {
-    if (opts.name && !opts.name.test(obj.name))
-        return;
-    if (opts.size && obj.type === 'object' && opts.size > obj.size)
-        return;
-    if (opts.type && opts.type === 'd' && obj.type !== 'directory')
-        return;
-    if (opts.type && opts.type === 'o' && obj.type !== 'object')
-        return;
-    if (opts.maxdepth && opts.depth > opts.maxdepth)
-        return;
-    if (opts.mindepth && opts.depth < opts.mindepth)
-        return;
-
-
-    console.log(opts.path + (obj.name ? ('/' + obj.name) : ''));
+    console.log(obj.parent + (obj.name ? ('/' + obj.name) : ''));
     if (opts.limit && (++TOTAL_ENTRIES >= opts.limit))
         process.exit(0);
 }
@@ -141,109 +128,20 @@ function printEntry(opts, obj) {
 ///--- Mainline
 
 (function main() {
+    var barrier = vasync.barrier();
     var options = parseOptions();
     var client = manta.createBinClient(options);
+    var print = printEntry.bind(null, options);
 
-    var queue = new manta.Queue({
-        limit: options.parallel,
-        worker: function ls(opts, cb) {
-            var last;
-            var _opts = {
-                query: {}
-            };
-
-            if (options.limit)
-                _opts.query.limit = options.limit;
-            if (opts.marker)
-                _opts.query.marker = opts.marker;
-
-            client.ls(opts.path, _opts, function (err, res) {
-                ifError(err);
-
-                res.on('directory', function onDirectory(dir) {
-                    if (dir.name === opts.marker)
-                        return;
-
-                    printEntry(opts, dir);
-
-                    if (opts.maxdepth && opts.depth >= opts.maxdepth)
-                        return;
-
-                    var p = opts.path + '/' + dir.name;
-                    last = dir.name;
-                    queue.push({
-                        client: client,
-                        name: options.name,
-                        path: p,
-                        size: options.size,
-                        type: options.type,
-                        depth: opts.depth + 1,
-                        mindepth: options.mindepth,
-                        maxdepth: options.maxdepth
-                    });
-                });
-
-                res.on('object', function onObject(obj) {
-                    if (obj.name === opts.marker)
-                        return;
-
-                    last = obj.name;
-                    printEntry(opts, obj);
-                });
-
-                res.once('error', ifError);
-
-                res.once('end', function onEnd(http_res) {
-                    if (last) {
-                        queue.push({
-                            marker: last,
-                            name: options.name,
-                            path: opts.path,
-                            type: options.type,
-                            depth: opts.depth,
-                            mindepth: options.mindepth,
-                            maxdepth: options.maxdepth
-                        });
-                    }
-                    cb();
-                });
-            });
-        }
-    });
-
-    var startQ = new manta.Queue({
-        limit: 1,
-        worker: function (p, cb) {
-            var _opts = manta.cloneOptions(options);
-            _opts.depth = 1;
-            _opts.path = p;
-            client.info(p, function (err, info) {
-                if (err) {
-                    client.get(p, function (err2) {
-                        ifError(err2);
-                        ifError(err);
-                    });
-                    return;
-                }
-
-                if (info.extension === 'directory') {
-                    queue.push(_opts);
-                } else {
-                    printEntry(_opts, {});
-                }
-                cb();
-            });
-        }
-    });
+    barrier.once('drain', client.close.bind(client));
 
     options.paths.forEach(function (p) {
-        ifError(manta.assertPath(p, true));
-        startQ.push(manta.path(p, true));
-    });
-    startQ.close();
+        barrier.start(p);
+        client.ftw(p, options, function (err, res) {
+            ifError(err);
 
-    startQ.once('end', function () {
-        queue.once('end', client.close.bind(client));
-        queue.close();
+            res.on('entry', print);
+            res.on('end', barrier.done.bind(barrier, p));
+        });
     });
 })();
