@@ -28,7 +28,7 @@
         "path-platform": "0.0.1",
         "progbar": "0.0.2",
         "readable-stream": "1.1.9",
-        "restify": "2.6.0",
+        "restify": "git://github.com/mcavage/node-restify.git#master",
         "showdown": "0.3.1",
         "ssh-agent": "0.2.2",
         "tar": "0.1.18",
