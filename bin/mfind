@@ -138,7 +138,15 @@ function printEntry(opts, obj) {
     options.paths.forEach(function (p) {
         barrier.start(p);
         client.ftw(p, options, function (err, res) {
-            ifError(err);
+            if (err) {
+                if (err.name === 'InvalidDirectoryError') {
+                    print(err.info);
+                    barrier.done(p);
+                    return;
+                } else {
+                    ifError(err);
+                }
+            }
 
             res.on('entry', print);
             res.on('end', barrier.done.bind(barrier, p));
