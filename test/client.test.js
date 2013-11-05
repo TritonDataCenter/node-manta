@@ -54,6 +54,8 @@ before(function (cb) {
                 connectTimeout: 1000,
                 log: helper.createLogger(),
                 retry: false,
+                rejectUnauthorized: (process.env.MANTA_TLS_INSECURE ?
+                                     false : true),
                 sign: manta.privateKeySigner({
                     key: key,
                     keyId: stdout.replace('\n', ''),
