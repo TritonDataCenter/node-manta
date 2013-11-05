@@ -140,6 +140,8 @@ function printEntry(opts, obj) {
         client.ftw(p, options, function (err, res) {
             if (err) {
                 if (err.name === 'InvalidDirectoryError') {
+                    // Hack this up as the object is the full path
+                    err.info.name = '';
                     print(err.info);
                     barrier.done(p);
                     return;
