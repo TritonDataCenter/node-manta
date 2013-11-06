@@ -127,11 +127,11 @@ function parseOptions() {
             log: opts.log,
             method: opts.method,
             query: _url.query,
-            path: manta.path(_url.pathname),
+            path: _url.pathname,
             sign: client.sign,
             user: opts.account
         };
-        client.signUrl(_opts, function (err, resource) {
+        client.signURL(_opts, function (err, resource) {
             ifError(err);
             // Remove trailing slashes from MANTA_URL before combining with
             // the signed path:

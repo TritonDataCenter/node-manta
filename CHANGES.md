@@ -2,6 +2,7 @@
 
 ## Not yet released
 
+- #147: msign broken on urls with spaces in them
 - #140: SSH Agent Signer not caching in some race scenarios
 - #138: `mjob/mlogin` support assets with  `~~/...` syntax
 - #132: mput needs to handle files that are still being appended to
