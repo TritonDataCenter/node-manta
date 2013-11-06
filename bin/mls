@@ -134,7 +134,7 @@ function printEntry(opts, obj) {
         console.log('%j', obj);
     } else if (opts['long']) {
         var d = moment(obj.mtime);
-        var fmt = 'MMM D ';
+        var fmt = 'MMM DD ';
         var now = moment();
 
         if (now.diff(d, 'months') >= 6) {
