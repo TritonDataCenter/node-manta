@@ -175,11 +175,6 @@ function printEntry(opts, obj) {
             client.close();
     }
 
-    if (options.type) {
-        options.query = options.query || {};
-        options.query[options.type] = true;
-    }
-
     options.paths.forEach(function (p) {
         client.ls(p, options, function (err, res) {
             if (err) {
