@@ -111,7 +111,7 @@ function addInputsFromStdin(client, opts, cb) {
         if (!l)
             return;
 
-        tmp.push(manta.path(l));
+        tmp.push(manta.path(l, true));
         if (tmp.length === opts.batch) {
             if (!queue.push(tmp.slice(0)) && !paused) {
                 queue.once('drain', function () {
