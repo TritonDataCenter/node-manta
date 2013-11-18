@@ -1,6 +1,8 @@
 # node-manta Changelog
 
-## Not yet released
+## Not Yet Released
+
+## v1.2.0
 
 - #147: msign broken on urls with spaces in them
 - #140: SSH Agent Signer not caching in some race scenarios
