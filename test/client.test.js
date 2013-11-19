@@ -3,7 +3,7 @@
 var exec = require('child_process').exec;
 var fs = require('fs');
 
-var libuuid = require('libuuid');
+var libuuid = require('node-uuid');
 var MemoryStream = require('readable-stream/passthrough.js');
 
 var manta = require('../lib');
@@ -22,10 +22,10 @@ var test = helper.test;
 
 var JOB;
 var ROOT = '/' + (process.env.MANTA_USER || 'admin') + '/stor';
-var SUBDIR1 = ROOT + '/' + libuuid.create();
-var SUBDIR2 = SUBDIR1 + '/' + libuuid.create(); // directory
-var CHILD1 = SUBDIR1 + '/' + libuuid.create(); // object
-var CHILD2 = SUBDIR2 + '/' + libuuid.create(); // link
+var SUBDIR1 = ROOT + '/' + libuuid.v4();
+var SUBDIR2 = SUBDIR1 + '/' + libuuid.v4(); // directory
+var CHILD1 = SUBDIR1 + '/' + libuuid.v4(); // object
+var CHILD2 = SUBDIR2 + '/' + libuuid.v4(); // link
 var NOENTSUB1 = SUBDIR1 + '/a/b/c';
 var NOENTSUB2 = SUBDIR1 + '/d/e/f';
 

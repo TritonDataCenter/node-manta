@@ -1,6 +1,12 @@
 # node-manta Changelog
 
-## Not Yet Released
+## v1.2.2
+
+- ARGH! rollback to node-uuid
+
+## v1.2.1
+
+- libuuid was broken on linux
 
 ## v1.2.0
 
