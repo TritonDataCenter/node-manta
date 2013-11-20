@@ -1544,10 +1544,16 @@ MJob.prototype.do_cost.options = manta.DEFAULT_CLI_OPTIONS.concat([
 ]);
 
 MJob.prototype.do_cost.help = (
-    'Estimate the cost of a job.\n' +
+    'Estimate the cost of a job in US dollars.\n' +
     '\n' +
-    'Example:\n' +
-    '   mjob cost f6e1391b-584d-4722-bbdf-4506621148c7\n' +
+    'Examples:\n' +
+    '   $ mjob cost f6e1391b-584d-4722-bbdf-4506621148c7\n' +
+    '   07be4a4c-520d-11e3-9cf4-fba37c5a3185\n' +
+    '   added 3 inputs to 07be4a4c-520d-11e3-9cf4-fba37c5a3185\n' +
+    '   $0.341\n' +
+    '\n' +
+    '   $ mjob cost f6e1391b-584d-4722-bbdf-4506621148c7 2>/dev/null\n' +
+    '   $0.341\n' +
     '\n' +
     'Usage:\n' +
     '   mjob cost [OPTIONS] JobId\n' +
