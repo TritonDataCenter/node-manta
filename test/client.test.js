@@ -2,6 +2,7 @@
 
 var exec = require('child_process').exec;
 var fs = require('fs');
+var path = require('path');
 
 var libuuid = require('node-uuid');
 var MemoryStream = require('readable-stream/passthrough.js');
@@ -111,6 +112,7 @@ test('put', function (t) {
         stream.end();
     });
 });
+
 
 test('put without mkdirp', function (t) {
     var text = 'Don\'t mind if I don\'t!';
@@ -264,6 +266,47 @@ test('info (link)', function (t) {
             t.ok(type.md5);
         }
         t.end();
+    });
+});
+
+
+test('ftw', function (t) {
+    var text = 'The lazy brown fox \nsomething \nsomething foo';
+    var self = this;
+    var size = Buffer.byteLength(text);
+    var stream = new MemoryStream();
+
+    this.client.mkdirp(SUBDIR2, function (err) {
+        t.ifError(err);
+        self.client.put(CHILD1, stream, {size: size}, function (err2) {
+            t.ifError(err);
+            self.client.ftw(SUBDIR1, function (err3, res) {
+                t.ifError(err3);
+                t.ok(res);
+
+                var count = 0;
+                res.on('entry', function (e) {
+                    if (e.name === path.basename(SUBDIR2)) {
+                        count++;
+                        t.equal(e.type, 'directory');
+                    } else if (e.name === path.basename(CHILD1)) {
+                        count++;
+                        t.equal(e.type, 'object');
+                    }
+                    //ignore other garbage
+                });
+
+                res.once('end', function () {
+                    t.equal(count, 2);
+                    t.end();
+                });
+            });
+        });
+    });
+
+    process.nextTick(function () {
+        stream.write(text);
+        stream.end();
     });
 });
 
