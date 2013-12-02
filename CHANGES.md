@@ -1,5 +1,9 @@
 # node-manta Changelog
 
+## Not Yet Released
+
+- #157: mkdirp broken on paths requiring url encoding
+
 ## v1.2.2
 
 - ARGH! rollback to node-uuid
