@@ -2,6 +2,7 @@
 
 ## Not Yet Released
 
+- add `path` API to manta client
 - #157: mkdirp broken on paths requiring url encoding
 
 ## v1.2.2
