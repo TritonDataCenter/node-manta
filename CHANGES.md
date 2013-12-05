@@ -2,6 +2,7 @@
 
 ## Not Yet Released
 
+- `client.mkdir` should return the same object as `client.info`
 - add `path` API to manta client
 - #157: mkdirp broken on paths requiring url encoding
 
