@@ -1,10 +1,13 @@
 # node-manta Changelog
 
-## Not Yet Released
+## not yet released
+
+## v1.2.3
 
 - `client.mkdir` should return the same object as `client.info`
 - add `path` API to manta client
 - #157: mkdirp broken on paths requiring url encoding
+- depend on restify from npm, not git
 
 ## v1.2.2
 
