@@ -280,6 +280,7 @@ test('ftw', function (t) {
         t.ifError(err);
         self.client.put(CHILD1, stream, {size: size}, function (err2) {
             t.ifError(err);
+
             self.client.ftw(SUBDIR1, function (err3, res) {
                 t.ifError(err3);
                 t.ok(res);

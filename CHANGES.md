@@ -2,6 +2,10 @@
 
 ## not yet released
 
+## v1.2.4
+
+- `client.mkdir` broke contract of returning an HTTP respose object.
+
 ## v1.2.3
 
 - `client.mkdir` should return the same object as `client.info`
