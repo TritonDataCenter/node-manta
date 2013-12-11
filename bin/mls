@@ -191,7 +191,7 @@ function printEntry(opts, obj) {
             res.on('directory', print);
             res.on('object', print);
             res.once('error', cb);
-            res.once('end', cb);
+            res.once('end', cb.bind(null, null)); // end emits a "res"; ignore
         });
     });
 })();

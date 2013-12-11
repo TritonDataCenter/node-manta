@@ -1,8 +1,9 @@
 # node-manta Changelog
 
-## not yet released
+## v1.2.5
 
 - #149 mput of a zero byte file fails
+- mls spewing a random mls: [object Object] at end of listings
 
 ## v1.2.4
 
