@@ -2,6 +2,8 @@
 
 ## not yet released
 
+- #149 mput of a zero byte file fails
+
 ## v1.2.4
 
 - `client.mkdir` broke contract of returning an HTTP respose object.

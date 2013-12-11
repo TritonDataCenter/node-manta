@@ -208,7 +208,7 @@ function printEntry(obj) {
                 cb = once(cb);
                 var f_opts = {
                     start: 0,
-                    end: stats.size - 1
+                    end: stats.size > 0 ? (stats.size - 1) : 0
                 };
                 var fstream = fs.createReadStream(options.file, f_opts);
                 fstream.pause();
