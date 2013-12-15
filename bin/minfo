@@ -1,0 +1,100 @@
+#!/usr/bin/env node
+// -*- mode: js -*-
+// Copyright (c) 2013, Joyent, Inc. All rights reserved.
+
+var http = require('http');
+var path = require('path-platform');
+
+var bunyan = require('bunyan');
+var dashdash = require('dashdash');
+var restify = require('restify');
+
+var manta = require('../lib');
+
+var name = path.basename(process.argv[1]);
+
+///--- Globals
+
+var LOG = bunyan.createLogger({
+    name: name,
+    level: (process.env.LOG_LEVEL || 'info'),
+    stream: process.stderr,
+    serializers: restify.bunyan.serializers
+});
+
+var OPTIONS_PARSER = dashdash.createParser({
+    options: manta.DEFAULT_CLI_OPTIONS
+});
+
+
+
+///--- Functions
+
+function ifError(err) {
+    if (err) {
+        console.error('%s: %s', name, err.toString());
+        process.exit(1);
+    }
+}
+
+
+function parseOptions() {
+    var opts;
+
+    try {
+        opts = OPTIONS_PARSER.parse(process.argv);
+        manta.checkBinEnv(opts);
+    } catch (e) {
+        manta.cli_usage(OPTIONS_PARSER, e.message, 'path...');
+    }
+
+    manta.cli_logger(opts, LOG);
+
+    if (opts.help)
+        manta.cli_usage(OPTIONS_PARSER, false, 'path...');
+
+    if (opts._args.length < 1)
+        manta.cli_usage(OPTIONS_PARSER, 'path required', 'path...');
+
+    opts.paths = opts._args;
+
+    return (opts);
+}
+
+
+function printEntry(res) {
+    console.log('HTTP/%s %s %s',
+        res.httpVersion,
+        res.statusCode,
+        http.STATUS_CODES[res.statusCode]);
+    Object.keys(res.headers).forEach(function(header) {
+      console.log('%s: %s', header, res.headers[header]);
+    });
+    console.log();
+}
+
+
+///--- Mainline
+
+(function main() {
+    var opts = parseOptions();
+    var client = manta.createBinClient(opts);
+    var i = -1;
+
+    function get() {
+        var p = opts.paths[++i];
+        if (!p) {
+            client.close();
+            return;
+        }
+
+        client.info(p, function (err, info, res) {
+            if (err)
+                res = info;
+            printEntry(res);
+            get();
+        });
+    }
+
+    get();
+})();
