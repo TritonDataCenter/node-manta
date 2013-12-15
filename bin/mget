@@ -3,6 +3,7 @@
 // Copyright (c) 2013, Joyent, Inc. All rights reserved.
 
 var fs = require('fs');
+var http = require('http');
 var path = require('path-platform');
 var url = require('url');
 
@@ -97,8 +98,15 @@ function printEntry(obj) {
     console.log('%j', obj);
 }
 
-function printHeader(res, name) {
-    console.error('%s: %s', name, res.headers[name]);
+function printHeaders(res) {
+    console.error('HTTP/%s %s %s',
+        res.httpVersion,
+        res.statusCode,
+        http.STATUS_CODES[res.statusCode]);
+    Object.keys(res.headers).forEach(function(header) {
+      console.error('%s: %s', header, res.headers[header]);
+    });
+    console.error();
 }
 
 
@@ -121,12 +129,8 @@ function printHeader(res, name) {
         client.get(p, function (err, stream, res) {
             ifError(err);
 
-            if (opts.headers) {
-              Object.keys(res.headers).forEach(function(header) {
-                printHeader(res, header);
-              });
-              console.error();
-            }
+            if (opts.headers)
+                printHeaders(res);
 
             var bar;
             if (drawProgressBar) {
