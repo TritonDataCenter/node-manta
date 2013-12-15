@@ -26,6 +26,11 @@ var LOG = bunyan.createLogger({
 var OPTIONS_PARSER = dashdash.createParser({
     options: manta.DEFAULT_CLI_OPTIONS.concat([
         {
+            names: ['headers', 'H'],
+            type: 'bool',
+            help: 'show headers'
+        },
+        {
             names: ['quiet', 'q'],
             type: 'bool',
             help: 'disable the progress bar'
@@ -92,6 +97,9 @@ function printEntry(obj) {
     console.log('%j', obj);
 }
 
+function printHeader(res, name) {
+    console.error('%s: %s', name, res.headers[name]);
+}
 
 
 ///--- Mainline
@@ -112,6 +120,13 @@ function printEntry(obj) {
 
         client.get(p, function (err, stream, res) {
             ifError(err);
+
+            if (opts.headers) {
+              Object.keys(res.headers).forEach(function(header) {
+                printHeader(res, header);
+              });
+              console.error();
+            }
 
             var bar;
             if (drawProgressBar) {
