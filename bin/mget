@@ -3,6 +3,7 @@
 // Copyright (c) 2013, Joyent, Inc. All rights reserved.
 
 var fs = require('fs');
+var http = require('http');
 var path = require('path-platform');
 var url = require('url');
 
@@ -25,6 +26,11 @@ var LOG = bunyan.createLogger({
 
 var OPTIONS_PARSER = dashdash.createParser({
     options: manta.DEFAULT_CLI_OPTIONS.concat([
+        {
+            names: ['headers', 'H'],
+            type: 'bool',
+            help: 'show headers'
+        },
         {
             names: ['quiet', 'q'],
             type: 'bool',
@@ -92,6 +98,16 @@ function printEntry(obj) {
     console.log('%j', obj);
 }
 
+function printHeaders(res) {
+    console.error('HTTP/%s %s %s',
+        res.httpVersion,
+        res.statusCode,
+        http.STATUS_CODES[res.statusCode]);
+    Object.keys(res.headers).forEach(function(header) {
+      console.error('%s: %s', header, res.headers[header]);
+    });
+    console.error();
+}
 
 
 ///--- Mainline
@@ -112,6 +128,9 @@ function printEntry(obj) {
 
         client.get(p, function (err, stream, res) {
             ifError(err);
+
+            if (opts.headers)
+                printHeaders(res);
 
             var bar;
             if (drawProgressBar) {
