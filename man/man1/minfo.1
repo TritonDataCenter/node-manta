@@ -1,57 +1,31 @@
-.TH mget 1 "May 2013" Manta "Manta Commands"
+.TH minfo 1 "May 2013" Manta "Manta Commands"
 .SH NAME
 .PP
-mget \- download an object from Manta.
+minfo \- show HTTP headers for a Manta object
 .SH SYNOPSIS
 .PP
-\fB\fCmget\fR [OPTION...] PATH...
+\fB\fCminfo\fR [OPTION...] PATH...
 .SH DESCRIPTION
 .PP
-Retrieves the content of 
+Retrieves the HTTP headers of 
 .BR object (s) 
 specified by 
 .BR PATH (s), 
 and dumps them to
-stdout.  Note that mget does not perform incremental/resumable downloads, so any
-network\-level errors that occur during transfer will result in an incomplete
-and/or corrupt output.  You should check for an exit status of 0 to know that
-the request was successful.
-.PP
-Note that mget by default will emit a progress meter on stderr.  You can
-disable this with \fB\fC-q\fR.
+stdout.  Note that minfo does not download any content; use \fB\fCmget\fR for that.
 .SH EXAMPLES
 .PP
-Retrieves the given object, with a progress indicator.
+Retrieves HTTP headers for the given object.
 .PP
 .RS
 .nf
-$ mget /$MANTA_USER/stor/README.md > /tmp/README.md
-.fi
-.RE
-.PP
-Retrieves the given object, with a progress indicator, and stores it in the
-file README.md in the current directory.
-.PP
-.RS
-.nf
-$ mget -O /$MANTA_USER/stor/README.md
-.fi
-.RE
-.PP
-Finds and fetches a set of Javascript files, and pipes them to less.
-.PP
-.RS
-.nf
-$ mfind -t o -n '.js$' /$MANTA_USER/stor/foo | xargs mget -q | less
+$ minfo /$MANTA_USER/stor/README.md
 .fi
 .RE
 .SH OPTIONS
 .TP
 \fB\fC-a, --account login\fR
 Authenticate as account (login name).
-.TP
-\fB\fC-H, --headers\fR
-Print HTTP headers on stderr.
 .TP
 \fB\fC-h, --help\fR
 Print a help message and exit.
@@ -64,16 +38,6 @@ bundle installed by default.
 \fB\fC-k, --key fingerprint\fR
 Authenticate using the SSH key described by FINGERPRINT.  The key must
 either be in \fB\fC~/.ssh\fR or loaded in the SSH agent via \fB\fCssh-add\fR.
-.TP
-\fB\fC-o, --output file\fR
-Write output to <file> instead of stdout.
-.TP
-\fB\fC-O, --remote-name\fR
-Write output to a file using the requested object's name (i.e. the last
-element of the full object path) instead of stdout.
-.TP
-\fB\fC-q, --quiet\fR
-Do not display a progress meter.
 .TP
 \fB\fC-u, --url url\fR
 Manta base URL (such as \fB\fChttps://manta.us-east.joyent.com\fR).
@@ -101,7 +65,7 @@ try:
 .PP
 .RS
 .nf
-$ mget -vv /$MANTA_USER/stor/foo 2>&1 | bunyan
+$ minfo -vv /$MANTA_USER/stor/foo 2>&1 | bunyan
 .fi
 .RE
 .SH BUGS

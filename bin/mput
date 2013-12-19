@@ -178,17 +178,20 @@ function printEntry(obj) {
                 });
             }
 
-            client.put(options.path, stream, opts, function (err) {
-                if (err) {
-                    if (cb) {
-                        cb(err);
-                    } else {
-                        ifError(err);
+            stream.once('readable', function onDataReady() {
+                client.put(options.path, stream, opts, function onPut(err) {
+                    if (err) {
+                        if (cb) {
+                            cb(err);
+                        } else {
+                            ifError(err);
+                        }
                     }
-                }
-                client.close();
-                if (cb)
-                    cb();
+
+                    client.close();
+                    if (cb)
+                        cb();
+                });
             });
         });
     }

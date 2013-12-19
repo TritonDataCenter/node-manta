@@ -45,6 +45,9 @@ OPTIONS
 `-a, --account login`
   Authenticate as account (login name).
 
+`-H, --headers`
+  Print HTTP headers on stderr.
+
 `-h, --help`
   Print a help message and exit.
 

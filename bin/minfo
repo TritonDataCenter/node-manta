@@ -64,11 +64,11 @@ function parseOptions() {
 
 function printEntry(res) {
     console.log('HTTP/%s %s %s',
-        res.httpVersion,
-        res.statusCode,
-        http.STATUS_CODES[res.statusCode]);
-    Object.keys(res.headers).forEach(function(header) {
-      console.log('%s: %s', header, res.headers[header]);
+                res.httpVersion,
+                res.statusCode,
+                http.STATUS_CODES[res.statusCode]);
+    Object.keys(res.headers).forEach(function (k) {
+        console.log('%s: %s', k, res.headers[k]);
     });
     console.log();
 }

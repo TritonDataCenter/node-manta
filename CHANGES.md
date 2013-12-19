@@ -1,5 +1,9 @@
 # node-manta Changelog
 
+## Not yet released
+
+- #161 add `-H` to mget and an `minfo` command
+
 ## v1.2.5
 
 - #149 mput of a zero byte file fails

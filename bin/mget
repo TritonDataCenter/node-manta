@@ -100,14 +100,15 @@ function printEntry(obj) {
 
 function printHeaders(res) {
     console.error('HTTP/%s %s %s',
-        res.httpVersion,
-        res.statusCode,
-        http.STATUS_CODES[res.statusCode]);
-    Object.keys(res.headers).forEach(function(header) {
-      console.error('%s: %s', header, res.headers[header]);
+                  res.httpVersion,
+                  res.statusCode,
+                  http.STATUS_CODES[res.statusCode]);
+    Object.keys(res.headers).forEach(function (k) {
+        console.error('%s: %s', k, res.headers[k]);
     });
     console.error();
 }
+
 
 
 ///--- Mainline
