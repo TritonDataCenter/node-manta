@@ -3,6 +3,7 @@
 ## Not yet released
 
 - #161 add `-H` to mget and an `minfo` command
+- #164 assets whose names require URL-encoding don't work correctly
 
 ## v1.2.5
 

@@ -575,7 +575,7 @@ MJob.prototype.do_create = function create(subcmd, opts, args, cb) {
             switch (o.key) {
             case 'asset':
                 next.assets = next.assets || [];
-                next.assets.push(manta.path(o.value));
+                next.assets.push(manta.path(o.value, true));
                 break;
             case 'count':
                 next.count = o.value;
