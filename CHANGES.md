@@ -1,6 +1,6 @@
 # node-manta Changelog
 
-## Not yet released
+## v1.2.6
 
 - #161 add `-H` to mget and an `minfo` command
 - #164 assets whose names require URL-encoding don't work correctly
