@@ -3,6 +3,7 @@
 ## v1.2.7
 
 - #168: mls -l on objects shows wrong timestamp
+- #167: `client.put` hangs if the stream passed to it is not readable
 
 ## v1.2.6
 

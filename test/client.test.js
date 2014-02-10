@@ -114,6 +114,19 @@ test('put', function (t) {
 });
 
 
+test('put (zero byte streaming)', function (t) {
+    var self = this;
+    var stream = fs.createReadStream('/dev/null');
+
+    stream.once('open', function () {
+        self.client.put(CHILD1, stream, function (err) {
+            t.ifError(err);
+            t.end();
+        });
+    });
+});
+
+
 test('put without mkdirp', function (t) {
     var text = 'Don\'t mind if I don\'t!';
     var size = Buffer.byteLength(text);
