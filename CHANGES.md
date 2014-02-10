@@ -2,8 +2,9 @@
 
 ## v1.2.7
 
-- #168: mls -l on objects shows wrong timestamp
+- #156: `client.listJobs` not URL-encoding names
 - #167: `client.put` hangs if the stream passed to it is not readable
+- #168: mls -l on objects shows wrong timestamp
 
 ## v1.2.6
 
