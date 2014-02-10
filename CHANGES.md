@@ -1,5 +1,9 @@
 # node-manta Changelog
 
+## v1.2.7
+
+- #168: mls -l on objects shows wrong timestamp
+
 ## v1.2.6
 
 - #161 add `-H` to mget and an `minfo` command

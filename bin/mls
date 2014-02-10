@@ -133,7 +133,7 @@ function printEntry(opts, obj) {
         }
         console.log('%j', obj);
     } else if (opts['long']) {
-        var d = moment(obj.mtime);
+        var d = moment(obj.mtime || obj.headers['last-modified']);
         var fmt = 'MMM DD ';
         var now = moment();
 
