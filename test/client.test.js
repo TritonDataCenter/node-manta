@@ -114,6 +114,42 @@ test('put', function (t) {
 });
 
 
+test('chattr', function (t) {
+    var opts = {
+        headers: {
+            'm-foo': 'bar'
+        }
+    };
+    var self = this;
+
+    this.client.info(CHILD1, function (err, info) {
+        t.ifError(err);
+        t.ok(info);
+
+        if (!info) {
+            t.end();
+            return;
+        }
+
+        self.client.chattr(CHILD1, opts, function onChattr(err1) {
+            t.ifError(err1);
+
+            self.client.info(CHILD1, function onInfo(err2, info2) {
+                t.ifError(err2);
+                t.ok(info2);
+                if (info2) {
+                    t.ok(info2.headers);
+                    var headers = info2.headers || {};
+                    t.equal(headers['m-foo'], 'bar');
+                    t.equal(info2.etag, info.etag);
+                }
+                t.end();
+            });
+        });
+    });
+});
+
+
 test('put (zero byte streaming)', function (t) {
     var self = this;
     var stream = fs.createReadStream('/dev/null');

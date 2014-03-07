@@ -1,0 +1,112 @@
+#!/usr/bin/env node
+// -*- mode: js -*-
+// Copyright (c) 2014, Joyent, Inc. All rights reserved.
+
+var path = require('path');
+var url = require('url');
+
+var bunyan = require('bunyan');
+var dashdash = require('dashdash');
+var restify = require('restify');
+
+var manta = require('../lib');
+
+
+
+///--- Globals
+
+var LOG = bunyan.createLogger({
+    name: path.basename(process.argv[1]),
+    level: (process.env.LOG_LEVEL || 'info'),
+    stream: process.stderr,
+    serializers: restify.bunyan.serializers
+});
+
+var OPTIONS_PARSER = dashdash.createParser({
+    options: manta.DEFAULT_CLI_OPTIONS.concat([
+        {
+            names: ['header', 'H'],
+            type: 'arrayOfString',
+            help: 'HTTP headers to include',
+            helpArg: 'HEADER'
+        }
+    ])
+});
+
+
+
+///--- Functions
+
+function ifError(err) {
+    if (err) {
+        console.error('mchattr: ' + err.toString());
+        process.exit(1);
+    }
+}
+
+
+function parseOptions() {
+    var opts;
+
+    try {
+        opts = OPTIONS_PARSER.parse(process.argv);
+        manta.checkBinEnv(opts);
+    } catch (e) {
+        manta.cli_usage(OPTIONS_PARSER, e.message, 'path...');
+    }
+
+    manta.cli_logger(opts, LOG);
+
+    if (opts.help)
+        manta.cli_usage(OPTIONS_PARSER, false, 'path...');
+
+    if (opts._args.length < 1)
+        manta.cli_usage(OPTIONS_PARSER, 'path required', 'path...');
+
+    opts.headers = {};
+    (opts.header || []).forEach(function (h) {
+        if (h.indexOf(':') === -1) {
+            manta.cli_usage(OPTIONS_PARSER,
+                            'header must be in the form of "[header]: value"',
+                            'path...');
+        }
+        var tmp = h.split(':');
+        opts.headers[tmp[0]] = tmp[1].trim();
+    });
+
+    opts.paths = opts._args.map(function (p) {
+        ifError(manta.assertPath(p, true));
+        return (manta.path(p, true));
+    });
+
+    return (opts);
+}
+
+
+function printEntry(obj) {
+    console.log('%j', obj);
+}
+
+
+
+///--- Mainline
+
+(function main() {
+    var options = parseOptions();
+    var client = manta.createBinClient(options);
+    var i = -1;
+    var opts = {
+        headers: options.headers
+    };
+
+    (function chattr(cb_err) {
+        ifError(cb_err);
+
+        var p = options.paths[++i];
+        if (!p) {
+            client.close();
+        } else {
+            client.chattr(p, opts, chattr);
+        }
+    })();
+})();
