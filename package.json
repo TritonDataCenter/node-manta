@@ -37,7 +37,8 @@
         "tar": "0.1.18",
         "vasync": "1.4.0",
         "verror": "1.3.6",
-        "watershed": "0.3.0"
+        "watershed": "0.3.0",
+        "yakaa": "git://github.com/jclulow/yakaa.git#a144f715f413a13549d320d0c6156675994a03fb"
     },
     "devDependencies": {
         "nodeunit": "0.8.1"
