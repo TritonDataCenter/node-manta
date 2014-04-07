@@ -2,6 +2,7 @@
 
 ## v1.2.7
 
+- #177: Clearer error if $HOME is not set.
 - #156: `client.listJobs` not URL-encoding names
 - #167: `client.put` hangs if the stream passed to it is not readable
 - #168: mls -l on objects shows wrong timestamp
