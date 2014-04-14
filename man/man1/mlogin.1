@@ -70,8 +70,16 @@ Run \fB\fCshell_command\fR instead of the default shell. This will be passed to
 other than the default interactive shell.  Can be especially useful when
 you provide a script or program to run via \fB\fC--assets\fR.
 .TP
+\fB\fC--disk disk\fR
+Override the OS quota, and use the specified amount of disk.
+This option is specified in gigabytes.
+.TP
 \fB\fC-h, --help\fR
 Print a help message and exit.
+.TP
+\fB\fC--image version\fR
+Specifies an image version semver to use in job phases.  Must be specified as
+a semver string (default is ~1.0).
 .TP
 \fB\fC--init command\fR
 Specifies a command to execute in the compute zone.  This command will be
@@ -87,6 +95,10 @@ bundle installed by default.
 Authenticate using the SSH key described by \fB\fCfingerprint\fR.  The key must
 either be in \fB\fC~/.ssh\fR or loaded in the SSH agent via \fB\fCssh-add\fR.
 .TP
+\fB\fC--memory memory\fR
+Override the OS size, and use the specified amount of DRAM.
+This option is specified in megabytes.
+.TP
 \fB\fC-s, --assets path\fR
 Specifies an asset to make available in the compute zone.
 .TP
@@ -98,14 +110,6 @@ Print debug output to stderr.  Repeat option to increase verbosity.
 .TP
 \fB\fC-q, --quiet\fR
 Don't print session establishment status messages.
-.TP
-\fB\fC--disk disk\fR
-Override the OS quota, and use the specified amount of disk.
-This option is specified in gigabytes.
-.TP
-\fB\fC--memory memory\fR
-Override the OS size, and use the specified amount of DRAM.
-This option is specified in megabytes.
 .SH ENVIRONMENT
 .TP
 \fB\fCMANTA_USER\fR

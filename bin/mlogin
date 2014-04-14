@@ -66,6 +66,12 @@ var OPTIONS_PARSER = dashdash.createParser({
             type: 'string',
             help: 'command to run before execution; must be valid bash script',
             helpArg: 'INIT_COMMAND'
+        },
+        {
+            names: [ 'image' ],
+            type: 'string',
+            help: 'Allowed compute image string (semver)',
+            helpArg: 'IMAGE_SEMVER'
         }
     ])
 });
@@ -159,6 +165,8 @@ function create_job(opts, next) {
         the_job.phases[0].disk = opts.disk;
     if (opts.init)
         the_job.phases[0].init = opts.init;
+    if (opts.image)
+        the_job.phases[0].image = opts.image;
     if (opts.asset) {
         opts.asset.forEach(function (asset) {
             the_job.phases[0].assets.push(manta.path(asset, true));

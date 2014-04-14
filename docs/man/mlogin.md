@@ -73,8 +73,16 @@ The options are supported:
   other than the default interactive shell.  Can be especially useful when
   you provide a script or program to run via `--assets`.
 
+`--disk disk`
+  Override the OS quota, and use the specified amount of disk.
+  This option is specified in gigabytes.
+
 `-h, --help`
   Print a help message and exit.
+
+`--image version`
+  Specifies an image version semver to use in job phases.  Must be specified as
+  a semver string (default is ~1.0).
 
 `--init command`
   Specifies a command to execute in the compute zone.  This command will be
@@ -90,6 +98,10 @@ The options are supported:
   Authenticate using the SSH key described by `fingerprint`.  The key must
   either be in `~/.ssh` or loaded in the SSH agent via `ssh-add`.
 
+`--memory memory`
+  Override the OS size, and use the specified amount of DRAM.
+  This option is specified in megabytes.
+
 `-s, --assets path`
   Specifies an asset to make available in the compute zone.
 
@@ -101,14 +113,6 @@ The options are supported:
 
 `-q, --quiet`
   Don't print session establishment status messages.
-
-`--disk disk`
-  Override the OS quota, and use the specified amount of disk.
-  This option is specified in gigabytes.
-
-`--memory memory`
-  Override the OS size, and use the specified amount of DRAM.
-  This option is specified in megabytes.
 
 ENVIRONMENT
 -----------
