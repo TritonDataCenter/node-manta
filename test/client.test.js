@@ -537,3 +537,19 @@ test('mkdirp/rmr', function (t) {
         });
     });
 });
+
+
+test('#180: Invalid key results in no client error', function (t) {
+    t.throws(function () {
+        manta.createClient({
+            sign: manta.privateKeySigner({
+                key: fs.readFileSync('/dev/null', 'utf8'),
+                keyId: process.env.MANTA_KEY_ID,
+                user: process.env.MANTA_USER
+            }),
+            user: process.env.MANTA_USER,
+            url: process.env.MANTA_URL
+        });
+    });
+    t.end();
+});

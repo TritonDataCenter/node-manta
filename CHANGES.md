@@ -1,5 +1,9 @@
 # node-manta Changelog
 
+## not yet release
+
+- #180: client should throw on empty/badly formatted private key
+
 ## v1.2.7
 
 - #179: mlogin now supports --image
