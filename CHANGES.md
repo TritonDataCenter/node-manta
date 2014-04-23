@@ -2,6 +2,7 @@
 
 ## not yet release
 
+- #181: `client.get` should auto-resume interrupted downloads
 - #180: client should throw on empty/badly formatted private key
 
 ## v1.2.7
