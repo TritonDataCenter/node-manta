@@ -27,9 +27,10 @@ var LOG = bunyan.createLogger({
 var OPTIONS_PARSER = dashdash.createParser({
     options: manta.DEFAULT_CLI_OPTIONS.concat([
         {
-            names: ['headers', 'H'],
-            type: 'bool',
-            help: 'show headers'
+            names: ['header', 'H'],
+            type: 'arrayOfString',
+            help: 'HTTP headers to include',
+            helpArg: 'HEADER'
         },
         {
             names: ['quiet', 'q'],
@@ -90,23 +91,23 @@ function parseOptions() {
         }
     }
 
+    opts.headers = {};
+    (opts.header || []).forEach(function (h) {
+        if (h.indexOf(':') === -1) {
+            manta.cli_usage(OPTIONS_PARSER,
+                            'header must be in the form of "[header]: value"',
+                            'path...');
+        }
+        var tmp = h.split(':');
+        opts.headers[tmp[0]] = tmp[1].trim();
+    });
+
     return (opts);
 }
 
 
 function printEntry(obj) {
     console.log('%j', obj);
-}
-
-function printHeaders(res) {
-    console.error('HTTP/%s %s %s',
-                  res.httpVersion,
-                  res.statusCode,
-                  http.STATUS_CODES[res.statusCode]);
-    Object.keys(res.headers).forEach(function (k) {
-        console.error('%s: %s', k, res.headers[k]);
-    });
-    console.error();
 }
 
 
@@ -129,9 +130,6 @@ function printHeaders(res) {
 
         client.get(p, function (err, stream, res) {
             ifError(err);
-
-            if (opts.headers)
-                printHeaders(res);
 
             var bar;
             if (drawProgressBar) {
