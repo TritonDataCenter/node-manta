@@ -289,14 +289,15 @@ function get_signed_url(opts, next) {
 // agent via the asset mechanism.
 function put_config_object(opts, next) {
     assert.string(opts.signed_url, 'opts.signed_url');
-    var putopts = {
-        copies: 1
-    };
-    var obj = {
+    var sobj = JSON.stringify({
         signed_url: opts.signed_url,
         insecure_tls: opts.insecure ? true : false
+    });
+    var putopts = {
+        copies: 1,
+        size: sobj.length
     };
-    var inputstream = new manta.StringStream(JSON.stringify(obj));
+    var inputstream = new manta.StringStream(sobj);
     opts.mclient.put(opts.config_key, inputstream, putopts, next);
 }
 
