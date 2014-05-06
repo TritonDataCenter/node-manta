@@ -2,6 +2,8 @@
 
 ## not yet release
 
+- #184: update progbar to 0.1.0
+    * includes: jclulow/node-progbar#10 (handle tty resizing)
 - #181: `client.get` should auto-resume interrupted downloads
 - #180: client should throw on empty/badly formatted private key
 
