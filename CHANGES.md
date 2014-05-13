@@ -1,14 +1,14 @@
 # node-manta Changelog
 
-## not yet release
+## not yet released
 
+## v1.2.7
+
+- include restify v2.8.0
 - #184: update progbar to 0.1.0
     * includes: jclulow/node-progbar#10 (handle tty resizing)
 - #181: `client.get` should auto-resume interrupted downloads
 - #180: client should throw on empty/badly formatted private key
-
-## v1.2.7
-
 - #179: mlogin now supports --image
 - #177: Clearer error if $HOME is not set.
 - #156: `client.listJobs` not URL-encoding names

@@ -10,7 +10,7 @@
         "type": "git",
         "url": "git://github.com/joyent/node-manta.git"
     },
-    "version": "1.2.6",
+    "version": "1.2.7",
     "main": "./lib/index.js",
     "dependencies": {
         "assert-plus": "0.1.5",
@@ -31,7 +31,7 @@
         "path-platform": "0.0.1",
         "progbar": "0.1.0",
         "readable-stream": "1.1.9",
-        "restify": "2.6.1",
+        "restify": "2.8.0",
         "showdown": "0.3.1",
         "ssh-agent": "0.2.2",
         "tar": "0.1.18",
