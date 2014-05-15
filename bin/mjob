@@ -183,31 +183,6 @@ function jobDataCommon(opts, callback) {
         worker: function getJobData(id, cb) {
             cb = once(cb);
 
-            function handleError(func_err) {
-                if (func_err.statusCode !== 404) {
-                    cb(func_err);
-                    return;
-                }
-
-                var p = sprintf(JOB_DATA_FMT, opts.user, id, opts.type);
-                opts.client.get(p, function (err, stream) {
-                    if (err) {
-                        cb(err);
-                        return;
-                    }
-
-                    var body = '';
-                    stream.setEncoding('utf8');
-                    stream.on('data', function (chunk) {
-                        body += chunk;
-                    });
-                    stream.once('end', function () {
-                        process.stdout.write(body);
-                        cb();
-                    });
-                });
-            }
-
             opts.client[opts.func](id, function (err, out) {
                 if (err) {
                     handleError(err);
@@ -216,7 +191,7 @@ function jobDataCommon(opts, callback) {
 
                 var body = '';
 
-                out.once('error', handleError);
+                out.once('error', cb);
                 out.on(opts.watch, function (obj) {
                     if (opts.func === 'jobErrors') {
                         body += JSON.stringify(obj) + '\n';
@@ -401,31 +376,7 @@ function getJobInfo(opts, cb) {
     assert.optionalFunc(cb, 'callback');
 
     cb = once(cb);
-    opts.client.job(opts.id, function (err, job) {
-        if (err) {
-            if (err.statusCode !== 404) {
-                cb(err);
-            } else {
-                var p = manta.jobPath(opts.id, opts.user) + '/job.json';
-                opts.client.get(p, function (_err, stream) {
-                    if (_err) {
-                        cb(_err);
-                    } else {
-                        var body = '';
-                        stream.setEncoding('utf8');
-                        stream.on('data', function (chunk) {
-                            body += chunk;
-                        });
-                        stream.once('end', function () {
-                            cb(null, JSON.parse(body));
-                        });
-                    }
-                });
-            }
-        } else {
-            cb(null, job);
-        }
-    });
+    opts.client.job(opts.id, cb);
 }
 
 
