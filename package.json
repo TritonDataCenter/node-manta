@@ -31,7 +31,7 @@
         "path-platform": "0.0.1",
         "progbar": "0.1.0",
         "readable-stream": "1.1.9",
-        "restify": "2.8.0",
+        "restify": "2.8.1",
         "showdown": "0.3.1",
         "ssh-agent": "0.2.2",
         "tar": "0.1.18",
