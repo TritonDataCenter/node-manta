@@ -30,6 +30,14 @@ var JOB_POLL_PERIOD = 1000 * 5;
 
 var MANTA_ASSET = '/poseidon/public/medusa/agent.sh';
 
+var ESCAPE = '~';
+var CC_ESCAPE = ESCAPE.charCodeAt(0);
+var CC_HELP = '?'.charCodeAt(0);
+var CC_INFO = 'i'.charCodeAt(0);
+var CC_EXIT = '.'.charCodeAt(0);
+var CC_CR = '\r'.charCodeAt(0);
+var CC_NL = '\n'.charCodeAt(0);
+
 var OPTIONS_PARSER = dashdash.createParser({
     options: manta.DEFAULT_CLI_OPTIONS.concat([
         {
@@ -72,6 +80,12 @@ var OPTIONS_PARSER = dashdash.createParser({
             type: 'string',
             help: 'Allowed compute image string (semver)',
             helpArg: 'IMAGE_SEMVER'
+        },
+        {
+            names: [ 'escape', 'e' ],
+            type: 'string',
+            help: 'Escape character (single non-newline character)',
+            helpArg: 'ESCAPE_CHARACTER'
         }
     ])
 });
@@ -137,6 +151,26 @@ function parseOptions() {
 
     if (opts.quiet)
         QUIET = true;
+
+    if (opts.escape) {
+        if (opts.escape === 'none') {
+            // We accept, as does ssh(1), the value "none" to disable
+            // escape character recognition altogether.
+            ESCAPE = CC_ESCAPE = null;
+        } else if (opts.escape.length !== 1) {
+            console.error('mlogin: escape character sequences must ' +
+                          'be a single character');
+            process.exit(1);
+        } else {
+            if (opts.escape === '\r' || opts.escape === '\n') {
+                console.error('mlogin: escape character must not be ' +
+                              'carriage return or linefeed');
+                process.exit(1);
+            }
+            ESCAPE = opts.escape;
+            CC_ESCAPE = ESCAPE.charCodeAt(0);
+        }
+    }
 
     opts.config_key = '/' + opts.account + '/stor/medusa-config-' +
         libuuid.v4() + '.json';
@@ -380,7 +414,6 @@ function check_path(opts, next) {
     });
 }
 
-
 // Once the Medusa reflector informs us that we are attached to the agent
 // running in the marlin job, we send the agent some terminal details and
 // a command and start relaying between the remote agent and the local
@@ -402,6 +435,68 @@ function start_session(opts) {
 
     start_server_pinger(opts);
 
+    var saw_cr = false;
+    var saw_escape = false;
+    var user_input = function (buf) {
+        var outbuf = new Buffer(buf.length);
+        var obpos = 0;
+
+        if (CC_ESCAPE === null)
+            return (buf);
+
+        for (var i = 0; i < buf.length; i++) {
+            if (saw_escape) {
+                // If the previous character we saw was an escape character,
+                // then we must decide what special action to take now.
+                if (buf[i] === CC_ESCAPE) {
+                    // The user wants us to send the escape character
+                    // to the remote host.
+                    outbuf[obpos++] = CC_ESCAPE;
+                } else if (buf[i] === CC_HELP) {
+                    // Print the help menu:
+                    process.stdout.write('\n' + [
+                        'Supported escape sequences:',
+                        ' !.   - terminate session',
+                        ' !i   - print job information',
+                        ' !?   - this message',
+                        ' !!   - send the escape character by typing ' +
+                                'it twice',
+                        '(Note that escapes are only recognized ' +
+                          'immediately after newline.)'
+                    ].join('\n').replace(/!/g, ESCAPE) + '\n');
+                } else if (buf[i] === CC_INFO) {
+                    // Print out job statistics
+                    process.stdout.write('\n' + [
+                        'Information about this Manta job:',
+                        '   Job ID: ' + opts.job_id
+                    ].join('\n') + '\n');
+                } else if (buf[i] === CC_EXIT) {
+                    opts.cancel_job = true;
+                    opts.cleanup();
+                }
+                saw_escape = false;
+                continue;
+            } else if (saw_cr) {
+                // If the previous character we saw was a carriage return,
+                // then this is the beginning of a new line.  Check for
+                // the escape character.
+                if (buf[i] === CC_ESCAPE) {
+                    saw_escape = true;
+                    continue;
+                }
+            }
+
+            // If this character is a carriage return or line feed,
+            // remember it:
+            saw_cr = (buf[i] === CC_CR || buf[i] === CC_NL);
+
+            // Copy character into output buffer:
+            outbuf[obpos++] = buf[i];
+        }
+
+        return (outbuf.slice(0, obpos));
+    };
+
     shed.on('text', function (x) {
         if (!opts.running) {
             shed.destroy();
@@ -419,7 +514,8 @@ function start_session(opts) {
             process.stdin.setRawMode(true);
             process.stdin.on('data', function (ch) {
                 var buf = Buffer.isBuffer(ch) ? ch : new Buffer(ch);
-                shed.send(buf);
+                var outbuf = user_input(buf);
+                shed.send(outbuf);
             });
             process.stdin.resume();
             process.stdout.on('resize', function () {

@@ -74,6 +74,14 @@ you provide a script or program to run via \fB\fC--assets\fR.
 Override the OS quota, and use the specified amount of disk.
 This option is specified in gigabytes.
 .TP
+\fB\fC-e, --escape escape_character\fR
+Sets the escape character for this mlogin session.  This character is
+recognised immediately following a carriage return, and allows the user
+to perform a session control function.  If the escape character is
+followed by a period (\fB\fC.\fR), the session will end; followed by a
+question mark (\fB\fC?\fR) prints a list of available escape characters.
+Passing \fB\fC"none"\fR to the \fB\fC-e\fR flag disables the escape character entirely.
+.TP
 \fB\fC-h, --help\fR
 Print a help message and exit.
 .TP

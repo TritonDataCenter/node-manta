@@ -77,6 +77,14 @@ The options are supported:
   Override the OS quota, and use the specified amount of disk.
   This option is specified in gigabytes.
 
+`-e, --escape escape_character`
+  Sets the escape character for this mlogin session.  This character is
+  recognised immediately following a carriage return, and allows the user
+  to perform a session control function.  If the escape character is
+  followed by a period (`.`), the session will end; followed by a
+  question mark (`?`) prints a list of available escape characters.
+  Passing `"none"` to the `-e` flag disables the escape character entirely.
+
 `-h, --help`
   Print a help message and exit.
 

@@ -2,6 +2,8 @@
 
 ## not yet released
 
+- #187: mlogin should support session control escape character
+
 ## v1.2.7
 
 - include restify v2.8.0
