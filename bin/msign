@@ -75,6 +75,7 @@ function parseOptions() {
     try {
         opts = OPTIONS_PARSER.parse(process.argv);
         manta.checkBinEnv(opts);
+        manta.parseBinCaller(opts);
     } catch (e) {
         manta.cli_usage(OPTIONS_PARSER, e.message, 'path...');
     }
@@ -117,7 +118,7 @@ function parseOptions() {
     opts.paths.forEach(function (p) {
 
         var _url = url.parse(p, true);
-        ifError(manta.assertPath(_url.pathname, true));
+        ifError(manta.assertPath(_url.pathname, opts.account, true));
 
         var _opts = {
             algorithm: opts.algorithm,
@@ -129,7 +130,8 @@ function parseOptions() {
             query: _url.query,
             path: _url.pathname,
             sign: client.sign,
-            user: opts.account
+            account: opts.account,
+            user: opts.user
         };
         client.signURL(_opts, function (err, resource) {
             ifError(err);

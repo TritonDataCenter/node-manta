@@ -1,0 +1,169 @@
+#!/usr/bin/env node
+// -*- mode: js -*-
+// Copyright (c) 2014, Joyent, Inc. All rights reserved.
+
+var path = require('path');
+var url = require('url');
+
+var bunyan = require('bunyan');
+var dashdash = require('dashdash');
+var restify = require('restify');
+
+var manta = require('../lib');
+
+var name = path.basename(process.argv[1]);
+
+
+///--- Globals
+
+var LOG = bunyan.createLogger({
+    name: path.basename(process.argv[1]),
+    level: (process.env.LOG_LEVEL || 'info'),
+    stream: process.stderr,
+    serializers: restify.bunyan.serializers
+});
+
+var OPTIONS_PARSER = dashdash.createParser({
+    options: manta.DEFAULT_CLI_OPTIONS,
+    allowUnknown: true
+});
+
+
+
+///--- Functions
+
+function ifError(err) {
+    if (err) {
+        console.error('%s: %s', name, err.toString());
+        process.exit(1);
+    }
+}
+
+
+function parseMchmodOptions() {
+    if (process.argv.length <= 2) {
+        manta.cli_usage(OPTIONS_PARSER, 'role required',
+                                        '-- [+-=]role,... path...');
+    }
+
+    var startRoles = process.argv.indexOf('--');
+    var operation;
+    var roleOpt;
+
+    if (startRoles < 0) {   // no other options: `mchmod +role path`
+        roleOpt = process.argv.splice(2, 1).pop();
+    } else {                // other options: `mchmod -a account -- +role path`
+        roleOpt = process.argv.splice(startRoles, 2).pop();
+    }
+
+    operation = roleOpt.charAt(0);
+    if (operation !== '+' && operation !== '-' && operation !== '=') {
+        manta.cli_usage('operation should be one of "+", "-" or "="');
+    }
+
+    return ({
+        operation: operation,
+        roles: roleOpt.substring(1).split(',')
+    });
+}
+
+
+function parseOptions() {
+    var opts;
+
+    var mchmodOpts = parseMchmodOptions();
+
+    try {
+        opts = OPTIONS_PARSER.parse(process.argv);
+        manta.checkBinEnv(opts);
+        manta.parseBinCaller(opts);
+    } catch (e) {
+        manta.cli_usage(OPTIONS_PARSER, e.message,
+                                        '-- [+-=]role,... path...');
+    }
+
+    opts.mchmodOperation = mchmodOpts.operation;
+    opts.mchmodRoles = mchmodOpts.roles;
+
+    manta.cli_logger(opts, LOG);
+
+    if (opts.help) {
+        manta.cli_usage(OPTIONS_PARSER, false,
+                                        '-- [+-=]role,... path...');
+    }
+
+    if (opts._args.length < 1) {
+        manta.cli_usage(OPTIONS_PARSER, 'path required',
+                                        '-- [+-=]role,... path...');
+    }
+
+    opts.paths = opts._args.map(function (p) {
+        ifError(manta.assertPath(p, opts.account, true));
+        return (manta.path(p, opts.account, true));
+    });
+
+    return (opts);
+}
+
+
+function printEntry(obj) {
+    console.log('%j', obj);
+}
+
+
+
+///--- Mainline
+
+(function main() {
+    var options = parseOptions();
+    var client = manta.createBinClient(options);
+    var i = -1;
+
+    (function chmod(cb_err) {
+        ifError(cb_err);
+
+        var opts = {
+            headers: {}
+        };
+
+        var p = options.paths[++i];
+        if (!p) {
+            client.close();
+            return;
+        }
+
+        if (options.operation === '=') {
+            opts.headers['role-tag'] = options.mchmodRoles.join(',');
+            client.chattr(p, opts, chmod);
+            return;
+        }
+
+        client.info(p, options, function (err, info, res) {
+            ifError(err);
+            var roles;
+            if (info.headers.roles) {
+                /* JSSTYLED */
+                roles = info.headers.roles.split(/\s*,\s*/);
+            } else {
+                roles = [];
+            }
+
+            if (options.mchmodOperation === '+') {
+                options.mchmodRoles.forEach(function (role) {
+                    if (roles.indexOf(role) < 0) {
+                        roles.push(role);
+                    }
+                });
+            } else if (options.mchmodOperation === '-') {
+                options.mchmodRoles.forEach(function (role) {
+                    var index = roles.indexOf(role);
+                    if (index >= 0) {
+                        roles.splice(index, 1);
+                    }
+                });
+            }
+            opts.headers['role-tag'] = roles.join(',');
+            client.chattr(p, opts, chmod);
+        });
+    })();
+})();

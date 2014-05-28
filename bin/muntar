@@ -63,6 +63,12 @@ var OPTIONS_PARSER = dashdash.createParser({
             help: 'number of retries on error (default 3)',
             'default': 3,
             helpArg: 'RETRIES'
+        },
+        {
+            names: ['role-tag'],
+            type: 'arrayOfString',
+            help: 'role tags to apply to the destination object',
+            helpArg: 'TAG,TAG...'
         }
     ])
 });
@@ -85,6 +91,7 @@ function parseOptions() {
     try {
         opts = OPTIONS_PARSER.parse(process.argv);
         manta.checkBinEnv(opts);
+        manta.parseBinCaller(opts);
     } catch (e) {
         manta.cli_usage(OPTIONS_PARSER, e.message, 'path');
     }
@@ -100,8 +107,8 @@ function parseOptions() {
     if (opts._args.length < 1)
         manta.cli_usage(OPTIONS_PARSER, 'path required', 'path');
 
-    ifError(manta.assertPath(opts._args[0], true));
-    opts.path = manta.path(opts._args[0], true);
+    ifError(manta.assertPath(opts._args[0], opts.account, true));
+    opts.path = manta.path(opts._args[0], opts.account, true);
 
     opts.headers = {};
     (opts.header || []).forEach(function (h) {
@@ -114,6 +121,11 @@ function parseOptions() {
         opts.headers[tmp[0]] = tmp[1].trim();
     });
 
+    if (opts['role-tag'] && opts['role-tag'].length === 1) {
+        /* JSSTYLED */
+        opts['role-tag'] = opts['role-tag'][0].split(/\s*,\s*/);
+    }
+
     return (opts);
 }
 
@@ -121,8 +133,8 @@ function parseOptions() {
 function put(client, path, stream, opts, cb) {
     client.put(path, stream, opts, function (err) {
         if (!err || !err.body ||
-            (err.body.code != 'ParentNotDirectory' &&
-             err.body.code != 'DirectoryDoesNotExist')) {
+            (err.body.code !== 'ParentNotDirectory' &&
+             err.body.code !== 'DirectoryDoesNotExist')) {
             cb(err);
             return;
         }
@@ -151,7 +163,7 @@ function put(client, path, stream, opts, cb) {
 
         IN_PROGRESS[dir] = [ postmkdir ];
 
-        client.mkdirp(dir, function (_err) {
+        client.mkdirp(dir, opts, function (_err) {
             IN_PROGRESS[dir].forEach(function (post) {
                 post.call(this, _err);
             });
@@ -232,11 +244,17 @@ function worker(client, tarball, callback) {
 
         e.pause();
 
+        var headers = options.headers || {};
+        if (options['role-tag'])
+            headers['role-tag'] = options['role-tag'].join(',');
+
         var p = options.path + '/' + e.props.path;
         var o = {
             copies: options.copies,
+            headers: headers,
             size: e.props.size
         };
+
         inflight++;
         put(client, p, e, o, done(p, e, entry));
     });
