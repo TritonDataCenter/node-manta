@@ -27,14 +27,16 @@ Print a help message and exit.
 \fB\fC-i, --insecure\fR
 This option explicitly allows "insecure" SSL connections and transfers.  All
 SSL connections are attempted to be made secure by using the CA certificate
-.TP
 bundle installed by default.
+.TP
 \fB\fC-k, --key fingerprint\fR
-Authenticate using the SSH key described by \fB\fCfingerprint\fR\&.  The key must
-either be in \fB\fC~/.ssh\fR or loaded in the SSH agent via \fB\fCssh-add\fR\&.
+Authenticate using the SSH key described by \fB\fCfingerprint\fR.  The key must
+either be in \fB\fC~/.ssh\fR or loaded in the SSH agent via \fB\fCssh-add\fR.
 .TP
 \fB\fC-p, --parallel concurrency\fR
-Limit concurrent operations to CONCURRENCY.  Default is 50.
+Limit concurrent operations to CONCURRENCY.  Default is 50.  This applies to
+operations issued by mjob itself (e.g., to add inputs or poll on the job).  It
+has no effect on the concurrency of the job.
 .TP
 \fB\fC-u, --url url\fR
 Manta base URL (such as \fB\fChttps://manta.us-east.joyent.com\fR).
@@ -47,7 +49,7 @@ The following commands and options are supported:
 .SS create [OPTIONS...] expression
 .PP
 Creates a job that executes the commands against keys that will be specified
-via \fB\fCaddinputs\fR\&.  \fB\fCexpression\fR can specify an arbitrary UNIX pipeline, with
+via \fB\fCaddinputs\fR.  \fB\fCexpression\fR can specify an arbitrary UNIX pipeline, with
 map/reduce \fIphases\fP separated by the \fB\fC^\fR or \fB\fC^^\fR 
 .BR character (s), 
 respectively.
@@ -78,12 +80,13 @@ The above form is useful for specifying options to each phase.  For example:
 .PP
 .RS
 .nf
-$ mjob create --memory 2048 -m 'grep foo' --memory 8192 -r 'sort | uniq -c'
+$ mjob create --memory 2048 -m 'grep foo'
+    --memory 8192 -r 'sort | uniq -c'
 .fi
 .RE
 .PP
 Overrides the amount of RAM available in each phase (the \fB\fCmemory\fR, \fB\fCdisk\fR,
-\fB\fCinit\fR and \fB\fCcount\fR options impact the \fInext\fP phase).
+\fB\fCinit\fR, \fB\fCimage\fR, and \fB\fCcount\fR options impact the \fInext\fP phase).
 .PP
 Jobs can also be specified using a JSON manifest file, as below (see Manta
 API documentation for the full JSON schema):
@@ -110,7 +113,8 @@ for the job to complete, then dump the output to stdout (as if you had run
 .PP
 .RS
 .nf
-$ mfind /$MANTA_USER/stor | mjob create -q -o grep foo ^^ sort \\| uniq -c
+$ mfind /$MANTA_USER/stor | 
+    mjob create -q -o grep foo ^^ sort \\| uniq -c
 .fi
 .RE
 .PP
@@ -137,8 +141,9 @@ This option is specified in megabytes.
 Read job description from file.
 .TP
 \fB\fC--image version\fR
-Specifies an image version semver to use in job phases.  Must be specified as
-a semver string (default is ~1.0).
+Specifies an image version semver to use in the next job phase.  Must be
+specified as a semver string.  The default is server\-provided and changes
+over time.
 .TP
 \fB\fC--init command\fR
 Specifies a command to execute in the compute zone for the next map or
@@ -328,13 +333,13 @@ Do not output any informative messages.
 In place of \fB\fC-a, --account\fR
 .TP
 \fB\fCMANTA_KEY_ID\fR
-In place of \fB\fC-k, --key\fR\&.
+In place of \fB\fC-k, --key\fR.
 .TP
 \fB\fCMANTA_URL\fR
-In place of \fB\fC-u, --url\fR\&.
+In place of \fB\fC-u, --url\fR.
 .TP
 \fB\fCMANTA_TLS_INSECURE\fR
-In place of \fB\fC-i, --insecure\fR\&.
+In place of \fB\fC-i, --insecure\fR.
 .SH DIAGNOSTICS
 .PP
 When using the \fB\fC-v\fR option, diagnostics will be sent to stderr in bunyan

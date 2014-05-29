@@ -3,6 +3,7 @@
 ## not yet released
 
 - #187: mlogin should support session control escape character
+- #188: mjob help and documentation nits
 
 ## v1.2.7
 

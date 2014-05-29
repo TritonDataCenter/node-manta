@@ -36,14 +36,16 @@ The following options are supported in all commands:
 `-i, --insecure`
   This option explicitly allows "insecure" SSL connections and transfers.  All
   SSL connections are attempted to be made secure by using the CA certificate
-
   bundle installed by default.
+
 `-k, --key fingerprint`
   Authenticate using the SSH key described by `fingerprint`.  The key must
   either be in `~/.ssh` or loaded in the SSH agent via `ssh-add`.
 
 `-p, --parallel concurrency`
-  Limit concurrent operations to CONCURRENCY.  Default is 50.
+  Limit concurrent operations to CONCURRENCY.  Default is 50.  This applies to
+  operations issued by mjob itself (e.g., to add inputs or poll on the job).  It
+  has no effect on the concurrency of the job.
 
 `-u, --url url`
   Manta base URL (such as `https://manta.us-east.joyent.com`).
@@ -78,10 +80,11 @@ flags; the same pipeline could be specified with:
 
 The above form is useful for specifying options to each phase.  For example:
 
-    $ mjob create --memory 2048 -m 'grep foo' --memory 8192 -r 'sort | uniq -c'
+    $ mjob create --memory 2048 -m 'grep foo'
+        --memory 8192 -r 'sort | uniq -c'
 
 Overrides the amount of RAM available in each phase (the `memory`, `disk`,
-`init` and `count` options impact the *next* phase).
+`init`, `image`, and `count` options impact the *next* phase).
 
 Jobs can also be specified using a JSON manifest file, as below (see Manta
 API documentation for the full JSON schema):
@@ -102,7 +105,8 @@ get like the example below; this would print no diagnostics, and would wait
 for the job to complete, then dump the output to stdout (as if you had run
 `find | grep | sort | uniq` locally):
 
-    $ mfind /$MANTA_USER/stor | mjob create -q -o grep foo ^^ sort \| uniq -c
+    $ mfind /$MANTA_USER/stor | 
+        mjob create -q -o grep foo ^^ sort \| uniq -c
 
 The following options are supported on `create`:
 
@@ -127,8 +131,9 @@ The following options are supported on `create`:
   Read job description from file.
 
 `--image version`
-  Specifies an image version semver to use in job phases.  Must be specified as
-  a semver string (default is ~1.0).
+  Specifies an image version semver to use in the next job phase.  Must be
+  specified as a semver string.  The default is server-provided and changes
+  over time.
 
 `--init command`
   Specifies a command to execute in the compute zone for the next map or

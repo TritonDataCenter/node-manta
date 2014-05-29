@@ -805,7 +805,7 @@ MJob.prototype.do_create.options = manta.DEFAULT_CLI_OPTIONS.concat([
     {
         names: ['parallel', 'p'],
         type: 'positiveInteger',
-        help: 'limit concurrent operations',
+        help: 'limit concurrent operations (from mjob, not the job)',
         'default': 25,
         helpArg: 'CONCURRENCY'
     },
@@ -844,7 +844,10 @@ MJob.prototype.do_create.help = (
         'Usage:\n' +
         '     mjob create [OPTIONS] [map [^ map] [^^ reduce]]\n' +
         '\n' +
-        '{{options}}'
+        '{{options}}\n' +
+        'The --asset, --count, --disk, --image, --init, and —-memory ' +
+        'options all\n' +
+        'apply to the next phase specified with --map or --reduce.'
     /* END JSSTYLED */
 );
 
