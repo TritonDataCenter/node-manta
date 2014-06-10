@@ -14,7 +14,7 @@ chomd 0755 manta-server
 
 Step 3 - Update system service definitions:
 ```
-update-rc.d my-application defaults
+update-rc.d manta-server defaults
 ```
 
 Step 4 - Then add your environment variables to the persistent scope *vi /etc/environment* and add the following lines:
