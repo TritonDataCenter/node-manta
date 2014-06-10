@@ -18,11 +18,11 @@ update-rc.d my-application defaults
 ```
 
 Step 4 - Then add your environment variables to the persistent scope *vi /etc/environment* and add the following lines:
-    ```
-    MANTA_KEY_ID="Key Id (can be found in your account settings SSH Keys)"
-    MANTA_URL="https://us-east.manta.joyent.com" 
-    MANTA_USER="Your username"
-    ```
+```
+MANTA_KEY_ID="Key Id (can be found in your account settings SSH Keys)"
+MANTA_URL="https://us-east.manta.joyent.com" 
+MANTA_USER="Your username"
+```
 
 Step 5 - Then source the env vars:
 ```
