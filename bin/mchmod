@@ -58,7 +58,8 @@ function parseMchmodOptions() {
 
     operation = roleOpt.charAt(0);
     if (operation !== '+' && operation !== '-' && operation !== '=') {
-        manta.cli_usage('operation should be one of "+", "-" or "="');
+        manta.cli_usage(OPTIONS_PARSER,
+            'operation should be one of "+", "-" or "="');
     }
 
     return ({
@@ -132,7 +133,7 @@ function printEntry(obj) {
             return;
         }
 
-        if (options.operation === '=') {
+        if (options.mchmodOperation === '=') {
             opts.headers['role-tag'] = options.mchmodRoles.join(',');
             client.chattr(p, opts, chmod);
             return;
