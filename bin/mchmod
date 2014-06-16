@@ -142,9 +142,9 @@ function printEntry(obj) {
         client.info(p, options, function (err, info, res) {
             ifError(err);
             var roles;
-            if (info.headers.roles) {
+            if (info.headers['role-tag']) {
                 /* JSSTYLED */
-                roles = info.headers.roles.split(/\s*,\s*/);
+                roles = info.headers['role-tag'].split(/\s*,\s*/);
             } else {
                 roles = [];
             }
