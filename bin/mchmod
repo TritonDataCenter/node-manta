@@ -140,6 +140,11 @@ function printEntry(obj) {
         }
 
         client.info(p, options, function (err, info, res) {
+            if (cb_err && cb_err.name === 'AuthorizationFailedError') {
+                console.error('%s: getobject access required for %s %s', name,
+                    name, options.mchmodOperation);
+                process.exit(1);
+            }
             ifError(err);
             var roles;
             if (info.headers['role-tag']) {
