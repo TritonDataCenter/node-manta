@@ -468,8 +468,8 @@ Fetches an object as a ReadableStream; this API is basically identical to `get`,
 except it's idiomatic to node streaming.  Additionally, the returned stream will
 emit `close` at the end of request data along with the HTTP Response object.
 
-    var stream = client.get('/jill/stor/hello_world.txt');
-    stream.pipe(stdout);
+    var stream = client.createReadStream('/jill/stor/hello_world.txt');
+    stream.pipe(process.stdout);
     stream.once('close', function (res) {
         console.error(res.statusCode);
     });
