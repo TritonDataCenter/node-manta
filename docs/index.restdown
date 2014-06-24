@@ -105,7 +105,7 @@ and callback is of the form `function (err, object)`, where `object` has the
 following properties:
 
     {
-	    algorithm: 'rsa-sha256',   // the signing algorithm used
+        algorithm: 'rsa-sha256',   // the signing algorithm used
         keyId: '7b:c0:5c:d6:9e:11:0c:76:04:4b:03:c9:11:f2:72:7f', // key fingerprint
         signature: $base64_encoded_signature,  // the actual signature
         user: 'mark'   // the user to issue the call as.
@@ -126,8 +126,8 @@ the correct canonicalization for a URL:
 
         var opts = {
             algorithm: 'RSA-SHA256',
-            expires: Date.now() + 3600, // epoch time
-            host: 'manta.us-east.joyentcloud.com',
+            expires: Math.floor(Date.now() / 1000) + 3600, // epoch time
+            host: 'us-east.manta.joyent.com',
             keyId: process.env.MANTA_KEY_ID,
             path: '/mark/stor/my_image.png',
             sign: manta.privateKeySigner({
