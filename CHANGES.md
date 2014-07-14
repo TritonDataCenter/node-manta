@@ -2,6 +2,8 @@
 
 ## not yet released
 
+## v1.2.8
+
 - #187: mlogin should support session control escape character
 - #188: mjob help and documentation nits
 - #191: signURL is not well documented
