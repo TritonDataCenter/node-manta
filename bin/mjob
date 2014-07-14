@@ -135,11 +135,6 @@ function addInputsFromStdin(client, opts, cb) {
     process.stdin.pipe(lstream);
 
     queue.once('end', function onKeysAdded() {
-        function _cb(err) {
-            client.close();
-            cb(err);
-        }
-
         if (!opts.open || opts.close) {
             var subQueue = new manta.Queue({
                 limit: opts.parallel,
@@ -148,13 +143,13 @@ function addInputsFromStdin(client, opts, cb) {
                 }
             });
 
-            subQueue.once('end', _cb);
-            subQueue.once('error', _cb);
+            subQueue.once('end', cb);
+            subQueue.once('error', cb);
 
             opts.jobIds.forEach(subQueue.push.bind(subQueue));
             subQueue.close();
         } else {
-            _cb();
+            cb();
         }
     });
 }
@@ -460,7 +455,10 @@ MJob.prototype.do_addinputs = function do_addinputs(subcmd, opts, args, cb) {
 
     var client = createClient(opts);
     opts.jobIds = args;
-    addInputsFromStdin(client, opts, cb);
+    addInputsFromStdin(client, opts, function (err) {
+        client.close();
+        cb(err);
+    });
 };
 
 MJob.prototype.do_addinputs.options = manta.DEFAULT_CLI_OPTIONS.concat([
@@ -716,6 +714,7 @@ MJob.prototype.do_create = function create(subcmd, opts, args, cb) {
             opts.jobIds = [id];
             addInputsFromStdin(client, opts, function (err2) {
                 if (err2) {
+                    client.close();
                     cb(err2);
                     return;
                 }
@@ -723,7 +722,10 @@ MJob.prototype.do_create = function create(subcmd, opts, args, cb) {
                     client: client,
                     id: id,
                     opts: opts
-                }, cb);
+                }, function (err3) {
+                    client.close();
+                    cb(err3);
+                });
             });
         }
     });

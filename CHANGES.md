@@ -5,6 +5,7 @@
 - #187: mlogin should support session control escape character
 - #188: mjob help and documentation nits
 - #191: signURL is not well documented
+- #194: mjob create -o emits "socket hang up"
 
 ## v1.2.7
 
