@@ -53,6 +53,12 @@ var OPTIONS_PARSER = dashdash.createParser({
             help: 'HTTP method to support',
             'default': ['GET'],
             helpArg: 'METHOD'
+        },
+        {
+            names: ['role-tag'],
+            type: 'arrayOfString',
+            help: 'role tags to apply to the created object',
+            helpArg: 'TAG,TAG...'
         }
     ])
 });
@@ -128,6 +134,8 @@ function parseOptions() {
             log: opts.log,
             method: opts.method,
             query: _url.query,
+            role: opts.role,
+            'role-tag': opts['role-tag'],
             path: _url.pathname,
             sign: client.sign,
             account: opts.account,
