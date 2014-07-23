@@ -35,42 +35,52 @@ var NOENTSUB2 = SUBDIR1 + '/d/e/f';
 ///--- Tests
 
 before(function (cb) {
-    var f = process.env.SSH_KEY || process.env.HOME + '/.ssh/id_rsa';
-    var cmd = 'ssh-keygen -l -f ' +
-        f + ' ' +
-        '| awk \'{print $2}\'';
     var self = this;
     var url = process.env.MANTA_URL || 'http://localhost:8080';
     var user = process.env.MANTA_USER || 'admin';
 
-    fs.readFile(f, 'utf8', function (err, key) {
-        if (err)
-            return (cb(err));
+    function createClient(signer) {
+        self.client = manta.createClient({
+            connectTimeout: 1000,
+            log: helper.createLogger(),
+            retry: false,
+            rejectUnauthorized: (process.env.MANTA_TLS_INSECURE ?
+                                    false : true),
+            sign: signer,
+            url: url,
+            user: user
+        });
 
-        exec(cmd, function (err2, stdout, stderr) {
-            if (err2)
-                return (cb(err2));
+        return (cb());
+    }
 
-            self.client = manta.createClient({
-                connectTimeout: 1000,
-                log: helper.createLogger(),
-                retry: false,
-                rejectUnauthorized: (process.env.MANTA_TLS_INSECURE ?
-                                     false : true),
-                sign: manta.privateKeySigner({
+    if (process.env.MANTA_KEY_ID) {
+        createClient(manta.sshAgentSigner({
+            user: user,
+            keyId: process.env.MANTA_KEY_ID
+        }));
+    } else {
+        var f = process.env.SSH_KEY || process.env.HOME + '/.ssh/id_rsa';
+        var cmd = 'ssh-keygen -l -f ' +
+            f + ' ' +
+            '| awk \'{print $2}\'';
+        fs.readFile(f, 'utf8', function (err, key) {
+            if (err)
+                return (cb(err));
+
+            exec(cmd, function (err2, stdout, stderr) {
+                if (err2)
+                    return (cb(err2));
+                createClient(manta.privateKeySigner({
                     key: key,
                     keyId: stdout.replace('\n', ''),
                     user: user
-                }),
-                url: url,
-                user: user
+                }));
+                return (undefined);
             });
-
-            return (cb());
+            return (undefined);
         });
-
-        return (undefined);
-    });
+    }
 });
 
 
