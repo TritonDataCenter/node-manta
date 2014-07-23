@@ -1,4 +1,4 @@
-// Copyright 2012 Joyent.  All rights reserved.
+// Copyright 2014 Joyent.  All rights reserved.
 
 var exec = require('child_process').exec;
 var fs = require('fs');
@@ -536,6 +536,22 @@ test('mkdirp/rmr', function (t) {
             t.end();
         });
     });
+});
+
+
+test('GH-196 getPath ~~/', function (t) {
+    // confirm that evaluating ~~/ works with and without ENV variables
+    var user = this.client.user;
+    var old = process.env.MANTA_USER;
+
+    process.env.MANTA_USER = user;
+    t.equal(this.client.path('~~/'), '/' + user);
+    delete process.env.MANTA_USER;
+    t.equal(this.client.path('~~/'), '/' + user);
+    process.env.MANTA_USER = old;
+    // The plain export depends on the ENV variable
+    t.equal(manta.path('~~/'), '/' + user);
+    t.done();
 });
 
 
