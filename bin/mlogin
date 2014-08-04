@@ -114,6 +114,7 @@ function parseOptions() {
     try {
         opts = OPTIONS_PARSER.parse(process.argv);
         manta.checkBinEnv(opts);
+        manta.parseBinCaller(opts);
     } catch (e) {
         manta.cli_usage(OPTIONS_PARSER, e.message, 'path...');
     }
@@ -131,12 +132,12 @@ function parseOptions() {
         opts.keyless = true;
     } else {
         opts.keyless = false;
-        if (manta.assertPath(opts._args[0], true)) {
+        if (manta.assertPath(opts._args[0], opts.account, true)) {
             console.error('mlogin: "' + opts._args[0] +
                           '" is not a valid path');
             process.exit(1);
         }
-        opts.path = manta.path(opts._args[0], true);
+        opts.path = manta.path(opts._args[0], opts.account, true);
     }
 
     if (opts.command) {
@@ -203,7 +204,8 @@ function create_job(opts, next) {
         the_job.phases[0].image = opts.image;
     if (opts.asset) {
         opts.asset.forEach(function (asset) {
-            the_job.phases[0].assets.push(manta.path(asset, true));
+            the_job.phases[0].assets.push(
+                manta.path(asset, opts.account, true));
         });
     }
     opts.mclient.createJob(the_job, function (err, jobid) {

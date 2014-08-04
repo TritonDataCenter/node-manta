@@ -24,7 +24,14 @@ var LOG = bunyan.createLogger({
 });
 
 var OPTIONS_PARSER = dashdash.createParser({
-    options: manta.DEFAULT_CLI_OPTIONS
+    options: manta.DEFAULT_CLI_OPTIONS.concat([
+        {
+            names: ['role-tag'],
+            type: 'arrayOfString',
+            help: 'role tags to apply to the destination object',
+            helpArg: 'TAG,TAG...'
+        }
+    ])
 });
 
 
@@ -45,6 +52,7 @@ function parseOptions() {
     try {
         opts = OPTIONS_PARSER.parse(process.argv);
         manta.checkBinEnv(opts);
+        manta.parseBinCaller(opts);
     } catch (e) {
         manta.cli_usage(OPTIONS_PARSER, e.message, 'source dest');
     }
@@ -62,6 +70,11 @@ function parseOptions() {
     opts.source = path.posix.normalize(opts._args[0]);
     opts.path = path.posix.normalize(opts._args[1]);
 
+    if (opts['role-tag'] && opts['role-tag'].length === 1) {
+        /* JSSTYLED */
+        opts['role-tag'] = opts['role-tag'][0].split(/\s*,\s*/);
+    }
+
     return (opts);
 }
 
@@ -72,10 +85,16 @@ function parseOptions() {
 (function main() {
     var options = parseOptions();
     var client = manta.createBinClient(options);
+    var headers = {
+        headers: options.headers || {}
+    };
 
-    ifError(manta.assertPath(options.path, true));
+    if (options['role-tag'])
+        headers.headers['role-tag'] = options['role-tag'].join(',');
 
-    client.ln(options.source, options.path, function (err) {
+    ifError(manta.assertPath(options.path, options.account, true));
+
+    client.ln(options.source, options.path, headers, function (err) {
         ifError(err);
 
         client.close();
