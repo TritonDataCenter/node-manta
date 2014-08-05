@@ -42,6 +42,12 @@ OPTIONS
   Authenticate using the SSH key described by FINGERPRINT.  The key must
   either be in `~/.ssh` or loaded in the SSH agent via `ssh-add`.
 
+`--role=ROLE,ROLE,...`
+  Specify which roles to assume for the request.
+
+`--user user`
+  Authenticate as user under account.
+
 `-u, --url url`
   Manta base URL (such as `https://manta.us-east.joyent.com`).
 
@@ -51,11 +57,17 @@ OPTIONS
 ENVIRONMENT
 -----------
 
-`MANTA_USER`
+`MANTA_ACCOUNT`
   In place of `-a, --account`
+
+`MANTA_USER`
+  In place of `--user`
 
 `MANTA_KEY_ID`
   In place of `-k, --key`.
+
+`MANTA_ROLE`
+  In place of `--role`.
 
 `MANTA_URL`
   In place of `-u, --url`.

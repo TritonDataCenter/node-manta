@@ -110,8 +110,14 @@ The options are supported:
   Override the OS size, and use the specified amount of DRAM.
   This option is specified in megabytes.
 
+`--role=ROLE,ROLE,...`
+  Specify which roles to assume for the request.
+
 `-s, --assets path`
   Specifies an asset to make available in the compute zone.
+
+`--user user`
+  Authenticate as user under account.
 
 `-u, --url url`
   Manta base URL (such as `https://manta.us-east.joyent.com`).
@@ -125,11 +131,17 @@ The options are supported:
 ENVIRONMENT
 -----------
 
-`MANTA_USER`
+`MANTA_ACCOUNT`
   In place of `-a, --account`
+
+`MANTA_USER`
+  In place of `--user`
 
 `MANTA_KEY_ID`
   In place of `-k, --key`.
+
+`MANTA_ROLE`
+  In place of `--role`.
 
 `MANTA_URL`
   In place of `-u, --url`.

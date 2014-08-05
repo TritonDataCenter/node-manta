@@ -1,31 +1,37 @@
-mln 1 "May 2013" Manta "Manta Commands"
+mchmod 1 "August 2014" Manta "Manta Commands"
 =======================================
 
 NAME
 ----
 
-mln - make link between objects
+mchmod - change object role tags
 
 SYNOPSIS
 --------
 
-`mln` [OPTION...] TARGET LINK_NAME
+`mchmod` [+-=]ROLE,... OBJECT
+`mchmod` [OPTION...] -- [+-=]ROLE,... OBJECT
+
 
 DESCRIPTION
 -----------
 
-mln creates a link to TARGET with the name LINK_NAME.  Links in Manta are
-allowed to be created by pointing at an object only, and are semantically
-different than a UNIX link (both hard and soft).  Links in Manta are essentially
-a "snapshot".  That is given object `A` and a link `B` to `A`, when `A` is
-overwritten to be `A'`, `B` will still return the original value of `A`.
+mchmod sets the role tags on an object or directory. Role tags are used to
+determine which of a user's roles will be checked to allow access.
+
+Note that in order to use `mchmod +ROLE` or `mchmode -ROLE` you will need access
+to read and write object metadata. Using `mchmod =ROLE` only requires write
+access.
 
 EXAMPLES
 --------
 
-Creates a link from README that snapshots the contents of README.md.
+    $ mchmod +read ~~/stor/foo.txt
 
-    $ mln /$MANTA_USER/stor/README.md /$MANTA_USER/stor/README
+    $ mchmod -read,write ~~/stor/foo.txt
+
+    $ mchmod -a other_account -- =read ~~/stor/foot.txt
+
 
 OPTIONS
 -------
@@ -45,17 +51,14 @@ OPTIONS
   Authenticate using the SSH key described by FINGERPRINT.  The key must
   either be in `~/.ssh` or loaded in the SSH agent via `ssh-add`.
 
-`--role=ROLE,ROLE,...`
+`--role`
   Specify which roles to assume for the request.
-
-`--role-tag=ROLE,ROLE,...`
-  Set the role tags on the created link.
-
-`--user user`
-  Authenticate as user under account.
 
 `-u, --url url`
   Manta base URL (such as `https://manta.us-east.joyent.com`).
+
+`--user user`
+  Authenticate as user under account.
 
 `-v, --verbose`
   Print debug output to stderr.  Repeat option to increase verbosity.
@@ -67,19 +70,19 @@ ENVIRONMENT
   In place of `-a, --account`
 
 `MANTA_USER`
-  In place of `--user`
+  In place of `--user`.
 
 `MANTA_KEY_ID`
   In place of `-k, --key`.
-
-`MANTA_ROLE`
-  In place of `--role`.
 
 `MANTA_URL`
   In place of `-u, --url`.
 
 `MANTA_TLS_INSECURE`
   In place of `-i, --insecure`.
+
+`MANTA_ROLE`
+  In place of `--role`.
 
 DIAGNOSTICS
 -----------
@@ -88,7 +91,7 @@ When using the `-v` option, diagnostics will be sent to stderr in bunyan
 output format.  As an example of tracing all information about a request,
 try:
 
-    $ mln -vv /$MANTA_USER/stor/foo 2>&1 | bunyan
+    $ mchmod -v ~~/stor/foo 2>&1 | bunyan
 
 BUGS
 ----
