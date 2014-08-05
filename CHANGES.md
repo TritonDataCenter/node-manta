@@ -1,6 +1,8 @@
 # node-manta Changelog
 
-## not yet released
+## 1.3.0
+
+- RBAC Support
 
 ## v1.2.8
 
