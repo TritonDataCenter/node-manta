@@ -3,6 +3,9 @@
 ## 1.3.0
 
 - RBAC Support
+    * add --role and --role-tag options
+    * add support for authentication as user (MANTA_ACCOUNT, MANTA_USER)
+- #197 mjob create -s ~~/stor/foo broken
 
 ## v1.2.8
 
