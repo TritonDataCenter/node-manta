@@ -22,22 +22,22 @@ directories do not exist, they are created.
 EXAMPLES
 --------
 
-	$ muntar -f shakespeare.tar  /$MANTA_USER/stor/plays/shakespeare
-	/$MANTA_USER/stor/plays/shakespeare/README
-	/$MANTA_USER/stor/plays/shakespeare/comedies/cymbeline
-	/$MANTA_USER/stor/plays/shakespeare/glossary
+	$ muntar -f shakespeare.tar  ~~/stor/plays/shakespeare
+	~~/stor/plays/shakespeare/README
+	~~/stor/plays/shakespeare/comedies/cymbeline
+	~~/stor/plays/shakespeare/glossary
 	. . .
-	/$MANTA_USER/stor/plays/shakespeare/comedies/merrywivesofwindsor
-	/$MANTA_USER/stor/plays/shakespeare/poetry/rapeoflucrece
-	/$MANTA_USER/stor/plays/shakespeare/poetry/various
-	/$MANTA_USER/stor/plays/shakespeare/poetry/sonnets
+	~~/stor/plays/shakespeare/comedies/merrywivesofwindsor
+	~~/stor/plays/shakespeare/poetry/rapeoflucrece
+	~~/stor/plays/shakespeare/poetry/various
+	~~/stor/plays/shakespeare/poetry/sonnets
 
 If the tarball is compressed, you can store it as an object and use muntar
 in the compute environment.
 
-    $ mput -f /var/tmp/backup.tar.gz /$MANTA_USER/stor/backup.tar.gz
-    $ echo /$MANTA_USER/stor/backup.tar.gz | \
-        mjob create -o -m gzcat -m 'muntar -f $MANTA_INPUT_FILE /$MANTA_USER/stor'
+    $ mput -f /var/tmp/backup.tar.gz ~~/stor/backup.tar.gz
+    $ echo ~~/stor/backup.tar.gz | \
+        mjob create -o -m gzcat -m 'muntar -f $MANTA_INPUT_FILE ~~/stor'
 
 
 
@@ -90,8 +90,8 @@ OPTIONS
 
 `-v, --verbose`
   Print debug output to stderr.  Repeat option to increase verbosity.
-  
-  
+
+
   ENVIRONMENT
 -----------
 `MANTA_ACCOUNT`
@@ -119,7 +119,11 @@ When using the `-v` option, diagnostics will be sent to stderr in bunyan
 output format.  As an example of tracing all information about a request,
 try:
 
-    $ mfind -vv /$MANTA_USER/stor 2>&1 | bunyan
+    $ mfind -vv ~~/stor 2>&1 | bunyan
+
+NOTES
+-----
+
 
 BUGS
 ----

@@ -24,10 +24,10 @@ supports Regular Expression matching.
 EXAMPLES
 --------
 
-    $ mfind -t o -n '.+.log$' /$MANTA_USER/stor/logs/foo/2013/04/29
-    /$MANTA_USER/stor/logs/foo/2013/04/29/00/gandalf.log
+    $ mfind -t o -n '.+.log$' ~~/stor/logs/foo/2013/04/29
+    ~~/stor/logs/foo/2013/04/29/00/gandalf.log
     /$USER/stor/logs/foo/2013/04/29/00/frodo.log
-    /$MANTA_USER/stor/logs/foo/2013/04/29/01/sam.log
+    ~~/stor/logs/foo/2013/04/29/01/sam.log
     /$USER/stor/logs/foo/2013/04/29/01/aragorn.log
 
 OPTIONS
@@ -110,7 +110,7 @@ When using the `-v` option, diagnostics will be sent to stderr in bunyan
 output format.  As an example of tracing all information about a request,
 try:
 
-    $ mfind -vv /$MANTA_USER/stor 2>&1 | bunyan
+    $ mfind -vv ~~/stor 2>&1 | bunyan
 
 BUGS
 ----

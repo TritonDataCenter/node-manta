@@ -22,7 +22,7 @@ EXAMPLES
 
 Retrieves HTTP headers for the given object.
 
-    $ minfo /$MANTA_USER/stor/README.md
+    $ minfo ~~/stor/README.md
 
 OPTIONS
 -------
@@ -82,7 +82,7 @@ When using the `-v` option, diagnostics will be sent to stderr in bunyan
 output format.  As an example of tracing all information about a request,
 try:
 
-    $ minfo -vv /$MANTA_USER/stor/foo 2>&1 | bunyan
+    $ minfo -vv ~~/stor/foo 2>&1 | bunyan
 
 BUGS
 ----

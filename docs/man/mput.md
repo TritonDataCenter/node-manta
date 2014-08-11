@@ -31,18 +31,18 @@ EXAMPLES
 
 Create an object with the contents of foo.txt.  Content-type will be text/plain.
 
-    $ mput -f ./foo.txt /$MANTA_USER/stor/foo.txt
+    $ mput -f ./foo.txt ~~/stor/foo.txt
 
 Create the same object from stdin, and set content-type.
 
-    $ cat ./foo.txt | mput -H 'content-type: text/plain' /$MANTA_USER/stor/foo.txt
+    $ cat ./foo.txt | mput -H 'content-type: text/plain' ~~/stor/foo.txt
 
 Create the same object, set CORS header, and create 3 copies, with no progress bar:
 
     $ cat ./foo.txt | mput -H 'content-type: text/plain' \
                            -H 'access-control-allow-origin: *' \
                            -c 3 -q \
-                           /$MANTA_USER/stor/foo.txt
+                           ~~/stor/foo.txt
 
 OPTIONS
 -------
@@ -118,7 +118,7 @@ When using the `-v` option, diagnostics will be sent to stderr in bunyan
 output format.  As an example of tracing all information about a request,
 try:
 
-    $ mput -vv /$MANTA_USER/stor/foo 2>&1 | bunyan
+    $ mput -vv ~~/stor/foo 2>&1 | bunyan
 
 BUGS
 ----

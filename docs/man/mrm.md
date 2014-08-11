@@ -21,7 +21,7 @@ EXAMPLES
 
 Recursively delete all directories and objects under `/:login/stor/tmp`.
 
-    $ mrm -r /$MANTA_USER/stor/tmp
+    $ mrm -r ~~/stor/tmp
 
 OPTIONS
 -------
@@ -87,7 +87,7 @@ When using the `-v` option, diagnostics will be sent to stderr in bunyan
 output format.  As an example of tracing all information about a request,
 try:
 
-    $ mrm -vv /$MANTA_USER/stor/foo 2>&1 | bunyan
+    $ mrm -vv ~~/stor/foo 2>&1 | bunyan
 
 BUGS
 ----

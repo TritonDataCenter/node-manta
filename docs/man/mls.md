@@ -15,14 +15,14 @@ DESCRIPTION
 -----------
 
 List information about the FILEs (`/:login/stor` by default, where `:login` is
-either the login specified by `-a` or `$MANTA_USER`).  Entries are sorted by
+either the login specified by `-a` or `$MANTA_ACCOUNT`).  Entries are sorted by
 creation time.  Note that `directories` will appear to have a trailing `/` after
 them, while objects will be just the name (unless `-l` is specified).
 
 EXAMPLES
 --------
 
-    $ mls /$MANTA_USER/stor
+    $ mls ~~/stor
     foo
     home/
     README.md
@@ -102,7 +102,7 @@ When using the `-v` option, diagnostics will be sent to stderr in bunyan
 output format.  As an example of tracing all information about a request,
 try:
 
-    $ mls -vv /$MANTA_USER/stor 2>&1 | bunyan
+    $ mls -vv ~~/stor 2>&1 | bunyan
 
 BUGS
 ----

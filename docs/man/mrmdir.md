@@ -19,7 +19,7 @@ mrmdir removes each specified directory, if they are empty.
 EXAMPLES
 --------
 
-    $ mrmdir /$MANTA_USER/stor/tmp
+    $ mrmdir ~~/stor/tmp
 
 OPTIONS
 -------
@@ -79,7 +79,7 @@ When using the `-v` option, diagnostics will be sent to stderr in bunyan
 output format.  As an example of tracing all information about a request,
 try:
 
-    $ mrmdir -vv /$MANTA_USER/stor/foo 2>&1 | bunyan
+    $ mrmdir -vv ~~/stor/foo 2>&1 | bunyan
 
 BUGS
 ----
