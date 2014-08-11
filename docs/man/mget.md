@@ -102,6 +102,17 @@ ENVIRONMENT
 `MANTA_TLS_INSECURE`
   In place of `-i, --insecure`.
 
+The shortcut `~~` is equivalent to `/:login`
+where `:login` is the account owner,
+typically `MANTA_ACCOUNT`.
+
+If `MANTA_ACCOUNT` is not set,
+`MANTA_USER`is assumed to be the account owner.
+If both are set,
+`MANTA_ACCOUNT` is the account owner, and
+`MANTA_USER` is user under the account.
+`MANTA_ACCOUNT` appeared in Manta 1.3.
+
 DIAGNOSTICS
 -----------
 
