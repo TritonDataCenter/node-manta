@@ -84,6 +84,9 @@ ENVIRONMENT
 `MANTA_ROLE`
   In place of `--role`.
 
+The shortcut `~~` is equivalent to `/:login`
+where `:login` is the account login name.
+
 DIAGNOSTICS
 -----------
 

@@ -28,16 +28,16 @@ EXAMPLES
 
 Retrieves the given object, with a progress indicator.
 
-    $ mget /$MANTA_USER/stor/README.md > /tmp/README.md
+    $ mget ~~/stor/README.md > /tmp/README.md
 
 Retrieves the given object, with a progress indicator, and stores it in the
 file README.md in the current directory.
 
-    $ mget -O /$MANTA_USER/stor/README.md
+    $ mget -O ~~/stor/README.md
 
 Finds and fetches a set of Javascript files, and pipes them to less.
 
-    $ mfind -t o -n '.js$' /$MANTA_USER/stor/foo | xargs mget -q | less
+    $ mfind -t o -n '.js$' ~~/stor/foo | xargs mget -q | less
 
 OPTIONS
 -------
@@ -102,6 +102,9 @@ ENVIRONMENT
 `MANTA_TLS_INSECURE`
   In place of `-i, --insecure`.
 
+The shortcut `~~` is equivalent to `/:login`
+where `:login` is the account login name.
+
 DIAGNOSTICS
 -----------
 
@@ -109,7 +112,7 @@ When using the `-v` option, diagnostics will be sent to stderr in bunyan
 output format.  As an example of tracing all information about a request,
 try:
 
-    $ mget -vv /$MANTA_USER/stor/foo 2>&1 | bunyan
+    $ mget -vv ~~/stor/foo 2>&1 | bunyan
 
 BUGS
 ----

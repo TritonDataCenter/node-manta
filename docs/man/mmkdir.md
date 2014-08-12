@@ -19,7 +19,7 @@ Create the DIRECTORY(ies), if they do not already exist.
 EXAMPLES
 --------
 
-    $ mmkdir -p /$MANTA_USER/stor/foo/bar/baz
+    $ mmkdir -p ~~/stor/foo/bar/baz
 
 OPTIONS
 -------
@@ -78,6 +78,9 @@ ENVIRONMENT
 `MANTA_TLS_INSECURE`
   In place of `-i, --insecure`.
 
+The shortcut `~~` is equivalent to `/:login`
+where `:login` is the account login name.
+
 DIAGNOSTICS
 -----------
 
@@ -85,7 +88,7 @@ When using the `-v` option, diagnostics will be sent to stderr in bunyan
 output format.  As an example of tracing all information about a request,
 try:
 
-    $ mmkdir -vv /$MANTA_USER/stor/foo 2>&1 | bunyan
+    $ mmkdir -vv ~~/stor/foo 2>&1 | bunyan
 
 BUGS
 ----

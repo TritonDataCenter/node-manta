@@ -149,6 +149,9 @@ ENVIRONMENT
 `MANTA_TLS_INSECURE`
   In place of `-i, --insecure`.
 
+The shortcut `~~` is equivalent to `/:login`
+where `:login` is the account login name.
+
 BUGS
 ----
 

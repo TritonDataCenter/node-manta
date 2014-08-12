@@ -30,11 +30,11 @@ EXAMPLES
 
 Assuming the GNU date command, generate a signed URL that expires in one month:
 
-    $ msign -e $(date -d "1 month" "+%s") /$MANTA_USER/stor/tmp
+    $ msign -e $(date -d "1 month" "+%s") ~~/stor/tmp
 
 On OS X, you would sign this way:
 
-    $ msign -e $(date -v+1m "+%s") /$MANTA_USER/stor/tmp
+    $ msign -e $(date -v+1m "+%s") ~~/stor/tmp
 
 
 OPTIONS
@@ -98,6 +98,9 @@ ENVIRONMENT
 `MANTA_TLS_INSECURE`
   In place of `-i, --insecure`.
 
+The shortcut `~~` is equivalent to `/:login`
+where `:login` is the account login name.
+
 DIAGNOSTICS
 -----------
 
@@ -105,7 +108,7 @@ When using the `-v` option, diagnostics will be sent to stderr in bunyan
 output format.  As an example of tracing all information about a request,
 try:
 
-    $ msign -vv /$MANTA_USER/stor/foo 2>&1 | bunyan
+    $ msign -vv ~~/stor/foo 2>&1 | bunyan
 
 BUGS
 ----

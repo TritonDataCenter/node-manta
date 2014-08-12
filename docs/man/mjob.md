@@ -111,7 +111,7 @@ get like the example below; this would print no diagnostics, and would wait
 for the job to complete, then dump the output to stdout (as if you had run
 `find | grep | sort | uniq` locally):
 
-    $ mfind /$MANTA_USER/stor | 
+    $ mfind ~~/stor |
         mjob create -q -o grep foo ^^ sort \| uniq -c
 
 The following options are supported on `create`:
@@ -162,7 +162,7 @@ The following options are supported on `create`:
   Specifies a reduce phase.
 
 `-s, --assets path`
-  Specifies an asset to make available in the compute zone that runs in 
+  Specifies an asset to make available in the compute zone that runs in
   the next map or reduce phase.
 
 `-w, --watch`
@@ -175,8 +175,8 @@ The addinputs command feeds input names from stdin to a list of JobIDs,
 and by default closes input when done.  For example:
 
     $ cat inputs.txt
-    /$MANTA_USER/stor/foo
-    /$MANTA_USER/stor/bar
+    ~~/stor/foo
+    ~~/stor/bar
     $ cat inputs.txt | mjob addinputs $job
 
 `-b, --batch size`
@@ -262,7 +262,7 @@ Generates and uploads a self-contained HTML page that describes the job,
 including its phases, the list of input and output objects, the contents of
 input and output objects, error details, and so on.
 
-**By default, this HTML page is uploaded to /$MANTA_USER/public/jobshares,
+**By default, this HTML page is uploaded to ~~/public/jobshares,
 meaning that it will be publicly accessible.  This includes the contents of
 input and output objects.**  If you just want to generate the HTML content
 without uploading it, use the "-s" option and save the output to a file.
@@ -324,6 +324,9 @@ ENVIRONMENT
 `MANTA_TLS_INSECURE`
   In place of `-i, --insecure`.
 
+The shortcut `~~` is equivalent to `/:login`
+where `:login` is the account login name.
+
 DIAGNOSTICS
 -----------
 
@@ -331,7 +334,7 @@ When using the `-v` option, diagnostics will be sent to stderr in bunyan
 output format.  As an example of tracing all information about a request,
 try:
 
-    $ mjob -vv /$MANTA_USER/stor/foo 2>&1 | bunyan
+    $ mjob -vv ~~/stor/foo 2>&1 | bunyan
 
 BUGS
 ----

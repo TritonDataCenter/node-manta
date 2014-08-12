@@ -25,7 +25,7 @@ EXAMPLES
 
 Creates a link from README that snapshots the contents of README.md.
 
-    $ mln /$MANTA_USER/stor/README.md /$MANTA_USER/stor/README
+    $ mln ~~/stor/README.md ~~/stor/README
 
 OPTIONS
 -------
@@ -81,6 +81,9 @@ ENVIRONMENT
 `MANTA_TLS_INSECURE`
   In place of `-i, --insecure`.
 
+The shortcut `~~` is equivalent to `/:login`
+where `:login` is the account login name.
+
 DIAGNOSTICS
 -----------
 
@@ -88,7 +91,7 @@ When using the `-v` option, diagnostics will be sent to stderr in bunyan
 output format.  As an example of tracing all information about a request,
 try:
 
-    $ mln -vv /$MANTA_USER/stor/foo 2>&1 | bunyan
+    $ mln -vv ~~/stor/foo 2>&1 | bunyan
 
 BUGS
 ----
