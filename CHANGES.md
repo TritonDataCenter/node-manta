@@ -2,6 +2,8 @@
 
 ## not yet released
 
+- DOC-590 Use ~~ in man pages instead of MANTA_USER
+
 ## 1.3.1
 
 - #197 mjob create -s ~~/stor/foo broken
