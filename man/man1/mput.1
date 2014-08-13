@@ -8,23 +8,23 @@ mput \- create an object
 .SH DESCRIPTION
 .PP
 mput creates an object specified at the name OBJECT with the contents either
-coming from stdin, or from the file specified with \fB\fC-f\fR.  mput will attempt to
+coming from stdin, or from the file specified with \fB\fC\-f\fR\&.  mput will attempt to
 set the HTTP Content\-Type based on the extension on the object, unless
 Content\-Type is specified as an HTTP header.  If mput cannot determine the type
 based on the extension the default content\-type is usually
-\fB\fCapplication/octet-stream\fR, but this can be overriden by setting the environment
-variable \fB\fCMANTA_DEFAULT_CONTENT_TYPE\fR (or passing \fB\fC-H\fR).
+\fB\fCapplication/octet\-stream\fR, but this can be overriden by setting the environment
+variable \fB\fCMANTA_DEFAULT_CONTENT_TYPE\fR (or passing \fB\fC\-H\fR).
 .PP
 By default, mput creates two copies of an object; this can be overridden with
-\fB\fC-c\fR.  Lastly, mput also draws a progress meter by default; this can be disabled
-with \fB\fC-q\fR.
+\fB\fC\-c\fR\&.  Lastly, mput also draws a progress meter by default; this can be disabled
+with \fB\fC\-q\fR\&.
 .SH EXAMPLES
 .PP
 Create an object with the contents of foo.txt.  Content\-type will be text/plain.
 .PP
 .RS
 .nf
-$ mput -f ./foo.txt /$MANTA_USER/stor/foo.txt
+$ mput \-f ./foo.txt ~~/stor/foo.txt
 .fi
 .RE
 .PP
@@ -32,7 +32,7 @@ Create the same object from stdin, and set content\-type.
 .PP
 .RS
 .nf
-$ cat ./foo.txt | mput -H 'content-type: text/plain' /$MANTA_USER/stor/foo.txt
+$ cat ./foo.txt | mput \-H 'content\-type: text/plain' ~~/stor/foo.txt
 .fi
 .RE
 .PP
@@ -40,69 +40,87 @@ Create the same object, set CORS header, and create 3 copies, with no progress b
 .PP
 .RS
 .nf
-$ cat ./foo.txt | mput -H 'content-type: text/plain' \\
-                       -H 'access-control-allow-origin: *' \\
-                       -c 3 -q \\
-                       /$MANTA_USER/stor/foo.txt
+$ cat ./foo.txt | mput \-H 'content\-type: text/plain' \\
+                       \-H 'access\-control\-allow\-origin: *' \\
+                       \-c 3 \-q \\
+                       ~~/stor/foo.txt
 .fi
 .RE
 .SH OPTIONS
 .TP
-\fB\fC-a, --account login\fR
+\fB\fC\-a, \-\-account login\fR
 Authenticate as account (login name).
 .TP
-\fB\fC-c, --copies file\fR
+\fB\fC\-c, \-\-copies file\fR
 Create COPIES copies as a replication factor (default 2).
 .TP
-\fB\fC-f, --file file\fR
+\fB\fC\-f, \-\-file file\fR
 Create contents of object from file.
 .TP
-\fB\fC-h, --help\fR
+\fB\fC\-h, \-\-help\fR
 Print a help message and exit.
 .TP
-\fB\fC-i, --insecure\fR
+\fB\fC\-i, \-\-insecure\fR
 This option explicitly allows "insecure" SSL connections and transfers.  All
 SSL connections are attempted to be made secure by using the CA certificate
 bundle installed by default.
 .TP
-\fB\fC-k, --key fingerprint\fR
+\fB\fC\-k, \-\-key fingerprint\fR
 Authenticate using the SSH key described by FINGERPRINT.  The key must
-either be in \fB\fC~/.ssh\fR or loaded in the SSH agent via \fB\fCssh-add\fR.
+either be in \fB\fC~/.ssh\fR or loaded in the SSH agent via \fB\fCssh\-add\fR\&.
 .TP
-\fB\fC-m, --md5\fR
-When using \fB\fC--file\fR, this switch instructs mput to first compute the MD5 of
-the file and send it in \fB\fCcontent-md5\fR.
+\fB\fC\-m, \-\-md5\fR
+When using \fB\fC\-\-file\fR, this switch instructs mput to first compute the MD5 of
+the file and send it in \fB\fCcontent\-md5\fR\&.
 .TP
-\fB\fC-q, --quiet\fR
+\fB\fC\-q, \-\-quiet\fR
 Do not display a progress meter.
 .TP
-\fB\fC-u, --url url\fR
-Manta base URL (such as \fB\fChttps://manta.us-east.joyent.com\fR).
+\fB\fC\-\-role=ROLE,ROLE,...\fR
+Specify which roles to assume for the request.
 .TP
-\fB\fC-v, --verbose\fR
+\fB\fC\-\-role\-tag=ROLE,ROLE,...\fR
+Set the role tags on the created object.
+.TP
+\fB\fC\-\-user user\fR
+Authenticate as user under account.
+.TP
+\fB\fC\-u, \-\-url url\fR
+Manta base URL (such as \fB\fChttps://manta.us\-east.joyent.com\fR).
+.TP
+\fB\fC\-v, \-\-verbose\fR
 Print debug output to stderr.  Repeat option to increase verbosity.
 .SH ENVIRONMENT
 .TP
 \fB\fCMANTA_USER\fR
-In place of \fB\fC-a, --account\fR
+In place of \fB\fC\-a, \-\-account\fR
+.TP
+\fB\fCMANTA_SUBUSER\fR
+In place of \fB\fC\-\-user\fR\&.
 .TP
 \fB\fCMANTA_KEY_ID\fR
-In place of \fB\fC-k, --key\fR.
+In place of \fB\fC\-k, \-\-key\fR\&.
+.TP
+\fB\fCMANTA_ROLE\fR
+In place of \fB\fC\-\-role\fR\&.
 .TP
 \fB\fCMANTA_URL\fR
-In place of \fB\fC-u, --url\fR.
+In place of \fB\fC\-u, \-\-url\fR\&.
 .TP
 \fB\fCMANTA_TLS_INSECURE\fR
-In place of \fB\fC-i, --insecure\fR.
+In place of \fB\fC\-i, \-\-insecure\fR\&.
+.PP
+The shortcut \fB\fC~~\fR is equivalent to \fB\fC/:login\fR
+where \fB\fC:login\fR is the account login name.
 .SH DIAGNOSTICS
 .PP
-When using the \fB\fC-v\fR option, diagnostics will be sent to stderr in bunyan
+When using the \fB\fC\-v\fR option, diagnostics will be sent to stderr in bunyan
 output format.  As an example of tracing all information about a request,
 try:
 .PP
 .RS
 .nf
-$ mput -vv /$MANTA_USER/stor/foo 2>&1 | bunyan
+$ mput \-vv ~~/stor/foo 2>&1 | bunyan
 .fi
 .RE
 .SH BUGS
@@ -110,5 +128,4 @@ $ mput -vv /$MANTA_USER/stor/foo 2>&1 | bunyan
 DSA keys do not work when loaded via the SSH agent.
 .PP
 Report bugs at Github
-.UR https://github.com/joyent/node-manta/issues
-.UE
+\[la]https://github.com/joyent/node-manta/issues\[ra]

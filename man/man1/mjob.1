@@ -18,30 +18,36 @@ UUID.
 .PP
 The following options are supported in all commands:
 .TP
-\fB\fC-a, --account login\fR
+\fB\fC\-a, \-\-account login\fR
 Authenticate as account (login name).
 .TP
-\fB\fC-h, --help\fR
+\fB\fC\-h, \-\-help\fR
 Print a help message and exit.
 .TP
-\fB\fC-i, --insecure\fR
+\fB\fC\-i, \-\-insecure\fR
 This option explicitly allows "insecure" SSL connections and transfers.  All
 SSL connections are attempted to be made secure by using the CA certificate
 bundle installed by default.
 .TP
-\fB\fC-k, --key fingerprint\fR
-Authenticate using the SSH key described by \fB\fCfingerprint\fR.  The key must
-either be in \fB\fC~/.ssh\fR or loaded in the SSH agent via \fB\fCssh-add\fR.
+\fB\fC\-k, \-\-key fingerprint\fR
+Authenticate using the SSH key described by \fB\fCfingerprint\fR\&.  The key must
+either be in \fB\fC~/.ssh\fR or loaded in the SSH agent via \fB\fCssh\-add\fR\&.
 .TP
-\fB\fC-p, --parallel concurrency\fR
+\fB\fC\-p, \-\-parallel concurrency\fR
 Limit concurrent operations to CONCURRENCY.  Default is 50.  This applies to
 operations issued by mjob itself (e.g., to add inputs or poll on the job).  It
 has no effect on the concurrency of the job.
 .TP
-\fB\fC-u, --url url\fR
-Manta base URL (such as \fB\fChttps://manta.us-east.joyent.com\fR).
+\fB\fC\-\-role=ROLE,ROLE,...\fR
+Specify which roles to assume for the request.
 .TP
-\fB\fC-v, --verbose\fR
+\fB\fC\-\-user user\fR
+Authenticate as user under account.
+.TP
+\fB\fC\-u, \-\-url url\fR
+Manta base URL (such as \fB\fChttps://manta.us\-east.joyent.com\fR).
+.TP
+\fB\fC\-v, \-\-verbose\fR
 Print debug output to stderr.  Repeat option to increase verbosity.
 .SH COMMANDS
 .PP
@@ -49,7 +55,7 @@ The following commands and options are supported:
 .SS create [OPTIONS...] expression
 .PP
 Creates a job that executes the commands against keys that will be specified
-via \fB\fCaddinputs\fR.  \fB\fCexpression\fR can specify an arbitrary UNIX pipeline, with
+via \fB\fCaddinputs\fR\&.  \fB\fCexpression\fR can specify an arbitrary UNIX pipeline, with
 map/reduce \fIphases\fP separated by the \fB\fC^\fR or \fB\fC^^\fR 
 .BR character (s), 
 respectively.
@@ -60,19 +66,19 @@ following invocation would be a likely example (note the | to escape the
 .PP
 .RS
 .nf
-$ mjob create grep foo ^^ sort \\| uniq -c
+$ mjob create grep foo ^^ sort \\| uniq \-c
 .fi
 .RE
 .PP
 This is the fastest and most common form of creating jobs, and runs with default
 compute container sizes.
 .PP
-Alternatively, jobs can be specified by using a combination of \fB\fC-m\fR and \fB\fC-r\fR
+Alternatively, jobs can be specified by using a combination of \fB\fC\-m\fR and \fB\fC\-r\fR
 flags; the same pipeline could be specified with:
 .PP
 .RS
 .nf
-$ mjob create -m 'grep foo' -r 'sort | uniq -c'
+$ mjob create \-m 'grep foo' \-r 'sort | uniq \-c'
 .fi
 .RE
 .PP
@@ -80,8 +86,8 @@ The above form is useful for specifying options to each phase.  For example:
 .PP
 .RS
 .nf
-$ mjob create --memory 2048 -m 'grep foo'
-    --memory 8192 -r 'sort | uniq -c'
+$ mjob create \-\-memory 2048 \-m 'grep foo'
+    \-\-memory 8192 \-r 'sort | uniq \-c'
 .fi
 .RE
 .PP
@@ -102,7 +108,7 @@ $ cat job.json
     "type": "reduce"
   }]
 }
-$ mjob create -f job.json
+$ mjob create \-f job.json
 .fi
 .RE
 .PP
@@ -113,63 +119,63 @@ for the job to complete, then dump the output to stdout (as if you had run
 .PP
 .RS
 .nf
-$ mfind /$MANTA_USER/stor | 
-    mjob create -q -o grep foo ^^ sort \\| uniq -c
+$ mfind ~~/stor |
+    mjob create \-q \-o grep foo ^^ sort \\| uniq \-c
 .fi
 .RE
 .PP
 The following options are supported on \fB\fCcreate\fR:
 .TP
-\fB\fC-b, --batch size\fR
+\fB\fC\-b, \-\-batch size\fR
 When adding inputs, add them in batches of size.
 .TP
-\fB\fC--close\fR
+\fB\fC\-\-close\fR
 End the input stream once the job is created.
 .TP
-\fB\fC--count num_reducers\fR
+\fB\fC\-\-count num_reducers\fR
 Use num_reducers in the reduce phase.
 .TP
-\fB\fC--disk disk\fR
+\fB\fC\-\-disk disk\fR
 Override the OS quota, and use the specified amount of disk in the next phase.
 This option is specified in gigabytes.
 .TP
-\fB\fC--memory memory\fR
+\fB\fC\-\-memory memory\fR
 Override the OS size, and use the specified amount of DRAM in the next phase.
 This option is specified in megabytes.
 .TP
-\fB\fC-f, --file file\fR
+\fB\fC\-f, \-\-file file\fR
 Read job description from file.
 .TP
-\fB\fC--image version\fR
+\fB\fC\-\-image version\fR
 Specifies an image version semver to use in the next job phase.  Must be
 specified as a semver string.  The default is server\-provided and changes
 over time.
 .TP
-\fB\fC--init command\fR
+\fB\fC\-\-init command\fR
 Specifies a command to execute in the compute zone for the next map or
 reduce phase.  This command will be executed \fIonce\fP per zone, and will
 run \fIbefore\fP the exec command for the phase.  This is useful for setup, etc.
 .TP
-\fB\fC-m, --map command\fR
+\fB\fC\-m, \-\-map command\fR
 Specifies a map phase.
 .TP
-\fB\fC-o, --cat-outputs\fR
+\fB\fC\-o, \-\-cat\-outputs\fR
 Wait for job to complete, then fetch and concatenate outputs.
 .TP
-\fB\fC--open\fR
+\fB\fC\-\-open\fR
 When adding inputs, do not close input, but leave job open.
 .TP
-\fB\fC-q, --quiet\fR
+\fB\fC\-q, \-\-quiet\fR
 Do not output any informative messages.
 .TP
-\fB\fC-r, --reduce command\fR
+\fB\fC\-r, \-\-reduce command\fR
 Specifies a reduce phase.
 .TP
-\fB\fC-s, --assets path\fR
-Specifies an asset to make available in the compute zone that runs in 
+\fB\fC\-s, \-\-assets path\fR
+Specifies an asset to make available in the compute zone that runs in
 the next map or reduce phase.
 .TP
-\fB\fC-w, --watch\fR
+\fB\fC\-w, \-\-watch\fR
 Wait for job to finish (only use when adding inputs at create time).
 .SS addinputs [\-b batch] [\-o] JOB...
 .PP
@@ -179,16 +185,16 @@ and by default closes input when done.  For example:
 .RS
 .nf
 $ cat inputs.txt
-/$MANTA_USER/stor/foo
-/$MANTA_USER/stor/bar
+~~/stor/foo
+~~/stor/bar
 $ cat inputs.txt | mjob addinputs $job
 .fi
 .RE
 .TP
-\fB\fC-b, --batch size\fR
+\fB\fC\-b, \-\-batch size\fR
 When adding inputs, add them in batches of size.
 .TP
-\fB\fC-o, --open\fR
+\fB\fC\-o, \-\-open\fR
 When adding inputs, do not close input, but leave job open.
 .SS close JOB
 .PP
@@ -196,7 +202,7 @@ Closes input for a given job.
 .PP
 .RS
 .nf
-$ mjob close 3ec32136-b125-11e2-8487-1b418dd6974b
+$ mjob close 3ec32136\-b125\-11e2\-8487\-1b418dd6974b
 .fi
 .RE
 .SS get JOB...
@@ -205,7 +211,7 @@ Returns the \fB\fCstatus\fR JSON document for a job.
 .PP
 .RS
 .nf
-$ mjob get 3ec32136-b125-11e2-8487-1b418dd6974b
+$ mjob get 3ec32136\-b125\-11e2\-8487\-1b418dd6974b
 .fi
 .RE
 .SS watch JOB
@@ -214,7 +220,7 @@ Waits for a given job to reach the \fB\fCdone\fR state.
 .PP
 .RS
 .nf
-$ mjob watch 3ec32136-b125-11e2-8487-1b418dd6974b
+$ mjob watch 3ec32136\-b125\-11e2\-8487\-1b418dd6974b
 .fi
 .RE
 .SS cancel JOB...
@@ -223,7 +229,7 @@ Cancels a currently running job.
 .PP
 .RS
 .nf
-$ mjob cancel 3ec32136-b125-11e2-8487-1b418dd6974b
+$ mjob cancel 3ec32136\-b125\-11e2\-8487\-1b418dd6974b
 .fi
 .RE
 .SS outputs JOB...
@@ -236,7 +242,7 @@ back in a contiguous stream.
 .PP
 .RS
 .nf
-$ mjob outputs 3ec32136-b125-11e2-8487-1b418dd6974b
+$ mjob outputs 3ec32136\-b125\-11e2\-8487\-1b418dd6974b
 .fi
 .RE
 .SS inputs JOB...
@@ -249,7 +255,7 @@ back in a contiguous stream.
 .PP
 .RS
 .nf
-$ mjob inputs 3ec32136-b125-11e2-8487-1b418dd6974b
+$ mjob inputs 3ec32136\-b125\-11e2\-8487\-1b418dd6974b
 .fi
 .RE
 .SS errors JOB...
@@ -262,7 +268,7 @@ back in a contiguous stream.
 .PP
 .RS
 .nf
-$ mjob errors 3ec32136-b125-11e2-8487-1b418dd6974b
+$ mjob errors 3ec32136\-b125\-11e2\-8487\-1b418dd6974b
 .fi
 .RE
 .SS failures JOB...
@@ -275,7 +281,7 @@ back in a contiguous stream.
 .PP
 .RS
 .nf
-$ mjob failures 3ec32136-b125-11e2-8487-1b418dd6974b
+$ mjob failures 3ec32136\-b125\-11e2\-8487\-1b418dd6974b
 .fi
 .RE
 .SS share JOB
@@ -284,36 +290,36 @@ Generates and uploads a self\-contained HTML page that describes the job,
 including its phases, the list of input and output objects, the contents of
 input and output objects, error details, and so on.
 .PP
-\fBBy default, this HTML page is uploaded to /$MANTA_USER/public/jobshares,
+\fBBy default, this HTML page is uploaded to ~~/public/jobshares,
 meaning that it will be publicly accessible.  This includes the contents of
 input and output objects.\fP  If you just want to generate the HTML content
 without uploading it, use the "\-s" option and save the output to a file.
 .PP
 .RS
 .nf
-$ mjob share 3ec32136-b125-11e2-8487-1b418dd6974b
+$ mjob share 3ec32136\-b125\-11e2\-8487\-1b418dd6974b
 .fi
 .RE
 .TP
-\fB\fC-r, --readme README_FILE\fR
+\fB\fC\-r, \-\-readme README_FILE\fR
 Insert the rendered contents of \fB\fCREADME_FILE\fR (a Markdown file) directly into
 the generated HTML page.
 .TP
-\fB\fC-s, --stdout\fR
+\fB\fC\-s, \-\-stdout\fR
 Emit the HTML output to stdout and do not upload it to Manta.
 .SS list [\-s state]
 .PP
 Lists all jobs for a user (note, this can also be done with a normal \fB\fCmls\fR
-call).  Optionally takes a \fB\fC-s\fR, that can be used to filter down to only
+call).  Optionally takes a \fB\fC\-s\fR, that can be used to filter down to only
 \fB\fCrunning\fR jobs.
 .PP
 .RS
 .nf
-$ mjob list -s running
+$ mjob list \-s running
 .fi
 .RE
 .TP
-\fB\fC-s, --state state\fR
+\fB\fC\-s, \-\-state state\fR
 Only list jobs in the given state.
 .SS cost JOB
 .PP
@@ -325,30 +331,39 @@ were running recently.**
 .IP
 $ mjob cost 3ec32136\-b125\-11e2\-8487\-1b418dd6974b
 .TP
-\fB\fC-q, --quiet\fR
+\fB\fC\-q, \-\-quiet\fR
 Do not output any informative messages.
 .SH ENVIRONMENT
 .TP
 \fB\fCMANTA_USER\fR
-In place of \fB\fC-a, --account\fR
+In place of \fB\fC\-a, \-\-account\fR
+.TP
+\fB\fCMANTA_SUBUSER\fR
+In place of \fB\fC\-\-user\fR
 .TP
 \fB\fCMANTA_KEY_ID\fR
-In place of \fB\fC-k, --key\fR.
+In place of \fB\fC\-k, \-\-key\fR\&.
+.TP
+\fB\fCMANTA_ROLE\fR
+In place of \fB\fC\-\-role\fR\&.
 .TP
 \fB\fCMANTA_URL\fR
-In place of \fB\fC-u, --url\fR.
+In place of \fB\fC\-u, \-\-url\fR\&.
 .TP
 \fB\fCMANTA_TLS_INSECURE\fR
-In place of \fB\fC-i, --insecure\fR.
+In place of \fB\fC\-i, \-\-insecure\fR\&.
+.PP
+The shortcut \fB\fC~~\fR is equivalent to \fB\fC/:login\fR
+where \fB\fC:login\fR is the account login name.
 .SH DIAGNOSTICS
 .PP
-When using the \fB\fC-v\fR option, diagnostics will be sent to stderr in bunyan
+When using the \fB\fC\-v\fR option, diagnostics will be sent to stderr in bunyan
 output format.  As an example of tracing all information about a request,
 try:
 .PP
 .RS
 .nf
-$ mjob -vv /$MANTA_USER/stor/foo 2>&1 | bunyan
+$ mjob \-vv ~~/stor/foo 2>&1 | bunyan
 .fi
 .RE
 .SH BUGS
@@ -356,5 +371,4 @@ $ mjob -vv /$MANTA_USER/stor/foo 2>&1 | bunyan
 DSA keys do not work when loaded via the SSH agent.
 .PP
 Report bugs at Github
-.UR https://github.com/joyent/node-manta/issues
-.UE
+\[la]https://github.com/joyent/node-manta/issues\[ra]

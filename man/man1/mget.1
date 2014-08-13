@@ -18,14 +18,14 @@ and/or corrupt output.  You should check for an exit status of 0 to know that
 the request was successful.
 .PP
 Note that mget by default will emit a progress meter on stderr.  You can
-disable this with \fB\fC-q\fR.
+disable this with \fB\fC\-q\fR\&.
 .SH EXAMPLES
 .PP
 Retrieves the given object, with a progress indicator.
 .PP
 .RS
 .nf
-$ mget /$MANTA_USER/stor/README.md > /tmp/README.md
+$ mget ~~/stor/README.md > /tmp/README.md
 .fi
 .RE
 .PP
@@ -34,7 +34,7 @@ file README.md in the current directory.
 .PP
 .RS
 .nf
-$ mget -O /$MANTA_USER/stor/README.md
+$ mget \-O ~~/stor/README.md
 .fi
 .RE
 .PP
@@ -42,66 +42,81 @@ Finds and fetches a set of Javascript files, and pipes them to less.
 .PP
 .RS
 .nf
-$ mfind -t o -n '.js$' /$MANTA_USER/stor/foo | xargs mget -q | less
+$ mfind \-t o \-n '.js$' ~~/stor/foo | xargs mget \-q | less
 .fi
 .RE
 .SH OPTIONS
 .TP
-\fB\fC-a, --account login\fR
+\fB\fC\-a, \-\-account login\fR
 Authenticate as account (login name).
 .TP
-\fB\fC-H, --headers\fR
+\fB\fC\-H, \-\-headers\fR
 Print HTTP headers on stderr.
 .TP
-\fB\fC-h, --help\fR
+\fB\fC\-h, \-\-help\fR
 Print a help message and exit.
 .TP
-\fB\fC-i, --insecure\fR
+\fB\fC\-i, \-\-insecure\fR
 This option explicitly allows "insecure" SSL connections and transfers.  All
 SSL connections are attempted to be made secure by using the CA certificate
 bundle installed by default.
 .TP
-\fB\fC-k, --key fingerprint\fR
+\fB\fC\-k, \-\-key fingerprint\fR
 Authenticate using the SSH key described by FINGERPRINT.  The key must
-either be in \fB\fC~/.ssh\fR or loaded in the SSH agent via \fB\fCssh-add\fR.
+either be in \fB\fC~/.ssh\fR or loaded in the SSH agent via \fB\fCssh\-add\fR\&.
 .TP
-\fB\fC-o, --output file\fR
+\fB\fC\-\-role=ROLE,ROLE,...\fR
+Specify which roles to assume for the request.
+.TP
+\fB\fC\-o, \-\-output file\fR
 Write output to <file> instead of stdout.
 .TP
-\fB\fC-O, --remote-name\fR
+\fB\fC\-O, \-\-remote\-name\fR
 Write output to a file using the requested object's name (i.e. the last
 element of the full object path) instead of stdout.
 .TP
-\fB\fC-q, --quiet\fR
+\fB\fC\-q, \-\-quiet\fR
 Do not display a progress meter.
 .TP
-\fB\fC-u, --url url\fR
-Manta base URL (such as \fB\fChttps://manta.us-east.joyent.com\fR).
+\fB\fC\-\-user user\fR
+Authenticate as user under account.
 .TP
-\fB\fC-v, --verbose\fR
+\fB\fC\-u, \-\-url url\fR
+Manta base URL (such as \fB\fChttps://manta.us\-east.joyent.com\fR).
+.TP
+\fB\fC\-v, \-\-verbose\fR
 Print debug output to stderr.  Repeat option to increase verbosity.
 .SH ENVIRONMENT
 .TP
 \fB\fCMANTA_USER\fR
-In place of \fB\fC-a, --account\fR
+In place of \fB\fC\-a, \-\-account\fR
+.TP
+\fB\fCMANTA_SUBUSER\fR
+In place of \fB\fC\-\-user\fR\&.
 .TP
 \fB\fCMANTA_KEY_ID\fR
-In place of \fB\fC-k, --key\fR.
+In place of \fB\fC\-k, \-\-key\fR\&.
+.TP
+\fB\fCMANTA_ROLE\fR
+In place of \fB\fC\-\-role\fR\&.
 .TP
 \fB\fCMANTA_URL\fR
-In place of \fB\fC-u, --url\fR.
+In place of \fB\fC\-u, \-\-url\fR\&.
 .TP
 \fB\fCMANTA_TLS_INSECURE\fR
-In place of \fB\fC-i, --insecure\fR.
+In place of \fB\fC\-i, \-\-insecure\fR\&.
+.PP
+The shortcut \fB\fC~~\fR is equivalent to \fB\fC/:login\fR
+where \fB\fC:login\fR is the account login name.
 .SH DIAGNOSTICS
 .PP
-When using the \fB\fC-v\fR option, diagnostics will be sent to stderr in bunyan
+When using the \fB\fC\-v\fR option, diagnostics will be sent to stderr in bunyan
 output format.  As an example of tracing all information about a request,
 try:
 .PP
 .RS
 .nf
-$ mget -vv /$MANTA_USER/stor/foo 2>&1 | bunyan
+$ mget \-vv ~~/stor/foo 2>&1 | bunyan
 .fi
 .RE
 .SH BUGS
@@ -109,5 +124,4 @@ $ mget -vv /$MANTA_USER/stor/foo 2>&1 | bunyan
 DSA keys do not work when loaded via the SSH agent.
 .PP
 Report bugs at Github
-.UR https://github.com/joyent/node-manta/issues
-.UE
+\[la]https://github.com/joyent/node-manta/issues\[ra]

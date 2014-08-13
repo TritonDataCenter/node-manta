@@ -14,15 +14,15 @@ directories do not exist, they are created.
 .PP
 .RS
 .nf
-$ muntar -f shakespeare.tar  /$MANTA_USER/stor/plays/shakespeare
-/$MANTA_USER/stor/plays/shakespeare/README
-/$MANTA_USER/stor/plays/shakespeare/comedies/cymbeline
-/$MANTA_USER/stor/plays/shakespeare/glossary
-. . .
-/$MANTA_USER/stor/plays/shakespeare/comedies/merrywivesofwindsor
-/$MANTA_USER/stor/plays/shakespeare/poetry/rapeoflucrece
-/$MANTA_USER/stor/plays/shakespeare/poetry/various
-/$MANTA_USER/stor/plays/shakespeare/poetry/sonnets
+$ muntar \-f shakespeare.tar  ~~/stor/plays/shakespeare
+~~/stor/plays/shakespeare/README
+~~/stor/plays/shakespeare/comedies/cymbeline
+~~/stor/plays/shakespeare/glossary
+\&. . .
+~~/stor/plays/shakespeare/comedies/merrywivesofwindsor
+~~/stor/plays/shakespeare/poetry/rapeoflucrece
+~~/stor/plays/shakespeare/poetry/various
+~~/stor/plays/shakespeare/poetry/sonnets
 .fi
 .RE
 .PP
@@ -31,77 +31,95 @@ in the compute environment.
 .PP
 .RS
 .nf
-$ mput -f /var/tmp/backup.tar.gz /$MANTA_USER/stor/backup.tar.gz
-$ echo /$MANTA_USER/stor/backup.tar.gz | \\
-    mjob create -o -m gzcat -m 'muntar -f $MANTA_INPUT_FILE /$MANTA_USER/stor'
+$ mput \-f /var/tmp/backup.tar.gz ~~/stor/backup.tar.gz
+$ echo ~~/stor/backup.tar.gz | \\
+    mjob create \-o \-m gzcat \-m 'muntar \-f $MANTA_INPUT_FILE ~~/stor'
 .fi
 .RE
 .SH OPTIONS
 .TP
-\fB\fC-a, --account=login\fR
+\fB\fC\-a, \-\-account=login\fR
 Authenticate as account (login name).
 .TP
-\fB\fC-c, --copies=copies\fR
+\fB\fC\-c, \-\-copies=copies\fR
 Number of copies to make.
 .TP
-\fB\fC-f, --file=tarfile\fR
+\fB\fC\-f, \-\-file=tarfile\fR
 The tar file to extract from.
 .TP
-\fB\fC-H, --header=header\fR
+\fB\fC\-H, \-\-header=header\fR
 HTTP headers to include.
 .TP
-\fB\fC-h, --help\fR
+\fB\fC\-h, \-\-help\fR
 Print a help message and exit.
 .TP
-\fB\fC-i, --insecure\fR
+\fB\fC\-i, \-\-insecure\fR
 This option explicitly allows "insecure" SSL connections and transfers.  All
 SSL connections are attempted to be made secure by using the CA certificate
 bundle installed by default.
 .TP
-\fB\fC-k fingerprint, --key=fingerprint\fR
+\fB\fC\-k fingerprint, \-\-key=fingerprint\fR
 Authenticate using the SSH key described by FINGERPRINT.  The key must
-either be in \fB\fC~/.ssh\fR or loaded in the SSH agent via \fB\fCssh-add\fR.
+either be in \fB\fC~/.ssh\fR or loaded in the SSH agent via \fB\fCssh\-add\fR\&.
 .TP
-\fB\fC-p concurrency, --parallel=oncurrency\fR
+\fB\fC\-p concurrency, \-\-parallel=oncurrency\fR
 Limit concurrent operations to CONCURRENCY.  Default is 20.
 .TP
-\fB\fC-t, --type type\fR
+\fB\fC\-t, \-\-type type\fR
 Specify \fB\fCd\fR for directories, and \fB\fCo\fR for objects.  If specified, only names of
 that type will be returned.
 .TP
-\fB\fC-u, --url url\fR
-Manta base URL (such as \fB\fChttps://manta.us-east.joyent.com\fR).
+\fB\fC\-\-role=ROLE,ROLE,...\fR
+Specify which roles to assume for the request.
 .TP
-\fB\fC-v, --verbose\fR
+\fB\fC\-\-role\-tag=ROLE,ROLE,...\fR
+Set the role tags on created objects and directories.
+.TP
+\fB\fC\-\-user user\fR
+Authenticate as user under account.
+.TP
+\fB\fC\-u, \-\-url url\fR
+Manta base URL (such as \fB\fChttps://manta.us\-east.joyent.com\fR).
+.TP
+\fB\fC\-v, \-\-verbose\fR
 Print debug output to stderr.  Repeat option to increase verbosity.
 .SH   ENVIRONMENT
 .TP
 \fB\fCMANTA_USER\fR
-In place of \fB\fC-a, --account\fR
+In place of \fB\fC\-a, \-\-account\fR
+.TP
+\fB\fCMANTA_SUBUSER\fR
+In place of \fB\fC\-\-user\fR\&.
 .TP
 \fB\fCMANTA_KEY_ID\fR
-In place of \fB\fC-k, --key\fR.
+In place of \fB\fC\-k, \-\-key\fR\&.
+.TP
+\fB\fCMANTA_ROLE\fR
+In place of \fB\fC\-\-role\fR\&.
 .TP
 \fB\fCMANTA_URL\fR
-In place of \fB\fC-u, --url\fR.
+In place of \fB\fC\-u, \-\-url\fR\&.
 .TP
 \fB\fCMANTA_TLS_INSECURE\fR
-In place of \fB\fC-i, --insecure\fR.
+In place of \fB\fC\-i, \-\-insecure\fR\&.
+.PP
+The shortcut \fB\fC~~\fR is equivalent to \fB\fC/:login\fR
+where \fB\fC:login\fR is the account login name.
 .SH DIAGNOSTICS
 .PP
-When using the \fB\fC-v\fR option, diagnostics will be sent to stderr in bunyan
+When using the \fB\fC\-v\fR option, diagnostics will be sent to stderr in bunyan
 output format.  As an example of tracing all information about a request,
 try:
 .PP
 .RS
 .nf
-$ mfind -vv /$MANTA_USER/stor 2>&1 | bunyan
+$ mfind \-vv ~~/stor 2>&1 | bunyan
 .fi
 .RE
+.SH NOTES
 .SH BUGS
 .PP
 DSA keys do not work when loaded via the SSH agent.
 .PP
 Report bugs at Github
-.UR https://github.com/joyent/node-manta/issues
-.UE
+\[la]https://github.com/joyent/node-manta/issues\[ra]

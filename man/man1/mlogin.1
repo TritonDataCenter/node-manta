@@ -29,7 +29,7 @@ $ mlogin
 user@manta # ptree $$
 91352 zsched
   2701  ./node lib/agent.js
-    2715  /bin/bash --norc
+    2715  /bin/bash \-\-norc
       2735  ptree 2715
 user@manta # exit
  * remote process exited
@@ -42,12 +42,12 @@ A more complicated use of \fB\fCmlogin\fR would be crashdump analysis with \fB\f
 .PP
 .RS
 .nf
-$ mlogin -c 'mdb /manta/user/stor/vmcore.1' /user/stor/vmcore.1
+$ mlogin \-c 'mdb /manta/user/stor/vmcore.1' /user/stor/vmcore.1
  * created interactive job
  * waiting for session... established
 Loading modules: [ unix genunix specfs dtrace mac ]
 > ::status
-debugging crash dump /manta/user/stor/vmcore.1 (64-bit)
+debugging crash dump /manta/user/stor/vmcore.1 (64\-bit)
 operating system: 5.11 joyent_20130226T234312Z (i86pc)
 panic message:
 BAD TRAP: type=e (#pf Page fault) rp=ffffff00b8e01070 addr=7b0
@@ -61,80 +61,94 @@ BAD TRAP: type=e (#pf Page fault) rp=ffffff00b8e01070 addr=7b0
 .PP
 The options are supported:
 .TP
-\fB\fC-a, --account login\fR
+\fB\fC\-a, \-\-account login\fR
 Authenticate as account (login name).
 .TP
-\fB\fC-c, --command shell_command\fR
+\fB\fC\-c, \-\-command shell_command\fR
 Run \fB\fCshell_command\fR instead of the default shell. This will be passed to
-\fB\fCbash -c\fR inside the interactive job, and can be used to run a command
+\fB\fCbash \-c\fR inside the interactive job, and can be used to run a command
 other than the default interactive shell.  Can be especially useful when
-you provide a script or program to run via \fB\fC--assets\fR.
+you provide a script or program to run via \fB\fC\-\-assets\fR\&.
 .TP
-\fB\fC--disk disk\fR
+\fB\fC\-\-disk disk\fR
 Override the OS quota, and use the specified amount of disk.
 This option is specified in gigabytes.
 .TP
-\fB\fC-e, --escape escape_character\fR
+\fB\fC\-e, \-\-escape escape_character\fR
 Sets the escape character for this mlogin session.  This character is
 recognised immediately following a carriage return, and allows the user
 to perform a session control function.  If the escape character is
-followed by a period (\fB\fC.\fR), the session will end; followed by a
+followed by a period (\fB\fC\&.\fR), the session will end; followed by a
 question mark (\fB\fC?\fR) prints a list of available escape characters.
-Passing \fB\fC"none"\fR to the \fB\fC-e\fR flag disables the escape character entirely.
+Passing \fB\fC"none"\fR to the \fB\fC\-e\fR flag disables the escape character entirely.
 .TP
-\fB\fC-h, --help\fR
+\fB\fC\-h, \-\-help\fR
 Print a help message and exit.
 .TP
-\fB\fC--image version\fR
+\fB\fC\-\-image version\fR
 Specifies an image version semver to use in job phases.  Must be specified as
 a semver string (default is ~1.0).
 .TP
-\fB\fC--init command\fR
+\fB\fC\-\-init command\fR
 Specifies a command to execute in the compute zone.  This command will be
 executed prior to starting the interactive job.  This is useful for setup,
 etc.
 .TP
-\fB\fC-i, --insecure\fR
+\fB\fC\-i, \-\-insecure\fR
 This option explicitly allows "insecure" SSL connections and transfers.  All
 SSL connections are attempted to be made secure by using the CA certificate
 bundle installed by default.
 .TP
-\fB\fC-k, --key fingerprint\fR
-Authenticate using the SSH key described by \fB\fCfingerprint\fR.  The key must
-either be in \fB\fC~/.ssh\fR or loaded in the SSH agent via \fB\fCssh-add\fR.
+\fB\fC\-k, \-\-key fingerprint\fR
+Authenticate using the SSH key described by \fB\fCfingerprint\fR\&.  The key must
+either be in \fB\fC~/.ssh\fR or loaded in the SSH agent via \fB\fCssh\-add\fR\&.
 .TP
-\fB\fC--memory memory\fR
+\fB\fC\-\-memory memory\fR
 Override the OS size, and use the specified amount of DRAM.
 This option is specified in megabytes.
 .TP
-\fB\fC-s, --assets path\fR
+\fB\fC\-\-role=ROLE,ROLE,...\fR
+Specify which roles to assume for the request.
+.TP
+\fB\fC\-s, \-\-assets path\fR
 Specifies an asset to make available in the compute zone.
 .TP
-\fB\fC-u, --url url\fR
-Manta base URL (such as \fB\fChttps://manta.us-east.joyent.com\fR).
+\fB\fC\-\-user user\fR
+Authenticate as user under account.
 .TP
-\fB\fC-v, --verbose\fR
+\fB\fC\-u, \-\-url url\fR
+Manta base URL (such as \fB\fChttps://manta.us\-east.joyent.com\fR).
+.TP
+\fB\fC\-v, \-\-verbose\fR
 Print debug output to stderr.  Repeat option to increase verbosity.
 .TP
-\fB\fC-q, --quiet\fR
+\fB\fC\-q, \-\-quiet\fR
 Don't print session establishment status messages.
 .SH ENVIRONMENT
 .TP
 \fB\fCMANTA_USER\fR
-In place of \fB\fC-a, --account\fR
+In place of \fB\fC\-a, \-\-account\fR
+.TP
+\fB\fCMANTA_SUBUSER\fR
+In place of \fB\fC\-\-user\fR
 .TP
 \fB\fCMANTA_KEY_ID\fR
-In place of \fB\fC-k, --key\fR.
+In place of \fB\fC\-k, \-\-key\fR\&.
+.TP
+\fB\fCMANTA_ROLE\fR
+In place of \fB\fC\-\-role\fR\&.
 .TP
 \fB\fCMANTA_URL\fR
-In place of \fB\fC-u, --url\fR.
+In place of \fB\fC\-u, \-\-url\fR\&.
 .TP
 \fB\fCMANTA_TLS_INSECURE\fR
-In place of \fB\fC-i, --insecure\fR.
+In place of \fB\fC\-i, \-\-insecure\fR\&.
+.PP
+The shortcut \fB\fC~~\fR is equivalent to \fB\fC/:login\fR
+where \fB\fC:login\fR is the account login name.
 .SH BUGS
 .PP
 DSA keys do not work when loaded via the SSH agent.
 .PP
 Report bugs at Github
-.UR https://github.com/joyent/node-manta/issues
-.UE
+\[la]https://github.com/joyent/node-manta/issues\[ra]

@@ -1,24 +1,26 @@
-.TH mput 1 "May 2013" Manta "Manta Commands"
+.TH mchmod 1 "August 2014" Manta "Manta Commands"
 .SH NAME
 .PP
-mchattr \- change object attributes
+mchmod \- change object role tags
 .SH SYNOPSIS
 .PP
-\fB\fCmchattr\fR [OPTION...] OBJECT
+\fB\fCmchmod\fR [+\-=]ROLE,... OBJECT
+\fB\fCmchmod\fR [OPTION...] \-\- [+\-=]ROLE,... OBJECT
 .SH DESCRIPTION
 .PP
-mchattr changes attributes of an object.  Running mchattr only changes metadata
-about the object (i.e., HTTP headers).  Running mchattr completely replaces all
-modifiable HTTP headers, so you must specify the complete set upon running.
+mchmod sets the role tags on an object or directory. Role tags are used to
+determine which of a user's roles will be checked to allow access.
 .PP
-Note you are not permitted to update "core" headers, such as \fB\fCdurability\-level\fR,
-\fB\fCcontent\-length\fR, and \fB\fCcontent\-md5\fR\&.  You can update \fB\fCcontent\-type\fR, \fB\fCm\-*\fR and
-CORS headers.
+Note that in order to use \fB\fCmchmod +ROLE\fR or \fB\fCmchmode \-ROLE\fR you will need access
+to read and write object metadata. Using \fB\fCmchmod =ROLE\fR only requires write
+access.
 .SH EXAMPLES
 .PP
 .RS
 .nf
-$ mchattr \-H m\-foo:bar ~~/stor/foo.txt
+$ mchmod +read ~~/stor/foo.txt
+$ mchmod \-read,write ~~/stor/foo.txt
+$ mchmod \-a other_account \-\- =read ~~/stor/foot.txt
 .fi
 .RE
 .SH OPTIONS
@@ -34,14 +36,11 @@ This option explicitly allows "insecure" SSL connections and transfers.  All
 SSL connections are attempted to be made secure by using the CA certificate
 bundle installed by default.
 .TP
-\fB\fC\-H, \-\-header\fR
-Set the specified HTTP header.
-.TP
 \fB\fC\-k, \-\-key fingerprint\fR
 Authenticate using the SSH key described by FINGERPRINT.  The key must
 either be in \fB\fC~/.ssh\fR or loaded in the SSH agent via \fB\fCssh\-add\fR\&.
 .TP
-\fB\fC\-\-role=ROLE,ROLE,...\fR
+\fB\fC\-\-role\fR
 Specify which roles to assume for the request.
 .TP
 \fB\fC\-u, \-\-url url\fR
@@ -63,14 +62,14 @@ In place of \fB\fC\-\-user\fR\&.
 \fB\fCMANTA_KEY_ID\fR
 In place of \fB\fC\-k, \-\-key\fR\&.
 .TP
-\fB\fCMANTA_ROLE\fR
-In place of \fB\fC\-\-role\fR\&.
-.TP
 \fB\fCMANTA_URL\fR
 In place of \fB\fC\-u, \-\-url\fR\&.
 .TP
 \fB\fCMANTA_TLS_INSECURE\fR
 In place of \fB\fC\-i, \-\-insecure\fR\&.
+.TP
+\fB\fCMANTA_ROLE\fR
+In place of \fB\fC\-\-role\fR\&.
 .PP
 The shortcut \fB\fC~~\fR is equivalent to \fB\fC/:login\fR
 where \fB\fC:login\fR is the account login name.
@@ -82,7 +81,7 @@ try:
 .PP
 .RS
 .nf
-$ mchattr \-v ~~/stor/foo 2>&1 | bunyan
+$ mchmod \-v ~~/stor/foo 2>&1 | bunyan
 .fi
 .RE
 .SH BUGS
