@@ -92,7 +92,7 @@ function parseOptions() {
     if (options['role-tag'])
         headers.headers['role-tag'] = options['role-tag'].join(',');
 
-    ifError(manta.assertPath(options.path, options.account, true));
+    ifError(manta.assertPath(options.path, true));
 
     client.ln(options.source, options.path, headers, function (err) {
         ifError(err);

@@ -85,7 +85,6 @@ function parseOptions() {
     try {
         opts = OPTIONS_PARSER.parse(process.argv);
         manta.checkBinEnv(opts);
-        manta.parseBinCaller(opts);
     } catch (e) {
         manta.cli_usage(OPTIONS_PARSER, e.message, '[PATH]...');
     }
@@ -104,7 +103,7 @@ function parseOptions() {
             if (!/^\//.test(p) && !/^~/.test(p))
                 p = '/' + opts.account + '/stor/' + p;
 
-            ifError(manta.assertPath(p, opts.account, true));
+            ifError(manta.assertPath(p, true));
             return (p);
         });
     }

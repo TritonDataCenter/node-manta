@@ -170,7 +170,6 @@ function jobDataCommon(opts, callback) {
     assert.string(opts.func, 'options.func');
     assert.number(opts.parallel, 'options.parallel');
     assert.string(opts.type, 'options.type');
-    assert.string(opts.account, 'options.account');
     assert.string(opts.watch, 'options.watch');
     assert.optionalFunc(callback, 'callback');
 
@@ -185,7 +184,7 @@ function jobDataCommon(opts, callback) {
                     return;
                 }
 
-                var p = sprintf(JOB_DATA_FMT, opts.account, id, opts.type);
+                var p = sprintf(JOB_DATA_FMT, id, opts.type);
                 opts.client.get(p, function (err, stream) {
                     if (err) {
                         cb(err);
@@ -323,7 +322,6 @@ function jobWait(opts, cb) {
                 func: 'jobOutput',
                 parallel: opts.opts.parallel,
                 type: 'out',
-                account: opts.opts.account,
                 watch: 'key'
             });
         }
@@ -393,7 +391,7 @@ function getJobInfo(opts, cb) {
     assert.object(opts, 'options');
     assert.object(opts.client, 'options.client');
     assert.string(opts.id, 'options.id');
-    assert.string(opts.account, 'options.account');
+    assert.string(opts.user, 'options.auser');
     assert.optionalFunc(cb, 'callback');
 
     cb = once(cb);
@@ -402,7 +400,7 @@ function getJobInfo(opts, cb) {
             if (err.statusCode !== 404) {
                 cb(err);
             } else {
-                var p = manta.jobPath(opts.id, opts.account) + '/job.json';
+                var p = manta.jobPath(opts.id, opts.user) + '/job.json';
                 opts.client.get(p, function (_err, stream) {
                     if (_err) {
                         cb(_err);
@@ -874,7 +872,7 @@ MJob.prototype.do_get = function do_get(subcmd, opts, args, cb) {
             getJobInfo({
                 client: client,
                 id: id,
-                account: opts.account
+                user: opts.user
             }, function (err, job) {
                 if (err) {
                     _cb(err);
@@ -937,7 +935,6 @@ MJob.prototype.do_inputs = function do_inputs(subcmd, opts, args, cb) {
         func: 'jobInput',
         parallel: opts.parallel,
         type: 'in',
-        account: opts.account,
         watch: 'key'
     }, cb);
 };
@@ -983,7 +980,6 @@ MJob.prototype.do_outputs = function do_outputs(subcmd, opts, args, cb) {
         func: 'jobOutput',
         parallel: opts.parallel,
         type: 'out',
-        account: opts.account,
         watch: 'key'
     }, cb);
 };
@@ -1029,7 +1025,6 @@ MJob.prototype.do_errors = function do_errors(subcmd, opts, args, cb) {
         func: 'jobErrors',
         parallel: opts.parallel,
         type: 'err',
-        account: opts.account,
         watch: 'err'
     }, cb);
 };
@@ -1076,7 +1071,6 @@ MJob.prototype.do_failures = function do_failures(subcmd, opts, args, cb) {
         func: 'jobFailures',
         parallel: opts.parallel,
         type: 'fail',
-        account: opts.account,
         watch: 'key'
     }, cb);
 };
@@ -1130,7 +1124,7 @@ MJob.prototype.do_list = function do_list(subcmd, opts, args, cb) {
                     fmt += 'HH:mm';
                 }
                 console.log('drwxr-xr-x 1 ' +
-                            opts.account + ' 1 ' +
+                            opts.user + ' 1 ' +
                             d.format(fmt) + ' ' +
                             j.name);
             } else {
@@ -1330,7 +1324,7 @@ MJob.prototype.do_share = function do_share(subcmd, opts, args, cb) {
             return;
         }
 
-        var dir = path.join('/', opts.account, 'public/jobshares',
+        var dir = path.join('/', 'public/jobshares',
             path.basename(args[0]));
         client.mkdirp(dir, function (err2) {
             if (err2) {

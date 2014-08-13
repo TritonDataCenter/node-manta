@@ -47,7 +47,6 @@ function parseOptions() {
     try {
         opts = OPTIONS_PARSER.parse(process.argv);
         manta.checkBinEnv(opts);
-        manta.parseBinCaller(opts);
     } catch (e) {
         manta.cli_usage(OPTIONS_PARSER, e.message, 'path...');
     }
@@ -109,8 +108,8 @@ function printError(p, err) {
     });
 
     options.paths.forEach(function (p) {
-        ifError(manta.assertPath(p, options.account, true));
-        queue.push(manta.path(p, options.account, true));
+        ifError(manta.assertPath(p, true));
+        queue.push(manta.path(p, true));
     });
 
     queue.close();
