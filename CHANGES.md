@@ -3,6 +3,7 @@
 ## not yet released
 
 - DOC-590 Use ~~ in man pages instead of MANTA_USER
+- DOC-592 Update doc to use MANTA_USER and MANTA_SUBUSER
 
 ## 1.3.1
 
