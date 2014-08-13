@@ -15,7 +15,7 @@ DESCRIPTION
 -----------
 
 List information about the FILEs (`/:login/stor` by default, where `:login` is
-either the login specified by `-a` or `$MANTA_ACCOUNT`).  Entries are sorted by
+either the login specified by `-a` or `$MANTA_USER`).  Entries are sorted by
 creation time.  Note that `directories` will appear to have a trailing `/` after
 them, while objects will be just the name (unless `-l` is specified).
 
@@ -77,10 +77,10 @@ OPTIONS
 ENVIRONMENT
 -----------
 
-`MANTA_ACCOUNT`
+`MANTA_USER`
   In place of `-a, --account`
 
-`MANTA_USER`
+`MANTA_SUBUSER`
   In place of `--user`.
 
 `MANTA_KEY_ID`

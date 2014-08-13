@@ -306,10 +306,10 @@ were running recently.**
 ENVIRONMENT
 -----------
 
-`MANTA_ACCOUNT`
+`MANTA_USER`
   In place of `-a, --account`
 
-`MANTA_USER`
+`MANTA_SUBUSER`
   In place of `--user`
 
 `MANTA_KEY_ID`
