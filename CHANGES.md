@@ -2,6 +2,8 @@
 
 ## not yet released
 
+## 1.4.1
+
 - MANTA-2401 fixed a few missed cases of old RBAC environment variable handling
 
 ## 1.4.0
