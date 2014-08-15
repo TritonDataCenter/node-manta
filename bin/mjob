@@ -48,7 +48,6 @@ function assertOpts(thisp, subcmd, opts, cb) {
 
     try {
         manta.checkBinEnv(opts);
-        manta.parseBinCaller(opts);
         manta.cli_logger(opts, LOG);
     } catch (e) {
         process.nextTick(cb.bind(thisp, e));
