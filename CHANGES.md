@@ -1,5 +1,9 @@
 # node-manta Changelog
 
+## not yet released
+
+- MANTA-2401 fixed a few missed cases of old RBAC environment variable handling
+
 ## 1.4.0
 
 - DOC-590 Use ~~ in man pages instead of MANTA_USER
