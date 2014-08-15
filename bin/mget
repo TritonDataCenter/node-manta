@@ -132,6 +132,7 @@ function printEntry(obj) {
             ifError(err);
 
             var bar;
+            var src = stream;
             if (drawProgressBar) {
                 var baropts = {
                     filename: p
@@ -145,16 +146,12 @@ function printEntry(obj) {
                     baropts.nosize = true;
                 }
                 bar = new manta.ProgressBar(baropts);
+                src = stream.pipe(bar.stream());
             }
 
-            stream.on('data', function (data) {
-                if (bar)
-                    bar.advance(data.length);
-                out.write(data);
-            });
-            stream.on('end', function () {
-                if (bar)
-                    bar.end();
+            src.pipe(out);
+
+            src.on('end', function () {
                 get();
             });
         });
