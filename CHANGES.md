@@ -2,6 +2,8 @@
 
 ## not yet released
 
+## 1.4.2
+
 - #201 mget should respect streams backpressure
 
 ## 1.4.1
