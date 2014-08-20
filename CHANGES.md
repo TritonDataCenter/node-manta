@@ -3,6 +3,7 @@
 ## not yet released
 
 - MANTA-2414 fix CLI tools unable to auth as subuser
+- fix presigned URLs for subusers
 
 ## 1.4.2
 
