@@ -2,6 +2,8 @@
 
 ## not yet released
 
+- MANTA-2414 fix CLI tools unable to auth as subuser
+
 ## 1.4.2
 
 - #201 mget should respect streams backpressure
