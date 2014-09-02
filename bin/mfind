@@ -108,7 +108,7 @@ function parseOptions() {
         opts.name = new RegExp(opts.name);
 
     if (!opts._args.length) {
-        opts.paths = ['/' + opts.user + '/stor'];
+        opts.paths = ['/' + opts.account + '/stor'];
     } else {
         opts.paths = opts._args;
     }

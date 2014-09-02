@@ -2,6 +2,8 @@
 
 ## not yet released
 
+- MANTA-2436 fix mjob and mfind using account/user options wrong
+
 ## 1.4.3
 
 - MANTA-2414 fix CLI tools unable to auth as subuser
