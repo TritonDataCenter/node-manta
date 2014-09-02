@@ -2,6 +2,8 @@
 
 ## not yet released
 
+## 1.4.4
+
 - MANTA-2436 fix mjob and mfind using account/user options wrong
 
 ## 1.4.3
