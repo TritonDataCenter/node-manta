@@ -2,6 +2,8 @@
 
 ## not yet released
 
+- #203 --account/-a doesn't work
+
 ## 1.4.4
 
 - MANTA-2436 fix mjob and mfind using account/user options wrong
