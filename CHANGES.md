@@ -2,6 +2,8 @@
 
 ## not yet released
 
+## 1.4.5
+
 - #203 --account/-a doesn't work
 
 ## 1.4.4
