@@ -2,6 +2,8 @@
 
 ## not yet released
 
+- #200 combining implicit phases with -m/-r flags drops phases
+
 ## 1.4.5
 
 - #203 --account/-a doesn't work

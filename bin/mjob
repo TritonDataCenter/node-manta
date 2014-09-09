@@ -568,6 +568,12 @@ MJob.prototype.do_create = function create(subcmd, opts, args, cb) {
         var tmp = fs.readFileSync(path.normalize(opts.file), 'utf8');
         job = JSON.parse(tmp);
     } else if (opts.map || opts.reduce) {
+        if (args.length > 0) {
+                cb(new Error('cannot use -m/-r along with a job expression\n' +
+                    '(did you forget a "-m" or "-r"?)'));
+                return;
+        }
+
         var next = {};
         opts._order.forEach(function (o) {
             switch (o.key) {
