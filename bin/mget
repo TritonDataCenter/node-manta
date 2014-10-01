@@ -38,6 +38,11 @@ var OPTIONS_PARSER = dashdash.createParser({
             help: 'disable the progress bar'
         },
         {
+            names: ['progress'],
+            type: 'bool',
+            help: 'force the progress bar to draw, even when stderr redirected'
+        },
+        {
             names: ['output', 'o'],
             type: 'string',
             help: 'write output to <file> instead of stdout'
@@ -133,9 +138,10 @@ function printEntry(obj) {
 
             var bar;
             var src = stream;
-            if (drawProgressBar) {
+            if (opts.progress || drawProgressBar) {
                 var baropts = {
-                    filename: p
+                    filename: p,
+                    devtty: opts.progress
                 };
                 var clen =
                     parseInt(res.headers['content-length'],
