@@ -2,6 +2,7 @@
 
 ## not yet released
 
+- #210 client.put fix for Windows
 - #206 mget/mput: draw progress bar to /dev/tty with `--progress`
 - #200 combining implicit phases with -m/-r flags drops phases
 
