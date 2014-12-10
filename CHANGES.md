@@ -2,7 +2,9 @@
 
 ## not yet released
 
-(nothing)
+- #211 Fix `mjob share` on Windows. Also add '-v|--verbose' option
+  to `mjob` top-level, along with all the other top-level `m*` tools
+  options, see `mjob --help`.
 
 ## 1.4.6
 

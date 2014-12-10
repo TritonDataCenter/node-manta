@@ -4,7 +4,8 @@
 
 var EventEmitter = require('events').EventEmitter;
 var fs = require('fs');
-var path = require('path');
+var path = require('path-platform');
+var urlpath = path.posix;  // manip of URL paths
 var url = require('url');
 var util = require('util');
 
@@ -38,25 +39,25 @@ var LOG = bunyan.createLogger({
 
 ///-- Helpers
 
-function assertOpts(thisp, subcmd, opts, cb) {
-    if (opts.help) {
-        process.nextTick(function () {
-            thisp.do_help('help', {}, [subcmd], cb.bind(thisp));
-        });
-        return (false);
+
+/**
+ * Shallow merge of two objects. Last one wins.
+ */
+function mergeObjs(a, b) {
+    var out = {};
+    var k;
+
+    for (k in a) {
+        if (a.hasOwnProperty(k))
+            out[k] = a[k];
+    }
+    for (k in b) {
+        if (b.hasOwnProperty(k))
+            out[k] = b[k];
     }
 
-    try {
-        manta.checkBinEnv(opts);
-        manta.cli_logger(opts, LOG);
-    } catch (e) {
-        process.nextTick(cb.bind(thisp, e));
-        return (false);
-    }
-
-    return (true);
+    return (out);
 }
-
 
 function addInputsFromStdin(client, opts, cb) {
     assert.object(client, 'client');
@@ -155,11 +156,6 @@ function addInputsFromStdin(client, opts, cb) {
 }
 
 
-function createClient(opts) {
-    return (manta.createBinClient(opts));
-}
-
-
 // GetJob(Errors|Failures|Inputs|Outputs) all have the same logic
 // So this is just a generic handler for those
 function jobDataCommon(opts, callback) {
@@ -169,7 +165,6 @@ function jobDataCommon(opts, callback) {
     assert.string(opts.func, 'options.func');
     assert.number(opts.parallel, 'options.parallel');
     assert.string(opts.type, 'options.type');
-    assert.string(opts.user, 'options.user');
     assert.string(opts.watch, 'options.watch');
     assert.optionalFunc(callback, 'callback');
 
@@ -184,7 +179,7 @@ function jobDataCommon(opts, callback) {
                     return;
                 }
 
-                var p = sprintf(JOB_DATA_FMT, opts.user, id, opts.type);
+                var p = sprintf(JOB_DATA_FMT, opts.client.user, id, opts.type);
                 opts.client.get(p, function (err, stream) {
                     if (err) {
                         cb(err);
@@ -322,7 +317,6 @@ function jobWait(opts, cb) {
                 func: 'jobOutput',
                 parallel: opts.opts.parallel,
                 type: 'out',
-                user: opts.opts.account,
                 watch: 'key'
             });
         }
@@ -392,7 +386,6 @@ function getJobInfo(opts, cb) {
     assert.object(opts, 'options');
     assert.object(opts.client, 'options.client');
     assert.string(opts.id, 'options.id');
-    assert.string(opts.user, 'options.user');
     assert.optionalFunc(cb, 'callback');
 
     cb = once(cb);
@@ -401,7 +394,7 @@ function getJobInfo(opts, cb) {
             if (err.statusCode !== 404) {
                 cb(err);
             } else {
-                var p = manta.jobPath(opts.id, opts.user) + '/job.json';
+                var p = manta.jobPath(opts.id, opts.client.user) + '/job.json';
                 opts.client.get(p, function (_err, stream) {
                     if (_err) {
                         cb(_err);
@@ -429,10 +422,36 @@ function getJobInfo(opts, cb) {
 function MJob() {
     cmdln.Cmdln.call(this, {
         name: 'mjob',
-        desc: 'Manages Manta compute jobs'
+        desc: 'Manages Manta compute jobs',
+        options: manta.DEFAULT_CLI_OPTIONS
     });
 }
 util.inherits(MJob, cmdln.Cmdln);
+
+MJob.prototype.init = function init(opts, args, cb) {
+    var self = this;
+    this.opts = opts;
+
+    if (opts.verbose) {
+        process.env.DEBUG = 1; // set for cmdln.main(), changes with cmdln v2
+    }
+
+    // Cmdln class handles `opts.help`.
+    cmdln.Cmdln.prototype.init.call(this, opts, args, function (err) {
+        if (err || err === false) {
+            return cb(err);
+        }
+
+        manta.checkBinEnv(opts);
+        manta.cli_logger(opts, LOG);
+        cb();
+    });
+};
+
+
+MJob.prototype._createClient = function _createClient(opts) {
+    return (manta.createBinClient(mergeObjs(this.opts, opts)));
+};
 
 
 //-- AddKeys
@@ -440,9 +459,6 @@ util.inherits(MJob, cmdln.Cmdln);
 MJob.prototype.do_addinputs = function do_addinputs(subcmd, opts, args, cb) {
     cb = once(cb);
 
-    if (!assertOpts(this, subcmd, opts, cb))
-        return;
-
     if (args.length < 1) {
         cb(new Error('At least one JobId must be specified'));
         return;
@@ -453,7 +469,7 @@ MJob.prototype.do_addinputs = function do_addinputs(subcmd, opts, args, cb) {
         return;
     }
 
-    var client = createClient(opts);
+    var client = this._createClient(opts);
     opts.jobIds = args;
     addInputsFromStdin(client, opts, function (err) {
         client.close();
@@ -503,15 +519,12 @@ MJob.prototype.do_addinputs.help = (
 MJob.prototype.do_cancel = function do_cancel(subcmd, opts, args, cb) {
     cb = once(cb);
 
-    if (!assertOpts(this, subcmd, opts, cb))
-        return;
-
     if (args.length < 1) {
         cb(new Error('At least one JobId must be specified'));
         return;
     }
 
-    var client = createClient(opts);
+    var client = this._createClient(opts);
     var queue = new manta.Queue({
         limit: opts.parallel,
         worker: function cancel(id, _cb) {
@@ -554,9 +567,6 @@ MJob.prototype.do_cancel.help = (
 
 MJob.prototype.do_create = function create(subcmd, opts, args, cb) {
     cb = once(cb);
-
-    if (!assertOpts(this, subcmd, opts, cb))
-        return;
 
     var count = opts.count;
     var job = {
@@ -682,7 +692,7 @@ MJob.prototype.do_create = function create(subcmd, opts, args, cb) {
         return;
     }
 
-    var client = createClient(opts);
+    var client = this._createClient(opts);
     client.createJob(job, function (err, id) {
         if (err) {
             cb(err);
@@ -864,22 +874,19 @@ MJob.prototype.do_create.help = (
 MJob.prototype.do_get = function do_get(subcmd, opts, args, cb) {
     cb = once(cb);
 
-    if (!assertOpts(this, subcmd, opts, cb))
-        return;
-
     if (args.length < 1) {
         cb(new Error('At least one JobId must be specified'));
         return;
     }
 
-    var client = createClient(opts);
+    var client = this._createClient(opts);
     var queue = new manta.Queue({
         limit: opts.parallel,
         worker: function getJob(id, _cb) {
             getJobInfo({
                 client: client,
                 id: id,
-                user: opts.user
+                user: client.user
             }, function (err, job) {
                 if (err) {
                     _cb(err);
@@ -927,22 +934,18 @@ MJob.prototype.do_get.help = (
 MJob.prototype.do_inputs = function do_inputs(subcmd, opts, args, cb) {
     cb = once(cb);
 
-    if (!assertOpts(this, subcmd, opts, cb))
-        return;
-
     if (args.length < 1) {
         cb(new Error('At least one JobId must be specified'));
         return;
     }
 
-    var client = createClient(opts);
+    var client = this._createClient(opts);
     jobDataCommon({
         args: args,
         client: client,
         func: 'jobInput',
         parallel: opts.parallel,
         type: 'in',
-        user: opts.user,
         watch: 'key'
     }, cb);
 };
@@ -973,22 +976,18 @@ MJob.prototype.do_inputs.help = (
 MJob.prototype.do_outputs = function do_outputs(subcmd, opts, args, cb) {
     cb = once(cb);
 
-    if (!assertOpts(this, subcmd, opts, cb))
-        return;
-
     if (args.length < 1) {
         cb(new Error('At least one JobId must be specified'));
         return;
     }
 
-    var client = createClient(opts);
+    var client = this._createClient(opts);
     jobDataCommon({
         args: args,
         client: client,
         func: 'jobOutput',
         parallel: opts.parallel,
         type: 'out',
-        user: opts.user,
         watch: 'key'
     }, cb);
 };
@@ -1019,22 +1018,18 @@ MJob.prototype.do_outputs.help = (
 MJob.prototype.do_errors = function do_errors(subcmd, opts, args, cb) {
     cb = once(cb);
 
-    if (!assertOpts(this, subcmd, opts, cb))
-        return;
-
     if (args.length < 1) {
         cb(new Error('At least one JobId must be specified'));
         return;
     }
 
-    var client = createClient(opts);
+    var client = this._createClient(opts);
     jobDataCommon({
         args: args,
         client: client,
         func: 'jobErrors',
         parallel: opts.parallel,
         type: 'err',
-        user: opts.user,
         watch: 'err'
     }, cb);
 };
@@ -1066,22 +1061,18 @@ MJob.prototype.do_errors.help = (
 MJob.prototype.do_failures = function do_failures(subcmd, opts, args, cb) {
     cb = once(cb);
 
-    if (!assertOpts(this, subcmd, opts, cb))
-        return;
-
     if (args.length < 1) {
         cb(new Error('At least one JobId must be specified'));
         return;
     }
 
-    var client = createClient(opts);
+    var client = this._createClient(opts);
     jobDataCommon({
         args: args,
         client: client,
         func: 'jobFailures',
         parallel: opts.parallel,
         type: 'fail',
-        user: opts.user,
         watch: 'key'
     }, cb);
 };
@@ -1113,10 +1104,7 @@ MJob.prototype.do_failures.help = (
 MJob.prototype.do_list = function do_list(subcmd, opts, args, cb) {
     cb = once(cb);
 
-    if (!assertOpts(this, subcmd, opts, cb))
-        return;
-
-    var client = createClient(opts);
+    var client = this._createClient(opts);
 
     client.listJobs(opts, function (err, res) {
         if (err) {
@@ -1135,7 +1123,7 @@ MJob.prototype.do_list = function do_list(subcmd, opts, args, cb) {
                     fmt += 'HH:mm';
                 }
                 console.log('drwxr-xr-x 1 ' +
-                            opts.user + ' 1 ' +
+                            client.user + ' 1 ' +
                             d.format(fmt) + ' ' +
                             j.name);
             } else {
@@ -1188,15 +1176,12 @@ MJob.prototype.do_list.help = (
 MJob.prototype.do_watch = function do_watch(subcmd, opts, args, cb) {
     cb = once(cb);
 
-    if (!assertOpts(this, subcmd, opts, cb))
-        return;
-
     if (args.length < 1) {
         cb(new Error('At least one JobId must be specified'));
         return;
     }
 
-    var client = createClient(opts);
+    var client = this._createClient(opts);
 
     var queue = new manta.Queue({
         limit: opts.parallel,
@@ -1256,15 +1241,12 @@ MJob.prototype.do_watch.help = (
 MJob.prototype.do_close = function do_close(subcmd, opts, args, cb) {
     cb = once(cb);
 
-    if (!assertOpts(this, subcmd, opts, cb))
-        return;
-
     if (args.length < 1) {
         cb(new Error('At least one JobId must be specified'));
         return;
     }
 
-    var client = createClient(opts);
+    var client = this._createClient(opts);
 
     var queue = new manta.Queue({
         limit: opts.parallel,
@@ -1309,15 +1291,12 @@ MJob.prototype.do_close.help = (
 MJob.prototype.do_share = function do_share(subcmd, opts, args, cb) {
     cb = once(cb);
 
-    if (!assertOpts(this, subcmd, opts, cb))
-        return;
-
     if (args.length !== 1) {
         cb(new Error('Exactly one JobId must be specified'));
         return;
     }
 
-    var client = createClient(opts);
+    var client = this._createClient(opts);
     var options = {};
     if (opts.readme)
         options.readme = opts.readme;
@@ -1335,7 +1314,7 @@ MJob.prototype.do_share = function do_share(subcmd, opts, args, cb) {
             return;
         }
 
-        var dir = path.join('/', opts.user, 'public/jobshares',
+        var dir = urlpath.join('/', client.user, 'public/jobshares',
             path.basename(args[0]));
         client.mkdirp(dir, function (err2) {
             if (err2) {
@@ -1343,7 +1322,7 @@ MJob.prototype.do_share = function do_share(subcmd, opts, args, cb) {
                 return;
             }
 
-            var tmp = path.join(dir, 'index.html');
+            var tmp = urlpath.join(dir, 'index.html');
             var stream = new manta.StringStream(share.html);
             options = { 'size': Buffer.byteLength(share.html, 'utf8') };
             client.put(tmp, stream, options, function (err3) {
@@ -1394,9 +1373,6 @@ MJob.prototype.do_share.help = (
 MJob.prototype.do_cost = function do_cost(subcmd, opts, args, cb) {
     cb = once(cb);
 
-    if (!assertOpts(this, subcmd, opts, cb))
-        return;
-
     if (args.length !== 1) {
         cb(new Error('Exactly one JobId must be specified'));
         return;
@@ -1404,8 +1380,8 @@ MJob.prototype.do_cost = function do_cost(subcmd, opts, args, cb) {
 
     var version = '1.0.0';
     var assetsPath = '/manta/public/jobs/mjob-cost/' + version;
-    var client = createClient(opts);
-    var parts = manta.jobPath(args[0], opts.user).split('/');
+    var client = this._createClient(opts);
+    var parts = manta.jobPath(args[0], client.user).split('/');
     var user = parts[1];
     var id = parts[3];
     var jobManifest = {
