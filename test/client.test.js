@@ -227,10 +227,14 @@ test('streams', function (t) {
         var r = client.createReadStream(CHILD1);
         var s = new MemoryStream();
         var str = '';
+        var opened = false;
 
         s.setEncoding('utf8');
         s.on('data', function (chunk) {
             str += chunk;
+        });
+        r.once('open', function (res2) {
+            opened = true;
         });
         r.once('end', function () {
             t.equal(str, text);
@@ -240,6 +244,7 @@ test('streams', function (t) {
 
         r.once('close', function (res2) {
             t.equal(res2.statusCode, 200);
+            t.ok(opened);
             t.end();
         });
     });
