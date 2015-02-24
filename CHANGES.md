@@ -4,6 +4,13 @@
 
 (nothing)
 
+## 1.4.7
+
+- #216 commands fail on 1.4.6 when using ssh-agent
+- #215 client.createReadStream should emit an 'open' event like
+  fs.createReadStream
+- #208 mget fails for large files over slow internet (MANTA-2546)
+
 ## 1.4.6
 
 - #210 client.put fix for Windows
