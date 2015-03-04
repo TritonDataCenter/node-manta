@@ -122,8 +122,7 @@ function parseOptions() {
     }
     opts.paths.forEach(function (p) {
 
-        var _url = url.parse(p, true);
-        ifError(manta.assertPath(_url.pathname, true));
+        ifError(manta.assertPath(p, true));
 
         var _opts = {
             algorithm: opts.algorithm,
@@ -132,10 +131,9 @@ function parseOptions() {
             keyId: opts.keyId,
             log: opts.log,
             method: opts.method,
-            query: _url.query,
             role: opts.role,
             'role-tag': opts['role-tag'],
-            path: _url.pathname,
+            path: p,
             sign: client.sign,
             user: opts.user,
             subuser: opts.subuser

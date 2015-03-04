@@ -4,6 +4,11 @@
 
 (nothing)
 
+## 1.5.0
+
+- #219 msign doesn't work on paths with # in them
+- #220 signURL must URI-encode the Manta path
+
 ## 1.4.7
 
 - #216 commands fail on 1.4.6 when using ssh-agent
