@@ -4,6 +4,10 @@
 
 (nothing)
 
+## 1.5.1
+
+- #218 allow custom ssh-agent options to be passed to constructor
+
 ## 1.5.0
 
 - #219 msign doesn't work on paths with # in them
