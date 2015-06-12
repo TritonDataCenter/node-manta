@@ -29,6 +29,7 @@ var CHILD1 = SUBDIR1 + '/' + libuuid.v4(); // object
 var CHILD2 = SUBDIR2 + '/' + libuuid.v4(); // link
 var NOENTSUB1 = SUBDIR1 + '/a/b/c';
 var NOENTSUB2 = SUBDIR1 + '/d/e/f';
+var SPECIALOBJ1 = SUBDIR1 + '/' + 'before-\r-after';
 
 
 
@@ -123,6 +124,63 @@ test('put', function (t) {
     });
 });
 
+
+test('#231: put (special characters)', function (t) {
+    var text = 'my filename can mess stuff up\n';
+    var size = Buffer.byteLength(text);
+    var stream = new MemoryStream();
+
+    this.client.put(SPECIALOBJ1, stream, {size: size}, function (err) {
+        t.ifError(err);
+        t.end();
+    });
+
+    process.nextTick(function () {
+        stream.write(text);
+        stream.end();
+    });
+});
+
+test('#231: ls (special characters)', function (t) {
+    this.client.ls(SUBDIR1, function (err, res) {
+        t.ifError(err);
+
+        var found = false;
+        res.on('object', function (obj) {
+            if (obj.name === path.basename(SPECIALOBJ1))
+                found = true;
+        });
+
+        res.on('end', function () {
+            t.ok(found);
+            t.end();
+        });
+    });
+});
+
+test('#231: get (special characters)', function (t) {
+    this.client.get(SPECIALOBJ1, function (err, stream) {
+        t.ifError(err);
+
+        var data = '';
+        stream.setEncoding('utf8');
+        stream.on('data', function (chunk) {
+            data += chunk;
+        });
+        stream.on('end', function (chunk) {
+            t.equal(data, 'my filename can mess stuff up\n');
+            t.end();
+        });
+    });
+});
+
+
+test('#231: rm (special characters)', function (t) {
+    this.client.unlink(SPECIALOBJ1, function (err) {
+        t.ifError(err);
+        t.end();
+    });
+});
 
 test('chattr', function (t) {
     var opts = {
@@ -560,12 +618,12 @@ test('GH-196 getPath ~~/', function (t) {
     var old = process.env.MANTA_USER;
 
     process.env.MANTA_USER = user;
-    t.equal(this.client.path('~~/'), '/' + user);
+    t.equal(decodeURIComponent(this.client.path('~~/')), '/' + user);
     delete process.env.MANTA_USER;
-    t.equal(this.client.path('~~/'), '/' + user);
+    t.equal(decodeURIComponent(this.client.path('~~/')), '/' + user);
     process.env.MANTA_USER = old;
     // The plain export depends on the ENV variable
-    t.equal(manta.path('~~/'), '/' + user);
+    t.equal(decodeURIComponent(manta.path('~~/')), '/' + user);
     t.done();
 });
 
