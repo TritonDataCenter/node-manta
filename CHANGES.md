@@ -2,7 +2,8 @@
 
 ## not yet released
 
-(nothing)
+- #228 pipeline callback invoked after the pipeline has already completed
+  This issue can also manifest as "TypeError: Not a buffer".
 
 ## 1.5.1
 
