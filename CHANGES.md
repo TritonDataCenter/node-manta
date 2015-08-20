@@ -4,6 +4,13 @@
 
 (nothing)
 
+## 1.6.0
+
+- #237 new `createListStream()` API, a second-generation streaming version
+  of `ls()`
+- #238 mls `--type` flag now works correctly, allowing the user to list only
+  objects, or only directories
+
 ## 1.5.2
 
 - #228 pipeline callback invoked after the pipeline has already completed
