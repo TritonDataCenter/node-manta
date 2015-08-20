@@ -327,6 +327,36 @@ Each output object will be of this schema:
         mtime: '2012-11-09T12:34:56Z'           // ISO8601 timestamp of the last update time
     }
 
+## client.createListStream(path, [options])
+
+List directory contents.  This is the `ReadableStream` version of `ls()`.  Each
+object read from the stream has the same format as objects emitted from the
+`EventEmitter` returned by `ls()`.
+
+    var dir = client.createListStream('/', opts);
+
+    dir.on('error', function (err) {
+        console.error(err.stack);
+        process.exit(1);
+    });
+
+    dir.on('readable', function () {
+        var ent;
+        while ((ent = dir.read()) !== null) {
+            console.log(ent);
+        }
+    });
+
+    dir.once('end', function () {
+        console.log('all done');
+    });
+
+### Inputs
+
+||**Name**||**JS Type**||**Description**||
+||path||String||*(required)* A full Manta path to list||
+||options||Object||*(optional)* optional overrides for this request||
+
 
 # Objects
 

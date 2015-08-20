@@ -1,6 +1,7 @@
 #!/usr/bin/env node
-// -*- mode: js -*-
-// Copyright (c) 2013, Joyent, Inc. All rights reserved.
+/*
+ * Copyright 2015 Joyent, Inc.
+ */
 
 var path = require('path-platform');
 var url = require('url');
@@ -114,7 +115,8 @@ function parseOptions() {
         } else if (opts.type === 'd') {
             opts.type = 'directory';
         } else {
-            ifError(new Error('invalid type, must be t or o'));
+            ifError(new Error('invalid type, must be "d" (directory) or ' +
+              '"o" (object)'));
         }
     }
 

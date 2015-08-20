@@ -28,6 +28,9 @@ var NOENTSUB1 = SUBDIR1 + '/a/b/c';
 var NOENTSUB2 = SUBDIR1 + '/d/e/f';
 var SPECIALOBJ1 = SUBDIR1 + '/' + 'before-\r-after';
 
+var SUBDIR1_NOBJECTS = 1;
+var SUBDIR1_NDIRECTORIES = 2;
+
 
 /*
  * Helper functions
@@ -379,20 +382,103 @@ test('GH-72 content-length: undefined', function (t) {
 
 
 test('ls', function (t) {
-    t.expect(5);
+    t.expect(3 + 2 * (SUBDIR1_NOBJECTS + SUBDIR1_NDIRECTORIES));
+
+    var dirs = 0;
+    var objs = 0;
     this.client.ls(SUBDIR1, function (err, res) {
         t.ifError(err);
-        res.once('object', function (obj) {
+        res.on('object', function (obj) {
+            objs++;
             t.ok(obj);
             t.equal(obj.type, 'object');
         });
-        res.once('directory', function (dir) {
+        res.on('directory', function (dir) {
+            dirs++;
             t.ok(dir);
             t.equal(dir.type, 'directory');
         });
         res.once('end', function () {
+            t.equal(objs, SUBDIR1_NOBJECTS);
+            t.equal(dirs, SUBDIR1_NDIRECTORIES);
             t.done();
         });
+    });
+});
+
+
+test('createListStream', function (t) {
+    t.expect(2 + 2 * (SUBDIR1_NOBJECTS + SUBDIR1_NDIRECTORIES));
+
+    var lstr = this.client.createListStream(SUBDIR1);
+
+    var dirs = 0;
+    var objs = 0;
+    lstr.once('error', function (err) {
+        t.ifError(err);
+    });
+    lstr.on('readable', function () {
+        var obj;
+        while ((obj = lstr.read()) !== null) {
+            t.ok(obj);
+            t.ok(obj.type === 'object' || obj.type === 'directory');
+            if (obj.type === 'object') {
+                objs++;
+            } else {
+                dirs++;
+            }
+        }
+    });
+    lstr.once('end', function () {
+        t.equal(objs, SUBDIR1_NOBJECTS);
+        t.equal(dirs, SUBDIR1_NDIRECTORIES);
+        t.done();
+    });
+});
+
+
+test('createListStream (dir only)', function (t) {
+    t.expect(2 * (SUBDIR1_NDIRECTORIES));
+
+    var lstr = this.client.createListStream(SUBDIR1, {
+        type: 'directory'
+    });
+
+    lstr.once('error', function (err) {
+        t.ifError(err);
+    });
+    lstr.on('readable', function () {
+        var obj;
+        while ((obj = lstr.read()) !== null) {
+            t.ok(obj);
+            t.ok(obj.type === 'directory');
+        }
+    });
+    lstr.once('end', function () {
+        t.done();
+    });
+});
+
+
+test('createListStream (object only)', function (t) {
+    t.expect(2 * (SUBDIR1_NOBJECTS));
+
+    var lstr = this.client.createListStream(SUBDIR1, {
+        type: 'object'
+    });
+
+    lstr.once('error', function (err) {
+        t.ifError(err);
+    });
+    lstr.on('readable', function () {
+        var obj;
+        while ((obj = lstr.read()) !== null) {
+            t.ok(obj);
+            t.ok(obj.type === 'object');
+        }
+    });
+    lstr.once('end', function () {
+        t.done();
     });
 });
 
