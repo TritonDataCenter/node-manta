@@ -1,4 +1,6 @@
-// Copyright 2014 Joyent.  All rights reserved.
+/*
+ * Copyright 2015 Joyent, Inc.
+ */
 
 var exec = require('child_process').exec;
 var fs = require('fs');
@@ -6,20 +8,15 @@ var path = require('path');
 
 var libuuid = require('node-uuid');
 var MemoryStream = require('readable-stream/passthrough.js');
+var bunyan = require('bunyan');
+var restify = require('restify');
 
 var manta = require('../lib');
 
-if (require.cache[__dirname + '/helper.js'])
-    delete require.cache[__dirname + '/helper.js'];
-var helper = require('./helper.js');
 
-
-
-///--- Globals
-
-var after = helper.after;
-var before = helper.before;
-var test = helper.test;
+/*
+ * Globals
+ */
 
 var JOB;
 var ROOT = '/' + (process.env.MANTA_USER || 'admin') + '/stor';
@@ -32,10 +29,30 @@ var NOENTSUB2 = SUBDIR1 + '/d/e/f';
 var SPECIALOBJ1 = SUBDIR1 + '/' + 'before-\r-after';
 
 
+/*
+ * Helper functions
+ */
 
-///--- Tests
+function test(name, testfunc) {
+    module.exports[name] = testfunc;
+}
 
-before(function (cb) {
+function createLogger(name, stream) {
+    return (bunyan.createLogger({
+        level: (process.env.LOG_LEVEL || 'info'),
+        name: name || process.argv[1],
+        stream: stream || process.stdout,
+        src: true,
+        serializers: restify.bunyan.serializers
+    }));
+}
+
+
+/*
+ * Pre- and Post-test actions
+ */
+
+module.exports.setUp = function (cb) {
     var self = this;
     var url = process.env.MANTA_URL || 'http://localhost:8080';
     var user = process.env.MANTA_USER || 'admin';
@@ -43,7 +60,7 @@ before(function (cb) {
     function createClient(signer) {
         self.client = manta.createClient({
             connectTimeout: 1000,
-            log: helper.createLogger(),
+            log: createLogger(),
             retry: false,
             rejectUnauthorized: (process.env.MANTA_TLS_INSECURE ?
                                     false : true),
@@ -52,7 +69,7 @@ before(function (cb) {
             user: user
         });
 
-        return (cb());
+        cb();
     }
 
     if (process.env.MANTA_KEY_ID) {
@@ -66,36 +83,46 @@ before(function (cb) {
             f + ' ' +
             '| awk \'{print $2}\'';
         fs.readFile(f, 'utf8', function (err, key) {
-            if (err)
-                return (cb(err));
+            if (err) {
+                cb(err);
+                return;
+            }
 
             exec(cmd, function (err2, stdout, stderr) {
-                if (err2)
-                    return (cb(err2));
+                if (err2) {
+                    (cb(err2));
+                    return;
+                }
                 createClient(manta.privateKeySigner({
                     key: key,
                     keyId: stdout.replace('\n', ''),
                     user: user
                 }));
-                return (undefined);
+                return;
             });
-            return (undefined);
+            return;
         });
     }
-});
+};
 
 
-after(function (cb) {
-    if (this.client)
+module.exports.tearDown = function (cb) {
+    if (this.client) {
         this.client.close();
+        delete this.client;
+    }
     cb();
-});
+};
 
+
+/*
+ * Tests
+ */
 
 test('mkdir', function (t) {
     this.client.mkdir(SUBDIR1, function (err) {
         t.ifError(err);
-        t.end();
+        t.done();
     });
 });
 
@@ -103,7 +130,7 @@ test('mkdir', function (t) {
 test('mkdir (sub)', function (t) {
     this.client.mkdir(SUBDIR2, function (err) {
         t.ifError(err);
-        t.end();
+        t.done();
     });
 });
 
@@ -115,7 +142,7 @@ test('put', function (t) {
 
     this.client.put(CHILD1, stream, {size: size}, function (err) {
         t.ifError(err);
-        t.end();
+        t.done();
     });
 
     process.nextTick(function () {
@@ -132,7 +159,7 @@ test('#231: put (special characters)', function (t) {
 
     this.client.put(SPECIALOBJ1, stream, {size: size}, function (err) {
         t.ifError(err);
-        t.end();
+        t.done();
     });
 
     process.nextTick(function () {
@@ -153,7 +180,7 @@ test('#231: ls (special characters)', function (t) {
 
         res.on('end', function () {
             t.ok(found);
-            t.end();
+            t.done();
         });
     });
 });
@@ -169,7 +196,7 @@ test('#231: get (special characters)', function (t) {
         });
         stream.on('end', function (chunk) {
             t.equal(data, 'my filename can mess stuff up\n');
-            t.end();
+            t.done();
         });
     });
 });
@@ -178,7 +205,7 @@ test('#231: get (special characters)', function (t) {
 test('#231: rm (special characters)', function (t) {
     this.client.unlink(SPECIALOBJ1, function (err) {
         t.ifError(err);
-        t.end();
+        t.done();
     });
 });
 
@@ -195,7 +222,7 @@ test('chattr', function (t) {
         t.ok(info);
 
         if (!info) {
-            t.end();
+            t.done();
             return;
         }
 
@@ -211,7 +238,7 @@ test('chattr', function (t) {
                     t.equal(headers['m-foo'], 'bar');
                     t.equal(info2.etag, info.etag);
                 }
-                t.end();
+                t.done();
             });
         });
     });
@@ -225,7 +252,7 @@ test('put (zero byte streaming)', function (t) {
     stream.once('open', function () {
         self.client.put(CHILD1, stream, function (err) {
             t.ifError(err);
-            t.end();
+            t.done();
         });
     });
 });
@@ -238,7 +265,7 @@ test('put without mkdirp', function (t) {
 
     this.client.put(NOENTSUB1, stream, { size: size }, function (err) {
         t.ok(err);
-        t.end();
+        t.done();
     });
 
     process.nextTick(function () {
@@ -257,7 +284,7 @@ test('put with mkdirp', function (t) {
         mkdirs: true
     }, function (err) {
         t.ifError(err);
-        t.end();
+        t.done();
     });
 
     process.nextTick(function () {
@@ -277,7 +304,7 @@ test('streams', function (t) {
 
     w.once('error', function (err) {
         t.ifError(err);
-        t.end();
+        t.done();
     });
     w.once('close', function (res) {
         t.ok(res);
@@ -303,7 +330,7 @@ test('streams', function (t) {
         r.once('close', function (res2) {
             t.equal(res2.statusCode, 200);
             t.ok(opened);
-            t.end();
+            t.done();
         });
     });
 });
@@ -320,7 +347,7 @@ test('put MD5 mismatch', function (t) {
 
     this.client.put(CHILD1, stream, opts, function (err) {
         t.ok(err);
-        t.end();
+        t.done();
     });
 
     process.nextTick(function () {
@@ -341,7 +368,7 @@ test('GH-72 content-length: undefined', function (t) {
 
     this.client.put(CHILD1, stream, opts, function (err) {
         t.ifError(err);
-        t.end();
+        t.done();
     });
 
     process.nextTick(function () {
@@ -363,7 +390,9 @@ test('ls', function (t) {
             t.ok(dir);
             t.equal(dir.type, 'directory');
         });
-        res.once('end', t.end.bind(t));
+        res.once('end', function () {
+            t.done();
+        });
     });
 });
 
@@ -371,7 +400,7 @@ test('ls', function (t) {
 test('ln', function (t) {
     this.client.ln(CHILD1, CHILD2, function (err) {
         t.ifError(err);
-        t.end();
+        t.done();
     });
 });
 
@@ -387,7 +416,7 @@ test('info (link)', function (t) {
             t.ok(type.etag);
             t.ok(type.md5);
         }
-        t.end();
+        t.done();
     });
 });
 
@@ -421,7 +450,7 @@ test('ftw', function (t) {
 
                 res.once('end', function () {
                     t.equal(count, 2);
-                    t.end();
+                    t.done();
                 });
             });
         });
@@ -441,7 +470,7 @@ test('create job (simple grep)', function (t) {
         t.ifError(err);
         t.ok(job);
         JOB = job;
-        t.end();
+        t.done();
     });
 });
 
@@ -455,9 +484,9 @@ test('get job', function (t) {
         t.ok((job.state === 'queued' || job.state === 'running'));
         t.ok(job.timeCreated);
         t.ok(job.phases);
-        t.notOk(job.cancelled);
-        t.notOk(job.inputDone);
-        t.end();
+        t.ok(!job.cancelled);
+        t.ok(!job.inputDone);
+        t.done();
     });
 });
 
@@ -470,7 +499,7 @@ test('add input keys', function (t) {
 
     this.client.addJobKey(JOB, keys, function (err) {
         t.ifError(err);
-        t.end();
+        t.done();
     });
 });
 
@@ -480,7 +509,7 @@ test('get job input', function (t) {
     function cb(err) {
         t.ifError(err);
         t.equal(keys, 2);
-        t.end();
+        t.done();
     }
 
     this.client.jobInput(JOB, function (err, res) {
@@ -501,7 +530,7 @@ test('get job input', function (t) {
 test('end job', function (t) {
     this.client.endJob(JOB, function (err) {
         t.ifError(err);
-        t.end();
+        t.done();
     });
 });
 
@@ -514,13 +543,13 @@ test('wait for job', function (t) {
         client.job(JOB, function (err, job) {
             t.ifError(err);
             if (err) {
-                t.end();
+                t.done();
             } else if (job.state === 'done') {
-                t.end();
+                t.done();
             } else {
                 if (++attempts >= 60) {
-                    t.notOk(attempts);
-                    t.end();
+                    t.ok(!attempts);
+                    t.done();
                 } else {
                     setTimeout(getState, 1000);
                 }
@@ -537,7 +566,7 @@ test('get job output', function (t) {
     function cb(err) {
         t.ifError(err);
         t.ok(_keys > 0);
-        t.end();
+        t.done();
     }
 
     this.client.jobOutput(JOB, function (err, res) {
@@ -569,7 +598,7 @@ test('create and cancel job', function (t) {
                 t.ok(job2.cancelled);
                 t.ok(job2.inputDone);
                 // t.equal(job2.state, 'done');
-                t.end();
+                t.done();
             });
         });
     });
@@ -579,7 +608,7 @@ test('create and cancel job', function (t) {
 test('unlink object', function (t) {
     this.client.unlink(CHILD2, function (err) {
         t.ifError(err);
-        t.end();
+        t.done();
     });
 });
 
@@ -587,7 +616,7 @@ test('unlink object', function (t) {
 test('unlink link', function (t) {
     this.client.unlink(CHILD1, function (err) {
         t.ifError(err);
-        t.end();
+        t.done();
     });
 });
 
@@ -595,7 +624,7 @@ test('unlink link', function (t) {
 test('rmr', function (t) {
     this.client.rmr(SUBDIR1, function (err) {
         t.ifError(err);
-        t.end();
+        t.done();
     });
 });
 
@@ -606,7 +635,7 @@ test('mkdirp/rmr', function (t) {
         t.ifError(err);
         self.client.rmr(SUBDIR1, function (err2) {
             t.ifError(err2);
-            t.end();
+            t.done();
         });
     });
 });
@@ -640,5 +669,5 @@ test('#180: Invalid key results in no client error', function (t) {
             url: process.env.MANTA_URL
         });
     });
-    t.end();
+    t.done();
 });
