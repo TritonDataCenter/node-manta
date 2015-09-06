@@ -13,25 +13,62 @@ time\-expiring URLs that can be shared with others.  This is useful to generate
 HTML links, for example.
 .PP
 The default expiration for URLs is 1 hour from \fB\fCnow\fR, but this can be changed
-with the \fB\fCexpires\fR option.  The expires option is designed to be used in
-conjunction with the UNIX date command.  In general, you should use the date
-command with a modifier (the syntax is different between BSD and GNU forms), and
-format the output to epoch time.
+with the \fB\fCexpires\fR option \- see \fB\fCEXPIRATION\fR below.
 .SH EXAMPLES
 .PP
-Assuming the GNU date command, generate a signed URL that expires in one month:
+Generate a signed URL that expires in 5 seconds:
 .PP
 .RS
 .nf
-$ msign \-e $(date \-d "1 month" "+%s") ~~/stor/tmp
+$ msign \-e 5s ~~/stor/tmp
 .fi
 .RE
 .PP
-On OS X, you would sign this way:
+Generate a signed URL that expires in 5 minutes:
 .PP
 .RS
 .nf
-$ msign \-e $(date \-v+1m "+%s") ~~/stor/tmp
+$ msign \-e 5m ~~/stor/tmp
+.fi
+.RE
+.PP
+Generate a signed URL that expires in 5 hours:
+.PP
+.RS
+.nf
+$ msign \-e 5h ~~/stor/tmp
+.fi
+.RE
+.PP
+Generate a signed URL that expires in 5 days:
+.PP
+.RS
+.nf
+$ msign \-e 5d ~~/stor/tmp
+.fi
+.RE
+.PP
+Generate a signed URL that expires in 5 weeks:
+.PP
+.RS
+.nf
+$ msign \-e 5w ~~/stor/tmp
+.fi
+.RE
+.PP
+Generate a signed URL that expires in 5 years:
+.PP
+.RS
+.nf
+$ msign \-e 5y ~~/stor/tmp
+.fi
+.RE
+.PP
+Generate a signed URL that expires at Wed Jan 20 20:42:01 UTC 2016:
+.PP
+.RS
+.nf
+$ msign \-e 1453322521 ~~/stor/tmp
 .fi
 .RE
 .SH OPTIONS
@@ -40,8 +77,8 @@ $ msign \-e $(date \-v+1m "+%s") ~~/stor/tmp
 Authenticate as account (login name).
 .TP
 \fB\fC\-e, \-\-expires expiration\fR
-Signed URL should last until EXPIRATION (seconds since epoch).  Default is 1
-hour from \fB\fCnow\fR\&.
+Expiration time in a relative form or seconds since epoch \- see \fB\fCEXPIRATION\fR
+below for a more detailed explanation. Default is 1 hour from \fB\fCnow\fR\&.
 .TP
 \fB\fC\-h, \-\-help\fR
 Print a help message and exit.
@@ -94,6 +131,30 @@ In place of \fB\fC\-i, \-\-insecure\fR\&.
 .PP
 The shortcut \fB\fC~~\fR is equivalent to \fB\fC/:login\fR
 where \fB\fC:login\fR is the account login name.
+.SH EXPIRATION
+.PP
+The \fB\fC\-e\fR argument can be given in multiple forms.  If just a number is given,
+it will be used as the seconds since epoch.  If a number followed by a valid
+modifier character is given it will be used as a relative date.  Valid
+modifiers are:
+.TP
+\fB\fCs\fR
+Seconds from now
+.TP
+\fB\fCm\fR
+Minutes from now
+.TP
+\fB\fCh\fR
+Hours from now
+.TP
+\fB\fCd\fR
+Days from now
+.TP
+\fB\fCw\fR
+Weeks from now
+.TP
+\fB\fCy\fR
+Years from now
 .SH DIAGNOSTICS
 .PP
 When using the \fB\fC\-v\fR option, diagnostics will be sent to stderr in bunyan

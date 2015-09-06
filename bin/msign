@@ -28,9 +28,9 @@ var OPTIONS_PARSER = dashdash.createParser({
     options: manta.DEFAULT_CLI_OPTIONS.concat([
         {
             names: ['expires', 'e'],
-            type: 'positiveInteger',
-            help: 'expiration time (epoch). Default is 1hr from now.',
-            'default': Math.floor((new Date().getTime() / 1000) + 3600),
+            type: 'string',
+            help: 'expiration time (epoch|relative). Default is 1h from now.',
+            'default': '1h',
             helpArg: 'EXPIRATION'
         },
         {
@@ -120,13 +120,49 @@ function parseOptions() {
     } catch (e) {
         ifError(e);
     }
+    // normalize expires option
+    var expires;
+    var match;
+    if ((match = opts.expires.match(/^([0-9]+)([smhdwy])$/))) {
+        var now = Math.floor(Date.now() / 1000);
+        var num = parseInt(match[1], 10);
+        switch (match[2]) {
+        case 's':
+            expires = now + (num);
+            break;
+        case 'm':
+            expires = now + (num * 60);
+            break;
+        case 'h':
+            expires = now + (num * 60 * 60);
+            break;
+        case 'd':
+            expires = now + (num * 60 * 60 * 24);
+            break;
+        case 'w':
+            expires = now + (num * 60 * 60 * 24 * 7);
+            break;
+        case 'y':
+            expires = now + (num * 60 * 60 * 24 * 365);
+            break;
+        default:
+            ifError(new Error('invalid expires: ' + opts.expires));
+            break;
+        }
+    } else if ((match = opts.expires.match(/^([0-9]+)$/))) {
+        expires = parseInt(opts.expires, 10);
+    } else {
+        ifError(new Error('invalid expires: ' + opts.expires));
+        return;
+    }
+
     opts.paths.forEach(function (p) {
 
         ifError(manta.assertPath(p, true));
 
         var _opts = {
             algorithm: opts.algorithm,
-            expires: opts.expires,
+            expires: expires,
             host: url.parse(opts.url).host,
             keyId: opts.keyId,
             log: opts.log,
