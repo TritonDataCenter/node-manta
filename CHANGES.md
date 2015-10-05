@@ -4,6 +4,13 @@
 
 (nothing)
 
+## 2.0.0
+
+- Change to use latest node-smartdc-auth for signing and authentication.
+  This solves a number of issues around key loading and signing, especially
+  with the SSH agent. The loadSSHKey method is known to be incompatible,
+  but other auth-related API is preserved.
+
 ## 1.6.0
 
 - #237 new `createListStream()` API, a second-generation streaming version
