@@ -4,6 +4,14 @@
 
 (nothing)
 
+## 2.0.2
+
+- Updated smartdc-auth version for repeatable builds.
+
+## 2.0.1
+
+- Updated smartdc-auth version for fixes with ED25519 keys.
+
 ## 2.0.0
 
 - Change to use latest node-smartdc-auth for signing and authentication.
