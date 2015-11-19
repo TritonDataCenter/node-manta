@@ -4,6 +4,10 @@
 
 (nothing)
 
+## 2.0.3
+
+- Updated smartdc-auth version, eliminates duplicated code from http-signature
+
 ## 2.0.2
 
 - Updated smartdc-auth version for repeatable builds.
