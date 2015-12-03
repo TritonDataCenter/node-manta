@@ -20,6 +20,7 @@ var manta = require('../lib');
 
 var JOB;
 var ROOT = '/' + (process.env.MANTA_USER || 'admin') + '/stor';
+var PUBLIC = '/' + (process.env.MANTA_USER || 'admin') + '/public';
 var SUBDIR1 = ROOT + '/' + libuuid.v4();
 var SUBDIR2 = SUBDIR1 + '/' + libuuid.v4(); // directory
 var CHILD1 = SUBDIR1 + '/' + libuuid.v4(); // object
@@ -756,4 +757,38 @@ test('#180: Invalid key results in no client error', function (t) {
         });
     });
     t.done();
+});
+
+test('MANTA-2812 null signer', function (t) {
+    var c = manta.createClient({
+        sign: function (data, cb) { cb(null, null); },
+        url: process.env.MANTA_URL,
+        user: process.env.MANTA_USER
+    });
+    c.ls(ROOT, function (err) {
+        t.ok(err);
+        t.strictEqual(err.code, 'ForbiddenError');
+
+        c.ls(PUBLIC, function (err2) {
+            t.ifError(err2);
+            t.done();
+        });
+    });
+});
+
+test('MANTA-2812 undefined signer', function (t) {
+    var c = manta.createClient({
+        sign: undefined,
+        url: process.env.MANTA_URL,
+        user: process.env.MANTA_USER
+    });
+    c.ls(ROOT, function (err) {
+        t.ok(err);
+        t.strictEqual(err.code, 'ForbiddenError');
+
+        c.ls(PUBLIC, function (err2) {
+            t.ifError(err2);
+            t.done();
+        });
+    });
 });

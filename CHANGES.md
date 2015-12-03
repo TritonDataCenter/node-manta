@@ -2,7 +2,11 @@
 
 ## not yet released
 
-(nothing)
+## 2.0.4
+
+- MANTA-2812, PUBAPI-1197 fix up support for custom request signers, and
+  handle "null signers" properly (prevent the generation of an Authorization
+  header)
 
 ## 2.0.3
 
