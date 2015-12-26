@@ -2,6 +2,12 @@
 
 ## not yet released
 
+## 2.0.5
+
+- PUBAPI-1214 update smartdc-auth to sshpk-agent 1.2.1, to fix a number of
+  bad-state issues arising when using node-manta under heavy load with the
+  ssh-agent
+
 ## 2.0.4
 
 - MANTA-2812, PUBAPI-1197 fix up support for custom request signers, and
