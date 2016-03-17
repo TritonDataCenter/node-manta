@@ -231,6 +231,7 @@ test('chattr', function (t) {
         }
 
         self.client.chattr(CHILD1, opts, function onChattr(err1) {
+           console.log('XXX err1', err1);
             t.ifError(err1);
 
             self.client.info(CHILD1, function onInfo(err2, info2) {
