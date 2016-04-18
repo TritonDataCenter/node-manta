@@ -43,8 +43,7 @@ var OPTIONS_PARSER = dashdash.createParser({
         {
             names: ['algorithm', 'g'],
             type: 'string',
-            help: 'Sign using algorithm. Default is RSA-SHA256',
-            'default': 'RSA-SHA1',
+            help: 'Sign using a specific algorithm.',
             helpArg: 'PRIVATE_KEY'
         },
         {
