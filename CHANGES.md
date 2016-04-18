@@ -2,6 +2,11 @@
 
 ## not yet released
 
+## 2.0.6
+
+- joyent/node-manta#250 msign should let smartdc-auth decide what algorithm
+  to use. Fixes msign with ECDSA keys (so the -g option is no longer needed)
+
 ## 2.0.5
 
 - PUBAPI-1214 update smartdc-auth to sshpk-agent 1.2.1, to fix a number of
