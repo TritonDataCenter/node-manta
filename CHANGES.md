@@ -2,6 +2,10 @@
 
 ## not yet released
 
+## 2.0.7
+
+- joyent/node-manta#252 2.0.6 breaks msign with ssh-agent and RSA keys
+
 ## 2.0.6
 
 - joyent/node-manta#250 msign should let smartdc-auth decide what algorithm
