@@ -50,5 +50,5 @@
     "scripts": {
         "test": "./node_modules/.bin/nodeunit test/*.test.js"
     },
-    "license": "MPL-2.0"
+    "license": "MIT"
 }
