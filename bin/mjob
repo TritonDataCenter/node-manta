@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 // -*- mode: js -*-
-// Copyright (c) 2013, Joyent, Inc. All rights reserved.
+/*
+ * Copyright 2016 Joyent, Inc.
+ */
 
 var EventEmitter = require('events').EventEmitter;
 var fs = require('fs');
@@ -15,7 +17,6 @@ var cmdln = require('cmdln');
 var LineStream = require('lstream');
 var moment = require('moment');
 var once = require('once');
-var restify = require('restify');
 
 var manta = require('../lib');
 
@@ -30,8 +31,7 @@ var JOB_DATA_FMT = '/%s/jobs/%s/%s.txt';
 var LOG = bunyan.createLogger({
     name: path.basename(process.argv[1]),
     level: (process.env.LOG_LEVEL || 'info'),
-    stream: process.stderr,
-    serializers: restify.bunyan.serializers
+    stream: process.stderr
 });
 
 

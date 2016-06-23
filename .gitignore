@@ -8,3 +8,4 @@ cscope.po.out
 cscope.out
 smf/manifests/bapi.xml
 *.tgz
+/test/node.paths

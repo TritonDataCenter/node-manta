@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 // -*- mode: js -*-
-// Copyright (c) 2013, Joyent, Inc. All rights reserved.
+/*
+ * Copyright 2016 Joyent, Inc.
+ */
 
 var fs = require('fs');
 var url = require('url');
@@ -10,7 +12,6 @@ var mod_path = require('path');
 var bunyan = require('bunyan');
 var dashdash = require('dashdash');
 var once = require('once');
-var restify = require('restify');
 
 var manta = require('../lib');
 
@@ -24,8 +25,7 @@ var IN_PROGRESS = {};
 var LOG = bunyan.createLogger({
     name: mod_path.basename(process.argv[1]),
     level: (process.env.LOG_LEVEL || 'info'),
-    stream: process.stderr,
-    serializers: restify.bunyan.serializers
+    stream: process.stderr
 });
 var MAX_SOCKETS = parseInt(process.env.MANTA_MAX_SOCKETS || 1000, 10);
 
