@@ -6,7 +6,7 @@ var exec = require('child_process').exec;
 var fs = require('fs');
 var path = require('path');
 
-var libuuid = require('node-uuid');
+var libuuid = require('uuid');
 var MemoryStream = require('readable-stream/passthrough.js');
 var bunyan = require('bunyan');
 
