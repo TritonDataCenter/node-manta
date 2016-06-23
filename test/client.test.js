@@ -63,7 +63,6 @@ module.exports.setUp = function (cb) {
         self.client = manta.createClient({
             connectTimeout: 1000,
             log: createLogger(),
-            retry: false,
             rejectUnauthorized: (process.env.MANTA_TLS_INSECURE ?
                                     false : true),
             sign: signer,
