@@ -7,7 +7,7 @@
         "type": "git",
         "url": "git://github.com/joyent/node-manta.git"
     },
-    "version": "2.1.0",
+    "version": "3.0.0",
     "main": "./lib/index.js",
     "dependencies": {
         "assert-plus": "1.0.0",
@@ -45,7 +45,7 @@
         "man": "./man/man1"
     },
     "engines": {
-        "node": ">=0.8.14"
+        "node": ">=0.10"
     },
     "scripts": {
         "test": "./node_modules/.bin/nodeunit test/*.test.js"

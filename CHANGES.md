@@ -2,9 +2,13 @@
 
 ## not yet released
 
-## 2.1.0
+## 3.0.0
 
-- joyent/node-manta#246 Update many dependencies.
+- joyent/node-manta#246 Update many dependencies to come up to the modern age.
+  This involved dropping support for node 0.8. It is for this reason, and
+  prudence at the large number of dependency updates (many of them across
+  major version bumps) that we are doing a major version bump of this package.
+  For node >=0.10 users there aren't any *known* backwards incompatibilities.
 - Workaround for MANTA-2929: Allow `mchattr` to work with node >0.12.
 
 ## 2.0.7

@@ -56,7 +56,7 @@ test: deps
 # "test/node.paths.example".
 #
 .PHONY: testall
-testall: test6 test5 test4 test012 test08 test010
+testall: test6 test5 test4 test012 test010
 
 .PHONY: test6
 test6:
@@ -95,14 +95,6 @@ test010:
 	@([[ -f test/node.paths ]] || (echo "no test/node.paths" && exit 1) \
 		&& echo "# Test with node `$(shell awk '/^0\.10/ { print $$2 }' test/node.paths)/node --version`" \
 		&& PATH="$(shell awk '/^0\.10/ { print $$2 }' test/node.paths):$(PATH)" \
-			NPM_CONFIG_LOGLEVEL=silent NPM_CONFIG_PROGRESS=false \
-			make clean test)
-
-.PHONY: test08
-test08:
-	@([[ -f test/node.paths ]] || (echo "no test/node.paths" && exit 1) \
-		&& echo "# Test with node `$(shell awk '/^0\.8/ { print $$2 }' test/node.paths)/node --version`" \
-		&& PATH="$(shell awk '/^0\.8/ { print $$2 }' test/node.paths):$(PATH)" \
 			NPM_CONFIG_LOGLEVEL=silent NPM_CONFIG_PROGRESS=false \
 			make clean test)
 

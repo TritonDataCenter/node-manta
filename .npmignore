@@ -1,7 +1,8 @@
-.gitmodules
-Makefile
-deps
-docs
-test
-tools
+/.gitmodules
+/Makefile
+/deps
+/docs
+/test
+/tools
 /tmp
+/npm-debug.log
