@@ -61,12 +61,14 @@ var OPTIONS_PARSER = dashdash.createParser({
             helpArg: 'd|o'
         },
         {
+            // XXX dashdash >=1.13.0: 'positiveInteger' excludes 0
             names: ['mindepth'],
             type: 'positiveInteger',
             help: 'only return items with at least this depth',
             helpArg: 'DEPTH'
         },
         {
+            // XXX dashdash >=1.13.0: 'positiveInteger' excludes 0
             names: ['maxdepth'],
             type: 'positiveInteger',
             help: 'only return items less than this depth',
