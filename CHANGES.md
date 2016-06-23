@@ -2,6 +2,11 @@
 
 ## not yet released
 
+## 2.1.0
+
+- joyent/node-manta#246 Update many dependencies.
+- Workaround for MANTA-2929: Allow `mchattr` to work with node >0.12.
+
 ## 2.0.7
 
 - joyent/node-manta#252 2.0.6 breaks msign with ssh-agent and RSA keys
