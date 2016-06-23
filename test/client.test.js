@@ -21,9 +21,9 @@ var JOB;
 var ROOT = '/' + (process.env.MANTA_USER || 'admin') + '/stor';
 var PUBLIC = '/' + (process.env.MANTA_USER || 'admin') + '/public';
 var SUBDIR1 = ROOT + '/node-manta-test-' + libuuid.v4().split('-')[0];
-var SUBDIR2 = SUBDIR1 + '/' + libuuid.v4(); // directory
-var CHILD1 = SUBDIR1 + '/' + libuuid.v4(); // object
-var CHILD2 = SUBDIR2 + '/' + libuuid.v4(); // link
+var SUBDIR2 = SUBDIR1 + '/subdir2-' + libuuid.v4().split('-')[0]; // directory
+var CHILD1 = SUBDIR1 + '/child1-' + libuuid.v4().split('-')[0]; // object
+var CHILD2 = SUBDIR2 + '/child2-' + libuuid.v4().split('-')[0]; // link
 var NOENTSUB1 = SUBDIR1 + '/a/b/c';
 var NOENTSUB2 = SUBDIR1 + '/d/e/f';
 var SPECIALOBJ1 = SUBDIR1 + '/' + 'before-\r-after';

@@ -61,9 +61,9 @@ function assertOpts(thisp, subcmd, opts, cb) {
 function addInputsFromStdin(client, opts, cb) {
     assert.object(client, 'client');
     assert.object(opts, 'options');
-    assert.number(opts.batch, 'options.batch');
+    assert.finite(opts.batch, 'options.batch');
     assert.arrayOfString(opts.jobIds, 'options.jobIds');
-    assert.number(opts.parallel, 'options.parallel');
+    assert.finite(opts.parallel, 'options.parallel');
     assert.optionalBool(opts.open, 'options.open');
     assert.func(cb, 'callback');
 
@@ -167,7 +167,7 @@ function jobDataCommon(opts, callback) {
     assert.arrayOfString(opts.args, 'options.args');
     assert.object(opts.client, 'options.client');
     assert.string(opts.func, 'options.func');
-    assert.number(opts.parallel, 'options.parallel');
+    assert.finite(opts.parallel, 'options.parallel');
     assert.string(opts.type, 'options.type');
     assert.string(opts.user, 'options.user');
     assert.string(opts.watch, 'options.watch');
