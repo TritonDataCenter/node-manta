@@ -76,6 +76,11 @@ The set of test files run can be filtered:
 
     make test TEST_FILTER=muntar
 
+As well, you can get debug/trace logging:
+
+    make test LOG_LEVEL=trace 2>&1 | bunyan
+
+
 There is a mechanism to re-build and test with a number of installed node
 versions. First you must create "test/node.paths" (based on
 "test/node.paths.example") and then:

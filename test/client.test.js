@@ -10,12 +10,15 @@ var libuuid = require('uuid');
 var MemoryStream = require('readable-stream/passthrough.js');
 var bunyan = require('bunyan');
 
+var logging = require('./lib/logging');
 var manta = require('../lib');
 
 
 /*
  * Globals
  */
+
+var log = logging.createLogger();
 
 var JOB;
 var ROOT = '/' + (process.env.MANTA_USER || 'admin') + '/stor';
@@ -38,15 +41,6 @@ var SUBDIR1_NDIRECTORIES = 2;
 
 function test(name, testfunc) {
     module.exports[name] = testfunc;
-}
-
-function createLogger(name, stream) {
-    return (bunyan.createLogger({
-        level: (process.env.LOG_LEVEL || 'info'),
-        name: name || process.argv[1],
-        stream: stream || process.stdout,
-        src: true
-    }));
 }
 
 
