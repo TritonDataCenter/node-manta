@@ -10,6 +10,7 @@
   major version bumps) that we are doing a major version bump of this package.
   For node >=0.10 users there aren't any *known* backwards incompatibilities.
 - Workaround for MANTA-2929: Allow `mchattr` to work with node >0.12.
+- Some improvements to the test suite.
 
 ## 2.0.7
 
