@@ -53,7 +53,7 @@ test: deps
 			$(NODEUNIT) test/*.test.js; \
 		else \
 			echo "# Running subset of tests matching TEST_FILTER=$(TEST_FILTER)"; \
-			$(NODEUNIT) $(shell ls test/*.test.js | grep "$(TEST_FILTER)"); \
+			$(NODEUNIT) $(NODEUNIT_ARGS) $(shell ls test/*.test.js | grep "$(TEST_FILTER)"); \
 		fi
 
 #
