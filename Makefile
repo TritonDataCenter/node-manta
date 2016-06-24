@@ -44,10 +44,17 @@ all: $(SMF_MANIFESTS) deps
 deps: | $(REPO_DEPS) $(NPM_EXEC)
 	$(NPM_ENV) $(NPM) install
 
+# Use "TEST_FILTER" to limit test files run, e.g.:
+#    make test TEST_FILTER=muntar
 .PHONY: test
 test: deps
 	unset MANTA_DEFAULT_CONTENT_TYPE; \
-	$(NODEUNIT) test
+		if [[ -z "$(TEST_FILTER)" ]]; then \
+			$(NODEUNIT) test/*.test.js; \
+		else \
+			echo "# Running subset of tests matching TEST_FILTER=$(TEST_FILTER)"; \
+			$(NODEUNIT) $(shell ls test/*.test.js | grep "$(TEST_FILTER)"); \
+		fi
 
 #
 # Test with a bunch of node versions.
