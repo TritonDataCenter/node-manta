@@ -23,7 +23,7 @@ var log = logging.createLogger();
 var JOB;
 var ROOT = '/' + (process.env.MANTA_USER || 'admin') + '/stor';
 var PUBLIC = '/' + (process.env.MANTA_USER || 'admin') + '/public';
-var SUBDIR1 = ROOT + '/node-manta-test-' + libuuid.v4().split('-')[0];
+var SUBDIR1 = ROOT + '/node-manta-test-client-' + libuuid.v4().split('-')[0];
 var SUBDIR2 = SUBDIR1 + '/subdir2-' + libuuid.v4().split('-')[0]; // directory
 var CHILD1 = SUBDIR1 + '/child1-' + libuuid.v4().split('-')[0]; // object
 var CHILD2 = SUBDIR2 + '/child2-' + libuuid.v4().split('-')[0]; // link
@@ -56,7 +56,7 @@ module.exports.setUp = function (cb) {
     function createClient(signer) {
         self.client = manta.createClient({
             connectTimeout: 1000,
-            log: createLogger(),
+            log: log,
             rejectUnauthorized: (process.env.MANTA_TLS_INSECURE ?
                                     false : true),
             sign: signer,

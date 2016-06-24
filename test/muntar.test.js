@@ -24,7 +24,7 @@ var log = logging.createLogger();
 
 var ROOT = '/' + (process.env.MANTA_USER || 'admin') + '/stor';
 var PUBLIC = '/' + (process.env.MANTA_USER || 'admin') + '/public';
-var SUBDIR1 = ROOT + '/node-manta-test-' + libuuid.v4().split('-')[0];
+var TSTDIR = ROOT + '/node-manta-test-muntar-' + libuuid.v4().split('-')[0];
 
 
 /*
@@ -112,9 +112,22 @@ var cases = [
     {
         tarpath: 'corpus/tar1.tar',
         checks: [
-            { path: 'subdir1/', type: 'application/x-json-stream; type=directory' },
-            { path: 'subdir1/test.txt', type: 'text/plain' },
-            { path: 'test.txt', type: 'text/plain' }
+            {
+                path: 'subdir1/',
+                type: 'application/x-json-stream; type=directory'
+            },
+            {
+                path: 'subdir1/test.txt',
+                type: 'text/plain',
+                size: 24,
+                md5: 'jio1WnSoM7CbsXjNHfTqwg=='
+            },
+            {
+                path: 'test.txt',
+                type: 'text/plain',
+                size: 20,
+                md5: 'c6scKv46Y7irTX2ipN2zUQ=='
+            }
         ]
     },
     {
@@ -134,7 +147,7 @@ cases.forEach(function (c, i) {
 
     var name = format('muntar case %d: %s', i, c.tarpath);
     var cmd = format('%s -f %s %s', path.resolve(__dirname, '../bin/muntar'),
-        path.resolve(__dirname, c.tarpath), SUBDIR1);
+        path.resolve(__dirname, c.tarpath), TSTDIR);
     log.debug({caseName: name, cmd: cmd}, 'run case');
 
     test(name, function (t) {
@@ -142,17 +155,34 @@ cases.forEach(function (c, i) {
         exec(cmd, function (err, stdout, stderr) {
             t.ifError(err);
             vasync.forEachPipeline({
-                func: function checkOne(o, cb) {
-                    var mpath = path.join(SUBDIR1, o.path);
-                    self.client.info(mpath, function (err2, type) {
-                        t.ifError(err2);
-                        t.equal(type.type, o.type);
+                func: function checkOne(check, cb) {
+                    var mpath = path.join(TSTDIR, check.path);
+                    self.client.info(mpath, function (err2, info) {
+                        t.ifError(err2, err2);
+                        if (!err2) {
+                            t.equal(info.type, check.type, format(
+                                '%s is expected type (%s): %s',
+                                mpath, check.type, info.type));
+                            if (check.size) {
+                                t.equal(info.size, check.size, format(
+                                    '%s is expected size (%s): %s',
+                                    mpath, check.size, info.size));
+                            }
+                            if (check.md5) {
+                                t.equal(info.md5, check.md5, format(
+                                    '%s is expected md5 (%s): %s',
+                                    mpath, check.md5, info.md5));
+                            }
+                        }
                         cb();
                     });
                 },
                 inputs: c.checks
             }, function (err3, results) {
-                t.done();
+                self.client.rmr(TSTDIR, function (rmErr) {
+                    t.ifError(rmErr, rmErr);
+                    t.done();
+                });
             });
         });
     });
