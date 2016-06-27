@@ -9,7 +9,7 @@
 var assert = require('assert-plus');
 var bunyan = require('bunyan');
 var path = require('path');
-// We are cheating here. restify-clients should export its 'bunyan'.
+// restify-clients should export its 'bunyan'. See restify/clients#65.
 var restifyBunyanSerializers =
     require('restify-clients/lib/helpers/bunyan').serializers;
 
