@@ -61,7 +61,7 @@ module.exports.setUp = function (cb) {
     }
 
     if (process.env.MANTA_KEY_ID) {
-        createClient(manta.sshAgentSigner({
+        createClient(manta.cliSigner({
             user: user,
             keyId: process.env.MANTA_KEY_ID
         }));

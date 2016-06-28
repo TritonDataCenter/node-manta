@@ -21,6 +21,7 @@ set -o pipefail
 
 SSH_OPTIONS="-q -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
 SSH="ssh $SSH_OPTIONS"
+SCP="scp $SSH_OPTIONS"
 
 instName=testnodemanta0
 instToDelete=
@@ -33,14 +34,19 @@ function fatal {
     exit 1
 }
 
+function cleanup {
+    if [[ "$optCleanup" == "yes" ]]; then
+        if [[ -n "$instToDelete" ]]; then
+            triton $TRITON_OPTS instance delete -w $instToDelete
+        fi
+    fi
+}
+
 function onexit {
     local status=$?
     [[ $status -ne 0 ]] || exit 0
 
-    # Cleanup.
-    if [[ -n "$instToDelete" ]]; then
-        triton $TRITON_OPTS instance delete -w $instToDelete
-    fi
+    cleanup
 
     echo "error exit status $status (run 'TRACE=1 $0' for more info)" >&2
 }
@@ -54,6 +60,7 @@ function usage {
     echo "  -p PROFILE  Triton profile to use for the container."
     echo "  -i INST     Use the given instance, rather than provisioning a new one."
     echo "  -b BRANCH   Branch of node-manta.git to test."
+    echo "  -C          Do NOT clean up the created test instance."
     echo ""
     echo "This expects that you have a 'MANTA_\*' envvars setup that will allow"
     echo "access to a Manta against which to run the test suite from the"
@@ -68,7 +75,8 @@ trap 'onexit' EXIT
 optProfile=
 optInst=
 optBranch=
-while getopts "hp:i:b:" opt; do
+optCleanup=yes
+while getopts "hp:i:b:C" opt; do
     case "$opt" in
         h)
             usage
@@ -82,6 +90,9 @@ while getopts "hp:i:b:" opt; do
             ;;
         b)
             optBranch=$OPTARG
+            ;;
+        C)
+            optCleanup=no
             ;;
         *)
             usage
@@ -106,13 +117,32 @@ fi
 # Provision a test container, unless given one (-i INST).
 if [[ -n "$optInst" ]]; then
     instName=$optInst
+    instIp=$(triton $TRITON_OPTS ip $instName)
 else
     echo "# Creating new inst (name=$instName) in which to test"
-    triton $TRITON_OPTS create -w -n $instName minimal-multiarch g4-highcpu-1G
+    triton $TRITON_OPTS create \
+        -m user-script="ssh-keygen -t rsa -b 2048 -N '' -C '$instName' -f /root/.ssh/id_rsa" \
+        -w -n $instName minimal-multiarch g4-highcpu-1G
     instToDelete=$instName
+
+    instIp=$(triton $TRITON_OPTS ip $instName)
+
+    # Add the pubkey created in the container.
+    $SCP root@$instIp:/root/.ssh/id_rsa.pub /tmp/id_rsa.pub.$$
+
+    existingKey=$(triton $TRITON_OPTS key get $instName 2>/dev/null || true)
+    if [[ -n "$existingKey" ]]; then
+        triton $TRITON_OPTS key delete -y $instName
+    fi
+    triton $TRITON_OPTS key add -n $instName /tmp/id_rsa.pub.$$
+    # Technically we'd need to wait for this key to propagate... we'll see
+    # if we get lucky.
+    sleep 3
+
+    MANTA_KEY_ID=$(triton $TRITON_OPTS key get $instName -j | json fingerprint)
 fi
-instIp=$(triton $TRITON_OPTS ip $instName)
 echo "# Testing with inst $instName (IP $instIp)"
+
 
 # SSH in and setup.
 $SSH -T -A root@$instIp <<SCRIPT
@@ -184,7 +214,4 @@ done
 exit 0
 SCRIPT
 
-# Clean up inst.
-if [[ -n "$instToDelete" ]]; then
-    triton $TRITON_OPTS instance delete -w $instToDelete
-fi
+cleanup
