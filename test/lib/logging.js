@@ -9,14 +9,12 @@
 var assert = require('assert-plus');
 var bunyan = require('bunyan');
 var path = require('path');
-// restify-clients should export its 'bunyan'. See restify/clients#65.
-var restifyBunyanSerializers =
-    require('restify-clients/lib/helpers/bunyan').serializers;
+var restifyClients = require('restify-clients');
 
 function createLogger() {
     return (bunyan.createLogger({
         name: path.basename(process.argv[1]),
-        serializers: restifyBunyanSerializers,
+        serializers: restifyClients.bunyan.serializers,
         src: true,
         streams: [
             {
