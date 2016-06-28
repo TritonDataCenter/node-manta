@@ -7,6 +7,9 @@
 # Provision a SmartOS container (using the given 'triton' profile) and
 # run the test suite with a number of node versions.
 #
+# This is being used for automatic tests after commit in Joyent's
+# internal Jenkins. This is likely quite brittle right now.
+#
 
 declare TRACE
 if [[ -n "$TRACE" ]]; then
@@ -38,6 +41,7 @@ function cleanup {
     if [[ "$optCleanup" == "yes" ]]; then
         if [[ -n "$instToDelete" ]]; then
             triton $TRITON_OPTS instance delete -w $instToDelete
+            triton $TRITON_OPTS key delete -y $instName
         fi
     fi
 }
@@ -59,6 +63,8 @@ function usage {
     echo "  -h          Print this help and exit."
     echo "  -p PROFILE  Triton profile to use for the container."
     echo "  -i INST     Use the given instance, rather than provisioning a new one."
+    echo "              This assumes you have envvars and ssh-agent setup to handle"
+    echo "              auth."
     echo "  -b BRANCH   Branch of node-manta.git to test."
     echo "  -C          Do NOT clean up the created test instance."
     echo ""
