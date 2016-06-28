@@ -15,7 +15,6 @@ if [[ -n "$TRACE" ]]; then
 fi
 set -o errexit
 set -o pipefail
-set -o nounset
 
 
 # ---- globals
@@ -103,9 +102,6 @@ fi
 [[ -n "$MANTA_URL" ]] || fatal "MANTA_URL is not set"
 [[ -n "$MANTA_USER" ]] || fatal "MANTA_USER is not set"
 [[ -n "$MANTA_KEY_ID" ]] || fatal "MANTA_KEY_ID is not set"
-if [[ -z "$MANTA_TLS_INSECURE" ]]; then
-    MANTA_TLS_INSECURE=
-fi
 
 # Provision a test container, unless given one (-i INST).
 if [[ -n "$optInst" ]]; then
