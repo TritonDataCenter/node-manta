@@ -37,6 +37,12 @@ function fatal {
 function onexit {
     local status=$?
     [[ $status -ne 0 ]] || exit 0
+
+    # Cleanup.
+    if [[ -n "$instToDelete" ]]; then
+        triton $TRITON_OPTS instance delete -w $instToDelete
+    fi
+
     echo "error exit status $status (run 'TRACE=1 $0' for more info)" >&2
 }
 
@@ -48,6 +54,7 @@ function usage {
     echo "  -h          Print this help and exit."
     echo "  -p PROFILE  Triton profile to use for the container."
     echo "  -i INST     Use the given instance, rather than provisioning a new one."
+    echo "  -b BRANCH   Branch of node-manta.git to test."
     echo ""
     echo "This expects that you have a 'MANTA_\*' envvars setup that will allow"
     echo "access to a Manta against which to run the test suite from the"
@@ -61,7 +68,8 @@ trap 'onexit' EXIT
 
 optProfile=
 optInst=
-while getopts "hp:i:" opt; do
+optBranch=
+while getopts "hp:i:b:" opt; do
     case "$opt" in
         h)
             usage
@@ -72,6 +80,9 @@ while getopts "hp:i:" opt; do
             ;;
         i)
             optInst=$OPTARG
+            ;;
+        b)
+            optBranch=$OPTARG
             ;;
         *)
             usage
@@ -144,8 +155,9 @@ if [[ -d node-manta ]]; then
 else
     git clone https://github.com/joyent/node-manta.git >\$miscLogPath 2>&1
 fi
-# XXX drop this when on master
-(cd node-manta && git checkout nouveau) >\$miscLogPath 2>&1
+if [[ -n "$optBranch" ]]; then
+    (cd node-manta && git checkout nouveau) >\$miscLogPath 2>&1
+fi
 
 # TODO: pkgsrc doesn't have node 6 yet.
 VERS="0.10 0.12 4 5"
