@@ -136,8 +136,8 @@ else
     fi
     triton $TRITON_OPTS key add -n $instName /tmp/id_rsa.pub.$$
     # Technically we'd need to wait for this key to propagate... we'll see
-    # if we get lucky.
-    sleep 3
+    # if we get lucky. Sleeps are lame:
+    sleep 30
 
     MANTA_KEY_ID=$(triton $TRITON_OPTS key get $instName -j | json fingerprint)
 fi
