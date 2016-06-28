@@ -9,8 +9,7 @@
   prudence at the large number of dependency updates (many of them across
   major version bumps) that we are doing a major version bump of this package.
   For node >=0.10 users there aren't any *known* backwards incompatibilities.
-- Workaround for MANTA-2929: Allow `mchattr` to work with node >0.12.
-- Some improvements to the test suite.
+- MANTA-2937: mchmod client-side workaround for MANTA-2929 InvalidUpdateError
 
 ## 2.0.7
 
