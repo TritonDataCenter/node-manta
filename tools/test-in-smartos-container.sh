@@ -112,13 +112,6 @@ else
     echo "# Creating new inst (name=$instName) in which to test"
     triton $TRITON_OPTS create -w -n $instName minimal-multiarch g4-highcpu-1G
     instToDelete=$instName
-
-    ## At least at time of writing we still have the lame case that when
-    ## 'triton create' returns... *ssh* on the machine might not be ready.
-    ## Let's poll for that:
-    #while true; do
-    #    pong=$()
-    #done
 fi
 instIp=$(triton $TRITON_OPTS ip $instName)
 echo "# Testing with inst $instName (IP $instIp)"
