@@ -19,7 +19,7 @@ set -o pipefail
 
 # ---- globals
 
-SSH_OPTIONS="-q -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ControlMaster=no -o ControlPath=/dev/null"
+SSH_OPTIONS="-q -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
 SSH="ssh $SSH_OPTIONS"
 
 instName=testnodemanta0
