@@ -115,7 +115,7 @@ instIp=$(triton $TRITON_OPTS ip $instName)
 echo "# Testing with inst $instName (IP $instIp)"
 
 # SSH in and setup.
-$SSH -A root@$instIp <<SCRIPT
+$SSH -T -A root@$instIp <<SCRIPT
 
 if [[ -n "$TRACE" ]]; then
     export PS4='\${BASH_SOURCE}:\${LINENO}: \${FUNCNAME[0]:+\${FUNCNAME[0]}(): }'
