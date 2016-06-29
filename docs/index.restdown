@@ -57,6 +57,7 @@ top-level of the SDK.  The example below assumes that you are using the
 environment variables you set above.
 
     var assert = require('assert');
+    var fs = require('fs');
     var manta = require('manta');
 
     var client = manta.createClient({
