@@ -1,16 +1,16 @@
 #!/usr/bin/env node
 /*
- * Copyright 2015 Joyent, Inc.
+ * Copyright 2016 Joyent, Inc.
  */
 
 var path = require('path-platform');
 var url = require('url');
 
+var assert = require('assert-plus');
 var bunyan = require('bunyan');
 var dashdash = require('dashdash');
 var moment = require('moment');
 var once = require('once');
-var restify = require('restify');
 var sprintf = require('extsprintf').sprintf;
 
 var manta = require('../lib');
@@ -22,8 +22,7 @@ var manta = require('../lib');
 var LOG = bunyan.createLogger({
     name: path.basename(process.argv[1]),
     level: (process.env.LOG_LEVEL || 'info'),
-    stream: process.stderr,
-    serializers: restify.bunyan.serializers
+    stream: process.stderr
 });
 
 var OPTIONS_PARSER = dashdash.createParser({
@@ -136,10 +135,29 @@ function printEntry(opts, obj) {
         }
         console.log('%j', obj);
     } else if (opts['long']) {
-        var d = moment(obj.mtime || obj.headers['last-modified']);
+        /*
+         * An `obj` from ListDirectory has a `obj.mtime` in ISO format:
+         *     {"name":"foo.txt","mtime":"2014-01-28T22:11:40.496Z",...}
+         * which `moment()` can parse by default
+         * (http://momentjs.com/docs/#/parsing/string/).
+         *
+         * An `obj` from `GetObject` has a "last-modified" header:
+         *     last-modified: Fri, 24 Jun 2016 23:03:53 GMT
+         * in "HTTP-date" format
+         * (https://www.w3.org/Protocols/rfc2616/rfc2616-sec3.html#sec3.3.1),
+         * which moment *cannot* parse
+         * (https://github.com/moment/moment/issues/1407).
+         */
+        var d;
+        if (obj.mtime) {
+            d = moment(obj.mtime);
+        } else {
+            assert.string(obj.headers['last-modified'], 'last-modifed header');
+            d = moment(new Date(obj.headers['last-modified']));
+        }
+
         var fmt = 'MMM DD ';
         var now = moment();
-
         if (now.diff(d, 'months') >= 6) {
             fmt += ' YYYY';
         } else {

@@ -2,6 +2,15 @@
 
 ## not yet released
 
+## 3.0.0
+
+- joyent/node-manta#246 Update many dependencies to come up to the modern age.
+  This involved dropping support for node 0.8. It is for this reason, and
+  prudence at the large number of dependency updates (many of them across
+  major version bumps) that we are doing a major version bump of this package.
+  For node >=0.10 users there aren't any *known* backwards incompatibilities.
+- MANTA-2937: mchmod client-side workaround for MANTA-2929 InvalidUpdateError
+
 ## 2.0.7
 
 - joyent/node-manta#252 2.0.6 breaks msign with ssh-agent and RSA keys

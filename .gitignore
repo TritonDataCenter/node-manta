@@ -7,4 +7,6 @@ cscope.in.out
 cscope.po.out
 cscope.out
 smf/manifests/bapi.xml
-*.tgz
+/manta-*.tgz
+/test/node.paths
+/npm-debug.log

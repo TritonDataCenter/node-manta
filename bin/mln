@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 // -*- mode: js -*-
-// Copyright (c) 2013, Joyent, Inc. All rights reserved.
+/*
+ * Copyright 2016 Joyent, Inc.
+ */
 
 var fs = require('fs');
 var path = require('path-platform');
@@ -8,7 +10,6 @@ var url = require('url');
 
 var bunyan = require('bunyan');
 var dashdash = require('dashdash');
-var restify = require('restify');
 
 var manta = require('../lib');
 
@@ -19,8 +20,7 @@ var manta = require('../lib');
 var LOG = bunyan.createLogger({
     name: path.basename(process.argv[1]),
     level: (process.env.LOG_LEVEL || 'info'),
-    stream: process.stderr,
-    serializers: restify.bunyan.serializers
+    stream: process.stderr
 });
 
 var OPTIONS_PARSER = dashdash.createParser({

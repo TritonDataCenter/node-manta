@@ -1,46 +1,43 @@
 {
     "name": "manta",
     "author": "Joyent (joyent.com)",
-    "contributors": [
-        "Dave Eddy"
-    ],
     "description": "Manta Client API",
     "homepage": "http://apidocs.joyent.com/manta",
     "repository": {
         "type": "git",
         "url": "git://github.com/joyent/node-manta.git"
     },
-    "version": "2.0.7",
+    "version": "3.0.0",
     "main": "./lib/index.js",
     "dependencies": {
-        "assert-plus": "0.1.5",
-        "backoff": "2.3.0",
-        "bunyan": "0.22.1",
-        "clone": "0.1.11",
+        "assert-plus": "^1.0.0",
+        "backoff": "~2.3.0",
+        "bunyan": "^1.8.1",
+        "clone": "~0.1.11",
         "cmdln": "1.3.1",
         "dashdash": "1.3.2",
-        "extsprintf": "1.0.2",
-        "hogan.js": "2.0.0",
-        "jsprim": "0.8.0",
-        "lomstream": "1.1.0",
-        "lstream": "0.0.3",
-        "mime": "1.2.11",
-        "node-uuid": "1.4.1",
-        "moment": "2.4.0",
-        "once": "1.3.0",
-        "path-platform": "0.0.1",
-        "progbar": "1.0.0",
-        "readable-stream": "1.1.9",
-        "restify": "2.8.1",
-        "showdown": "0.3.1",
-        "smartdc-auth": "2.4.1",
-        "tar": "0.1.18",
-        "vasync": "1.4.0",
-        "verror": "1.3.6",
-        "watershed": "0.3.0"
+        "extsprintf": "^1.3.0",
+        "hogan.js": "~2.0.0",
+        "jsprim": "^1.3.0",
+        "lomstream": "^1.1.0",
+        "lstream": "~0.0.4",
+        "mime": "~1.2.11",
+        "moment": "~2.13.0",
+        "once": "~1.3.3",
+        "path-platform": "~0.0.1",
+        "progbar": "^1.1.0",
+        "readable-stream": "~1.1.9",
+        "restify-clients": "~1.3.0",
+        "showdown": "~1.4.2",
+        "smartdc-auth": "^2.4.1",
+        "tar": "~2.2.1",
+        "uuid": "~2.0.2",
+        "vasync": "^1.6.4",
+        "verror": "^1.6.1",
+        "watershed": "^0.3.1"
     },
     "devDependencies": {
-        "nodeunit": "0.9.0"
+        "nodeunit": "~0.9.1"
     },
     "directories": {
         "bin": "./bin",
@@ -48,9 +45,10 @@
         "man": "./man/man1"
     },
     "engines": {
-        "node": ">=0.8.14"
+        "node": ">=0.10"
     },
     "scripts": {
         "test": "./node_modules/.bin/nodeunit test/*.test.js"
-    }
+    },
+    "license": "MIT"
 }

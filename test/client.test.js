@@ -1,16 +1,16 @@
 /*
- * Copyright 2015 Joyent, Inc.
+ * Copyright 2016 Joyent, Inc.
  */
 
 var exec = require('child_process').exec;
 var fs = require('fs');
 var path = require('path');
 
-var libuuid = require('node-uuid');
+var libuuid = require('uuid');
 var MemoryStream = require('readable-stream/passthrough.js');
 var bunyan = require('bunyan');
-var restify = require('restify');
 
+var logging = require('./lib/logging');
 var manta = require('../lib');
 
 
@@ -18,13 +18,15 @@ var manta = require('../lib');
  * Globals
  */
 
+var log = logging.createLogger();
+
 var JOB;
 var ROOT = '/' + (process.env.MANTA_USER || 'admin') + '/stor';
 var PUBLIC = '/' + (process.env.MANTA_USER || 'admin') + '/public';
-var SUBDIR1 = ROOT + '/' + libuuid.v4();
-var SUBDIR2 = SUBDIR1 + '/' + libuuid.v4(); // directory
-var CHILD1 = SUBDIR1 + '/' + libuuid.v4(); // object
-var CHILD2 = SUBDIR2 + '/' + libuuid.v4(); // link
+var SUBDIR1 = ROOT + '/node-manta-test-client-' + libuuid.v4().split('-')[0];
+var SUBDIR2 = SUBDIR1 + '/subdir2-' + libuuid.v4().split('-')[0]; // directory
+var CHILD1 = SUBDIR1 + '/child1-' + libuuid.v4().split('-')[0]; // object
+var CHILD2 = SUBDIR2 + '/child2-' + libuuid.v4().split('-')[0]; // link
 var NOENTSUB1 = SUBDIR1 + '/a/b/c';
 var NOENTSUB2 = SUBDIR1 + '/d/e/f';
 var SPECIALOBJ1 = SUBDIR1 + '/' + 'before-\r-after';
@@ -41,16 +43,6 @@ function test(name, testfunc) {
     module.exports[name] = testfunc;
 }
 
-function createLogger(name, stream) {
-    return (bunyan.createLogger({
-        level: (process.env.LOG_LEVEL || 'info'),
-        name: name || process.argv[1],
-        stream: stream || process.stdout,
-        src: true,
-        serializers: restify.bunyan.serializers
-    }));
-}
-
 
 /*
  * Pre- and Post-test actions
@@ -64,8 +56,7 @@ module.exports.setUp = function (cb) {
     function createClient(signer) {
         self.client = manta.createClient({
             connectTimeout: 1000,
-            log: createLogger(),
-            retry: false,
+            log: log,
             rejectUnauthorized: (process.env.MANTA_TLS_INSECURE ?
                                     false : true),
             sign: signer,
@@ -77,7 +68,7 @@ module.exports.setUp = function (cb) {
     }
 
     if (process.env.MANTA_KEY_ID) {
-        createClient(manta.sshAgentSigner({
+        createClient(manta.cliSigner({
             user: user,
             keyId: process.env.MANTA_KEY_ID
         }));
@@ -231,16 +222,19 @@ test('chattr', function (t) {
         }
 
         self.client.chattr(CHILD1, opts, function onChattr(err1) {
-            t.ifError(err1);
+            t.ok(!err1, 'err1: ' + err1);
 
             self.client.info(CHILD1, function onInfo(err2, info2) {
-                t.ifError(err2);
-                t.ok(info2);
+                t.ok(!err2, 'err2: ' + err2);
+                t.ok(info2, 'got info2: ' + info2);
                 if (info2) {
-                    t.ok(info2.headers);
+                    t.ok(info2.headers, 'got info2.headers: ' + info2.headers);
                     var headers = info2.headers || {};
-                    t.equal(headers['m-foo'], 'bar');
-                    t.equal(info2.etag, info.etag);
+                    t.equal(headers['m-foo'], 'bar',
+                        'info2.headers["m-foo"] is "bar": ' + headers['m-foo']);
+                    t.equal(info2.etag, info.etag,
+                        'info2.etag is unchanged: before=' + info.etag
+                        + ' after=' + info2.etag);
                 }
                 t.done();
             });
@@ -763,7 +757,8 @@ test('MANTA-2812 null signer', function (t) {
     var c = manta.createClient({
         sign: function (data, cb) { cb(null, null); },
         url: process.env.MANTA_URL,
-        user: process.env.MANTA_USER
+        user: process.env.MANTA_USER,
+        agent: false
     });
     c.ls(ROOT, function (err) {
         t.ok(err);
@@ -780,7 +775,8 @@ test('MANTA-2812 undefined signer', function (t) {
     var c = manta.createClient({
         sign: undefined,
         url: process.env.MANTA_URL,
-        user: process.env.MANTA_USER
+        user: process.env.MANTA_USER,
+        agent: false
     });
     c.ls(ROOT, function (err) {
         t.ok(err);

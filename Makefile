@@ -44,10 +44,67 @@ all: $(SMF_MANIFESTS) deps
 deps: | $(REPO_DEPS) $(NPM_EXEC)
 	$(NPM_ENV) $(NPM) install
 
+# Use "TEST_FILTER" to limit test files run, e.g.:
+#    make test TEST_FILTER=muntar
 .PHONY: test
 test: deps
 	unset MANTA_DEFAULT_CONTENT_TYPE; \
-	$(NODEUNIT) test
+		if [[ -z "$(TEST_FILTER)" ]]; then \
+			$(NODEUNIT) test/*.test.js; \
+		else \
+			echo "# Running subset of tests matching TEST_FILTER=$(TEST_FILTER)"; \
+			$(NODEUNIT) $(NODEUNIT_ARGS) $(shell ls test/*.test.js | grep "$(TEST_FILTER)"); \
+		fi
+
+#
+# Test with a bunch of node versions.
+#
+# This requires a "test/node.paths" file that looks something like
+# "test/node.paths.example".
+#
+.PHONY: testall
+testall: test6 test5 test4 test012 test010
+
+.PHONY: test6
+test6:
+	@([[ -f test/node.paths ]] || (echo "no test/node.paths" && exit 1) \
+		&& echo "# Test with node `$(shell awk '/^6/ { print $$2 }' test/node.paths)/node --version`" \
+		&& PATH="$(shell awk '/^6/ { print $$2 }' test/node.paths):$(PATH)" \
+			NPM_CONFIG_LOGLEVEL=silent NPM_CONFIG_PROGRESS=false \
+			make clean test)
+
+.PHONY: test5
+test5:
+	@([[ -f test/node.paths ]] || (echo "no test/node.paths" && exit 1) \
+		&& echo "# Test with node `$(shell awk '/^5/ { print $$2 }' test/node.paths)/node --version`" \
+		&& PATH="$(shell awk '/^5/ { print $$2 }' test/node.paths):$(PATH)" \
+			NPM_CONFIG_LOGLEVEL=silent NPM_CONFIG_PROGRESS=false \
+			make clean test)
+
+.PHONY: test4
+test4:
+	@([[ -f test/node.paths ]] || (echo "no test/node.paths" && exit 1) \
+		&& echo "# Test with node `$(shell awk '/^4/ { print $$2 }' test/node.paths)/node --version`" \
+		&& PATH="$(shell awk '/^4/ { print $$2 }' test/node.paths):$(PATH)" \
+			NPM_CONFIG_LOGLEVEL=silent NPM_CONFIG_PROGRESS=false \
+			make clean test)
+
+.PHONY: test012
+test012:
+	@([[ -f test/node.paths ]] || (echo "no test/node.paths" && exit 1) \
+		&& echo "# Test with node `$(shell awk '/^0\.12/ { print $$2 }' test/node.paths)/node --version`" \
+		&& PATH="$(shell awk '/^0\.12/ { print $$2 }' test/node.paths):$(PATH)" \
+			NPM_CONFIG_LOGLEVEL=silent NPM_CONFIG_PROGRESS=false \
+			make clean test)
+
+.PHONY: test010
+test010:
+	@([[ -f test/node.paths ]] || (echo "no test/node.paths" && exit 1) \
+		&& echo "# Test with node `$(shell awk '/^0\.10/ { print $$2 }' test/node.paths)/node --version`" \
+		&& PATH="$(shell awk '/^0\.10/ { print $$2 }' test/node.paths):$(PATH)" \
+			NPM_CONFIG_LOGLEVEL=silent NPM_CONFIG_PROGRESS=false \
+			make clean test)
+
 
 $(MAN_OUTDIR):
 	mkdir -p $@

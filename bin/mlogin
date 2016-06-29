@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 // -*- mode: js -*-
-// Copyright (c) 2013 Joyent, Inc.  All rights reserved.
 // vim: set syntax=javascript ts=4 sts=4 sw=4 et:
-
+/*
+ * Copyright 2016 Joyent, Inc.
+ */
 
 var net = require('net');
 var url = require('url');
@@ -10,7 +11,7 @@ var url = require('url');
 var assert = require('assert-plus');
 var bunyan = require('bunyan');
 var dashdash = require('dashdash');
-var libuuid = require('node-uuid');
+var libuuid = require('uuid');
 var vasync = require('vasync');
 
 var manta = require('../lib');
