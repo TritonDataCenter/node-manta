@@ -292,7 +292,7 @@ call).  Optionally takes a `-s`, that can be used to filter down to only
 
 Estimates the cost in USD of a job by creating a Manta job and adding as inputs
 compute usage reports from /:login/reports/usage/compute. Assets are pulled from
-/manta/public/jobs/jobcost. Note that usage reports are generated
+/manta/public/jobs/mjob-cost. Note that usage reports are generated
 asynchronously, so mjob cost may fail when estimating the cost of jobs that
 were running recently.**
 
