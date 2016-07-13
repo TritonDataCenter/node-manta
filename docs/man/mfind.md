@@ -1,4 +1,4 @@
-mfind 1 "May 2013" Manta "Manta Commands"
+mfind 1 "July 2016" Manta "Manta Commands"
 =======================================
 
 NAME
@@ -43,6 +43,9 @@ OPTIONS
   This option explicitly allows "insecure" SSL connections and transfers.  All
   SSL connections are attempted to be made secure by using the CA certificate
   bundle installed by default.
+
+`-j, --json`
+  Output a newline-separated JSON stream of find results.
 
 `-k, --key fingerprint`
   Authenticate using the SSH key described by FINGERPRINT.  The key must

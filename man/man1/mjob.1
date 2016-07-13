@@ -325,7 +325,7 @@ Only list jobs in the given state.
 .PP
 Estimates the cost in USD of a job by creating a Manta job and adding as inputs
 compute usage reports from /:login/reports/usage/compute. Assets are pulled from
-/manta/public/jobs/jobcost. Note that usage reports are generated
+/manta/public/jobs/mjob\-cost. Note that usage reports are generated
 asynchronously, so mjob cost may fail when estimating the cost of jobs that
 were running recently.**
 .IP
@@ -370,5 +370,4 @@ $ mjob \-vv ~~/stor/foo 2>&1 | bunyan
 .PP
 DSA keys do not work when loaded via the SSH agent.
 .PP
-Report bugs at Github
-\[la]https://github.com/joyent/node-manta/issues\[ra]
+Report bugs at Github \[la]https://github.com/joyent/node-manta/issues\[ra]
