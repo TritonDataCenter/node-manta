@@ -77,8 +77,8 @@ The set of test files run can be filtered:
     make test TEST_FILTER=muntar
 
 As well, you can get debug/trace logging (note that we intentionally avoid
-`LOG_LEVEL` because the `m*` tools used that and sharing the same envvar
-can break tests):
+`LOG_LEVEL` because the `m*` tools use that and sharing the same envvar can
+break tests):
 
     make test TEST_LOG_LEVEL=trace 2>&1 | bunyan
 
