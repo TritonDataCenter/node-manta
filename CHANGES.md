@@ -2,6 +2,14 @@
 
 ## not yet released
 
+## 3.1.0
+
+- joyent/node-manta#265 Add `--json, -j` option to `mfind`. E.g.:
+
+        $ mfind -j ~~/stor/tmp
+        {"name":"foo-file.gz","etag":"142ad91b-73d8-6cb4-9cd9-efacf7df7a9a","size":229535627,"type":"object","mtime":"2014-10-08T22:53:25.146Z","durability":2,"parent":"/trent.mick/stor/tmp","depth":0}
+        {"name":"foo.imgmanifest","etag":"88ac47b9-e53f-c065-b446-e2d0455c0c00","size":1052,"type":"object","mtime":"2014-10-08T22:52:44.298Z","durability":2,"parent":"/trent.mick/stor/tmp","depth":0}
+
 ## 3.0.0
 
 - joyent/node-manta#246 Update many dependencies to come up to the modern age.
