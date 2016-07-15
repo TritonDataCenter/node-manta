@@ -118,10 +118,19 @@ test('mfind -j TESTDIR', function (t) {
             .map(function (line) { return JSON.parse(line); });
         ['afile.txt', 'adir', 'bfile.txt'].forEach(function findHit(name) {
             var match = hits.filter(
-                function (hit) { return hit.name === name; })[0];
+                function (h) { return h.name === name; })[0];
             t.ok(match, format('found a matching hit for name "%s": %j',
                 name, match));
         });
+
+        // Assert fields on one of the hits.
+        var hit = hits[0];
+        t.equal(typeof (hit['name']), 'string', 'have "name" (string) field');
+        t.equal(typeof (hit['type']), 'string', 'have "type" (string) field');
+        t.equal(typeof (hit['mtime']), 'string', 'have "mtime" (string) field');
+        t.equal(typeof (hit['parent']), 'string',
+            'have "parent" (string) field');
+        t.equal(typeof (hit['depth']), 'number', 'have "depth" (string) field');
         t.done();
     });
 });

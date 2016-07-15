@@ -21,6 +21,16 @@ Unlike GNU/BSD find, `mfind` is not yet sophisticated enough to support full
 `expression` matching, but does (currently) allow a `--name` option that
 supports Regular Expression matching.
 
+With the `--json` option a stream of JSON objects is printed. Each JSON object
+contains the fields from the Manta [ListDirectory API
+endpoint](https://apidocs.joyent.com/manta/api.html#ListDirectory), plus the
+following client-side added fields:
+
+- `depth`: An integer directory depth under the given directory,
+  starting from 0.
+- `parent`: The full directory path of the entry.
+
+
 EXAMPLES
 --------
 
