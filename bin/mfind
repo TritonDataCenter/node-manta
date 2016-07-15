@@ -71,6 +71,11 @@ var OPTIONS_PARSER = dashdash.createParser({
             type: 'positiveInteger',
             help: 'only return items less than this depth',
             helpArg: 'DEPTH'
+        },
+        {
+            names: ['json', 'j'],
+            type: 'bool',
+            help: 'Output a newline-separated JSON stream of find results.'
         }
     ])
 });
@@ -118,9 +123,14 @@ function parseOptions() {
 
 
 function printEntry(opts, obj) {
-    console.log(obj.parent + (obj.name ? ('/' + obj.name) : ''));
-    if (opts.limit && (++TOTAL_ENTRIES >= opts.limit))
+    if (opts.json) {
+        console.log(JSON.stringify(obj));
+    } else {
+        console.log(obj.parent + (obj.name ? ('/' + obj.name) : ''));
+    }
+    if (opts.limit && (++TOTAL_ENTRIES >= opts.limit)) {
         process.exit(0);
+    }
 }
 
 

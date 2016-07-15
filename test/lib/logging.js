@@ -18,7 +18,7 @@ function createLogger() {
         src: true,
         streams: [
             {
-                level: (process.env.LOG_LEVEL || 'info'),
+                level: (process.env.TEST_LOG_LEVEL || 'info'),
                 stream: process.stderr
             }
         ]

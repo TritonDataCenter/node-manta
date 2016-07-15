@@ -1,4 +1,4 @@
-.TH mfind 1 "May 2013" Manta "Manta Commands"
+.TH mfind 1 "July 2016" Manta "Manta Commands"
 .SH NAME
 .PP
 mfind \- search for objects in a directory hierarchy.
@@ -13,6 +13,18 @@ listing names that are the specified \fB\fCtype\fR (or all if none is specified)
 Unlike GNU/BSD find, \fB\fCmfind\fR is not yet sophisticated enough to support full
 \fB\fCexpression\fR matching, but does (currently) allow a \fB\fC\-\-name\fR option that
 supports Regular Expression matching.
+.PP
+With the \fB\fC\-\-json\fR option a stream of JSON objects is printed. Each JSON object
+contains the fields from the Manta ListDirectory API
+endpoint \[la]https://apidocs.joyent.com/manta/api.html#ListDirectory\[ra], plus the
+following client\-side added fields:
+.RS
+.IP \(bu 2
+\fB\fCdepth\fR: An integer directory depth under the given directory,
+starting from 0.
+.IP \(bu 2
+\fB\fCparent\fR: The full directory path of the entry.
+.RE
 .SH EXAMPLES
 .PP
 .RS
@@ -36,6 +48,9 @@ Print a help message and exit.
 This option explicitly allows "insecure" SSL connections and transfers.  All
 SSL connections are attempted to be made secure by using the CA certificate
 bundle installed by default.
+.TP
+\fB\fC\-j, \-\-json\fR
+Output a newline\-separated JSON stream of find results.
 .TP
 \fB\fC\-k, \-\-key fingerprint\fR
 Authenticate using the SSH key described by FINGERPRINT.  The key must
@@ -112,5 +127,4 @@ $ mfind \-vv ~~/stor 2>&1 | bunyan
 .PP
 DSA keys do not work when loaded via the SSH agent.
 .PP
-Report bugs at Github
-\[la]https://github.com/joyent/node-manta/issues\[ra]
+Report bugs at Github \[la]https://github.com/joyent/node-manta/issues\[ra]

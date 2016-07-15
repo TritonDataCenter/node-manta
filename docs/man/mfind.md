@@ -1,4 +1,4 @@
-mfind 1 "May 2013" Manta "Manta Commands"
+mfind 1 "July 2016" Manta "Manta Commands"
 =======================================
 
 NAME
@@ -20,6 +20,16 @@ listing names that are the specified `type` (or all if none is specified).
 Unlike GNU/BSD find, `mfind` is not yet sophisticated enough to support full
 `expression` matching, but does (currently) allow a `--name` option that
 supports Regular Expression matching.
+
+With the `--json` option a stream of JSON objects is printed. Each JSON object
+contains the fields from the Manta [ListDirectory API
+endpoint](https://apidocs.joyent.com/manta/api.html#ListDirectory), plus the
+following client-side added fields:
+
+- `depth`: An integer directory depth under the given directory,
+  starting from 0.
+- `parent`: The full directory path of the entry.
+
 
 EXAMPLES
 --------
@@ -43,6 +53,9 @@ OPTIONS
   This option explicitly allows "insecure" SSL connections and transfers.  All
   SSL connections are attempted to be made secure by using the CA certificate
   bundle installed by default.
+
+`-j, --json`
+  Output a newline-separated JSON stream of find results.
 
 `-k, --key fingerprint`
   Authenticate using the SSH key described by FINGERPRINT.  The key must
