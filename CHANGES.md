@@ -2,6 +2,11 @@
 
 ## not yet released
 
+## 3.1.1
+
+- joyent/node-manta#261 "AssertionError: undefined (object) is required" after
+  "socket hang up"
+
 ## 3.1.0
 
 - joyent/node-manta#265 Add `--json, -j` option to `mfind`. E.g.:
