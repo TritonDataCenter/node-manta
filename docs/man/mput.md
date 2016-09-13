@@ -72,6 +72,9 @@ OPTIONS
   When using `--file`, this switch instructs mput to first compute the MD5 of
   the file and send it in `content-md5`.
 
+`-p, --parents`
+  Create parent directories as needed.
+
 `-q, --quiet`
   Do not display a progress meter.
 
