@@ -2,6 +2,8 @@
 
 ## not yet released
 
+- added -p to man mput
+
 ## 3.1.1
 
 - joyent/node-manta#261 "AssertionError: undefined (object) is required" after

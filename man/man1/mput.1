@@ -73,6 +73,9 @@ either be in \fB\fC~/.ssh\fR or loaded in the SSH agent via \fB\fCssh\-add\fR\&.
 When using \fB\fC\-\-file\fR, this switch instructs mput to first compute the MD5 of
 the file and send it in \fB\fCcontent\-md5\fR\&.
 .TP
+\fB\fC\-p, \-\-parents\fR
+Create parent directories as needed.
+.TP
 \fB\fC\-q, \-\-quiet\fR
 Do not display a progress meter.
 .TP
@@ -127,5 +130,4 @@ $ mput \-vv ~~/stor/foo 2>&1 | bunyan
 .PP
 DSA keys do not work when loaded via the SSH agent.
 .PP
-Report bugs at Github
-\[la]https://github.com/joyent/node-manta/issues\[ra]
+Report bugs at Github \[la]https://github.com/joyent/node-manta/issues\[ra]
