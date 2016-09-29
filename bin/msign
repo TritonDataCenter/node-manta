@@ -135,8 +135,7 @@ function parseOptions() {
             path: p,
             sign: client.sign,
             user: opts.user,
-            subuser: opts.subuser,
-            mantaSubUser: true
+            subuser: opts.subuser
         };
         client.signURL(_opts, function (err, resource) {
             ifError(err);
