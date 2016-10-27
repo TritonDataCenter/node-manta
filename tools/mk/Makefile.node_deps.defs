@@ -1,6 +1,14 @@
 # -*- mode: makefile -*-
 #
-# Copyright (c) 2012, Joyent, Inc. All rights reserved.
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+
+#
+# Copyright (c) 2014, Joyent, Inc.
+#
+
 #
 # Makefile.node_deps.defs: Makefile for including npm modules whose sources
 # reside inside the repo.  This should NOT be used for modules in the npm
@@ -31,5 +39,5 @@
 # appropriate (usually the "deps" or "all" target).
 #
 
-REPO_DEPS   := $(REPO_MODULES:src/node-%=node_modules/%)
+REPO_DEPS    = $(REPO_MODULES:src/node-%=node_modules/%)
 CLEAN_FILES += $(REPO_DEPS)
