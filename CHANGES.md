@@ -2,7 +2,14 @@
 
 ## not yet released
 
-- joyent/node-manta#270 Add -p to man mput
+## 3.1.3
+
+- joyent/node-manta#277 mjob fails with "mjob: AssertionError: body (object) is required"
+
+## 3.1.2
+
+- joyent/node-manta#275 msign with subusers broken
+- joyent/node-manta#270 Add -p to `man mput`
 
 ## 3.1.1
 
@@ -19,7 +26,8 @@
 
 ## 3.0.0
 
-- joyent/node-manta#246 Update many dependencies to come up to the modern age.
+- joyent/node-manta#246 Update many dependencies to support node v4 and v6
+  without build errors or warnings.
   This involved dropping support for node 0.8. It is for this reason, and
   prudence at the large number of dependency updates (many of them across
   major version bumps) that we are doing a major version bump of this package.
