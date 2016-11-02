@@ -2,6 +2,8 @@
 
 ## not yet released
 
+- joyent/node-manta#280 honor options with job expressions
+
 ## 3.1.3
 
 - joyent/node-manta#277 mjob fails with "mjob: AssertionError: body (object) is required"

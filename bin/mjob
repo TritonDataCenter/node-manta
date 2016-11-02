@@ -633,7 +633,10 @@ MJob.prototype.do_create = function create(subcmd, opts, args, cb) {
         function addPhase() {
             var p = {
                 exec: exec,
+                disk: opts.disk,
                 image: opts.image,
+                init: opts.init,
+                memory: opts.memory,
                 type: type
             };
 
