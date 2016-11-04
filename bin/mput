@@ -113,6 +113,8 @@ function parseOptions() {
     if (opts.help)
         manta.cli_usage(OPTIONS_PARSER, false, 'path...');
 
+    manta.cliVersionCheckPrintAndExit(opts);
+
     if (opts.md5 && !opts.file)
         manta.cli_usage(OPTIONS_PARSER, false, '--md5 requires --file');
 

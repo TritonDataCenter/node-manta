@@ -109,6 +109,8 @@ function parseOptions() {
     if (opts.help)
         manta.cli_usage(OPTIONS_PARSER, false, '[PATH]');
 
+    manta.cliVersionCheckPrintAndExit(opts);
+
     if (opts.name)
         opts.name = new RegExp(opts.name);
 

@@ -9,7 +9,6 @@ mchmod - change object role tags
 SYNOPSIS
 --------
 
-`mchmod` [+-=]ROLE,... OBJECT
 `mchmod` [OPTION...] -- [+-=]ROLE,... OBJECT
 
 
@@ -26,9 +25,9 @@ access.
 EXAMPLES
 --------
 
-    $ mchmod +read ~~/stor/foo.txt
+    $ mchmod -- +read ~~/stor/foo.txt
 
-    $ mchmod -read,write ~~/stor/foo.txt
+    $ mchmod -- -read,write ~~/stor/foo.txt
 
     $ mchmod -a other_account -- =read ~~/stor/foot.txt
 

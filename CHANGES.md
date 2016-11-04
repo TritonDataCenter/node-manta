@@ -2,6 +2,10 @@
 
 ## not yet released
 
+- joyent/node-manta#272 Add `--version` to all tools
+- joyent/node-manta#282 `mchmod` now parses all standard options.  The use of
+  the `--` form is encouraged to avoid ambiguities in role versus option names
+  (ex: `mchmod -- -read,write ~~/stor/foo.txt`).
 - joyent/node-manta#280 honor options with job expressions
 
 ## 3.1.3

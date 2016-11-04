@@ -4,7 +4,6 @@
 mchmod \- change object role tags
 .SH SYNOPSIS
 .PP
-\fB\fCmchmod\fR [+\-=]ROLE,... OBJECT
 \fB\fCmchmod\fR [OPTION...] \-\- [+\-=]ROLE,... OBJECT
 .SH DESCRIPTION
 .PP
@@ -18,8 +17,10 @@ access.
 .PP
 .RS
 .nf
-$ mchmod +read ~~/stor/foo.txt
-$ mchmod \-read,write ~~/stor/foo.txt
+$ mchmod \-\- +read ~~/stor/foo.txt
+
+$ mchmod \-\- \-read,write ~~/stor/foo.txt
+
 $ mchmod \-a other_account \-\- =read ~~/stor/foot.txt
 .fi
 .RE
@@ -88,5 +89,4 @@ $ mchmod \-v ~~/stor/foo 2>&1 | bunyan
 .PP
 DSA keys do not work when loaded via the SSH agent.
 .PP
-Report bugs at Github
-\[la]https://github.com/joyent/node-manta/issues\[ra]
+Report bugs at Github \[la]https://github.com/joyent/node-manta/issues\[ra]

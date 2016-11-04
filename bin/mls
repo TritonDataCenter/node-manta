@@ -94,6 +94,8 @@ function parseOptions() {
     if (opts.help)
         manta.cli_usage(OPTIONS_PARSER, false, '[PATH]...');
 
+    manta.cliVersionCheckPrintAndExit(opts);
+
     opts.paths = [];
     if (opts._args.length < 1) {
         opts.paths = ['/' + opts.account + '/stor'];

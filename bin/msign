@@ -89,6 +89,8 @@ function parseOptions() {
     if (opts.help)
         manta.cli_usage(OPTIONS_PARSER, false, 'path...');
 
+    manta.cliVersionCheckPrintAndExit(opts);
+
     opts.method = opts.method.map(function (m) {
         m = m.toUpperCase();
         if (METHODS.indexOf(m) === -1) {

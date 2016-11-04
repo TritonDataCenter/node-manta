@@ -61,6 +61,8 @@ function parseOptions() {
     if (opts.help)
         manta.cli_usage(OPTIONS_PARSER, false, 'source dest');
 
+    manta.cliVersionCheckPrintAndExit(opts);
+
     if (opts._args.length < 1)
         manta.cli_usage(OPTIONS_PARSER, 'source required', 'source dest');
     if (opts._args.length < 2)

@@ -46,6 +46,8 @@ function assertOpts(thisp, subcmd, opts, cb) {
         return (false);
     }
 
+    manta.handleOptsVersion(opts);
+
     try {
         manta.checkBinEnv(opts);
         manta.cli_logger(opts, LOG);
@@ -429,11 +431,26 @@ function getJobInfo(opts, cb) {
 function MJob() {
     cmdln.Cmdln.call(this, {
         name: 'mjob',
-        desc: 'Manages Manta compute jobs'
-    });
+        desc: 'Manages Manta compute jobs',
+        options: [
+            {
+                names: ['help', 'h'],
+                type: 'bool',
+                help: 'Show this help message and exit.'
+            },
+            {
+                names: ['version'],
+                type: 'bool',
+                help: 'Print version and exit.'
+            }
+        ]});
 }
 util.inherits(MJob, cmdln.Cmdln);
 
+MJob.prototype.init = function (opts, args, callback) {
+    manta.cliVersionCheckPrintAndExit(opts);
+    cmdln.Cmdln.prototype.init.apply(this, arguments);
+};
 
 //-- AddKeys
 

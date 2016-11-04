@@ -71,6 +71,8 @@ function parseOptions() {
     if (opts.help)
         manta.cli_usage(OPTIONS_PARSER, false, 'path...');
 
+    manta.cliVersionCheckPrintAndExit(opts);
+
     opts.headers = {};
     (opts.header || []).forEach(function (h) {
         if (h.indexOf(':') === -1) {

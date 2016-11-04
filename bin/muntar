@@ -100,6 +100,8 @@ function parseOptions() {
     if (opts.help)
         manta.cli_usage(OPTIONS_PARSER, false, 'path');
 
+    manta.cliVersionCheckPrintAndExit(opts);
+
     if (!opts.file)
         manta.cli_usage(OPTIONS_PARSER, 'file is a required argument', 'path');
 

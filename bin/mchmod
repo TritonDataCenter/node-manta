@@ -40,23 +40,15 @@ function ifError(err) {
 }
 
 
-function parseMchmodOptions() {
-    if (process.argv.length <= 2) {
+function parseMchmodOptions(args) {
+    if (args.length < 2) {
         manta.cli_usage(OPTIONS_PARSER, 'role required',
                                         '-- [+-=]role,... path...');
     }
 
-    var startRoles = process.argv.indexOf('--');
-    var operation;
-    var roleOpt;
+    var roleOpt = args.shift();
+    var operation = roleOpt.charAt(0);
 
-    if (startRoles < 0) {   // no other options: `mchmod +role path`
-        roleOpt = process.argv.splice(2, 1).pop();
-    } else {                // other options: `mchmod -a account -- +role path`
-        roleOpt = process.argv.splice(startRoles, 2).pop();
-    }
-
-    operation = roleOpt.charAt(0);
     if (operation !== '+' && operation !== '-' && operation !== '=') {
         manta.cli_usage(OPTIONS_PARSER,
             'operation should be one of "+", "-" or "="');
@@ -72,8 +64,6 @@ function parseMchmodOptions() {
 function parseOptions() {
     var opts;
 
-    var mchmodOpts = parseMchmodOptions();
-
     try {
         opts = OPTIONS_PARSER.parse(process.argv);
         manta.checkBinEnv(opts);
@@ -82,15 +72,18 @@ function parseOptions() {
                                         '-- [+-=]role,... path...');
     }
 
-    opts.mchmodOperation = mchmodOpts.operation;
-    opts.mchmodRoles = mchmodOpts.roles;
-
     manta.cli_logger(opts, LOG);
 
     if (opts.help) {
         manta.cli_usage(OPTIONS_PARSER, false,
                                         '-- [+-=]role,... path...');
     }
+
+    manta.cliVersionCheckPrintAndExit(opts);
+
+    var mchmodOpts = parseMchmodOptions(opts._args);
+    opts.mchmodOperation = mchmodOpts.operation;
+    opts.mchmodRoles = mchmodOpts.roles;
 
     if (opts._args.length < 1) {
         manta.cli_usage(OPTIONS_PARSER, 'path required',

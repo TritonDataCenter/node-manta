@@ -53,6 +53,8 @@ function parseOptions() {
     if (opts.help)
         manta.cli_usage(OPTIONS_PARSER, false, 'path...');
 
+    manta.cliVersionCheckPrintAndExit(opts);
+
     if (opts._args.length < 1)
         manta.cli_usage(OPTIONS_PARSER, 'path required', 'path...');
 
