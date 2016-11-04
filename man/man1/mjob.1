@@ -307,11 +307,11 @@ the generated HTML page.
 .TP
 \fB\fC\-s, \-\-stdout\fR
 Emit the HTML output to stdout and do not upload it to Manta.
-.SS list [\-s state]
+.SS list
 .PP
 Lists all jobs for a user (note, this can also be done with a normal \fB\fCmls\fR
-call).  Optionally takes a \fB\fC\-s\fR, that can be used to filter down to only
-\fB\fCrunning\fR jobs.
+call).  Optionally takes filters \-\- such as \fB\fC\-s\fR for \fB\fCstate\fR \-\- that can be used
+to show only certain jobs.
 .PP
 .RS
 .nf
@@ -319,15 +319,21 @@ $ mjob list \-s running
 .fi
 .RE
 .TP
+\fB\fC\-n, \-\-name name\fR
+only list jobs with the given name
+.TP
+\fB\fC\-l, \-\-long\fR
+use a long listing format
+.TP
 \fB\fC\-s, \-\-state state\fR
 Only list jobs in the given state.
 .SS cost JOB
 .PP
 Estimates the cost in USD of a job by creating a Manta job and adding as inputs
 compute usage reports from /:login/reports/usage/compute. Assets are pulled from
-/manta/public/jobs/mjob\-cost. Note that usage reports are generated
+/manta/public/jobs/mjob\-cost. \fBNote that usage reports are generated
 asynchronously, so mjob cost may fail when estimating the cost of jobs that
-were running recently.**
+were running recently.\fP
 .IP
 $ mjob cost 3ec32136\-b125\-11e2\-8487\-1b418dd6974b
 .TP

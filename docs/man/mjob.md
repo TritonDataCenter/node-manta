@@ -277,13 +277,20 @@ without uploading it, use the "-s" option and save the output to a file.
   Emit the HTML output to stdout and do not upload it to Manta.
 
 
-### list [-s state] ###
+### list ###
 
 Lists all jobs for a user (note, this can also be done with a normal `mls`
-call).  Optionally takes a `-s`, that can be used to filter down to only
-`running` jobs.
+call).  Optionally takes filters -- such as `-s` for `state` -- that can be used
+to show only certain jobs.
+
 
     $ mjob list -s running
+
+`-n, --name name`
+  only list jobs with the given name
+
+`-l, --long`
+  use a long listing format
 
 `-s, --state state`
   Only list jobs in the given state.
@@ -292,7 +299,7 @@ call).  Optionally takes a `-s`, that can be used to filter down to only
 
 Estimates the cost in USD of a job by creating a Manta job and adding as inputs
 compute usage reports from /:login/reports/usage/compute. Assets are pulled from
-/manta/public/jobs/mjob-cost. Note that usage reports are generated
+/manta/public/jobs/mjob-cost. **Note that usage reports are generated
 asynchronously, so mjob cost may fail when estimating the cost of jobs that
 were running recently.**
 
