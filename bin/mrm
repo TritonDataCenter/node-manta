@@ -16,8 +16,9 @@ var manta = require('../lib');
 
 ///--- Globals
 
+var NAME = path.basename(process.argv[1]);
 var LOG = bunyan.createLogger({
-    name: path.basename(process.argv[1]),
+    name: NAME,
     level: (process.env.LOG_LEVEL || 'info'),
     stream: process.stderr
 });
@@ -25,11 +26,14 @@ var LOG = bunyan.createLogger({
 var OPTIONS_PARSER = dashdash.createParser({
     options: manta.DEFAULT_CLI_OPTIONS.concat([
         {
+            group: NAME + ' options'
+        },
+        {
             names: ['parallel', 'p'],
             type: 'positiveInteger',
-            help: 'limit concurrent operations',
+            help: 'limit concurrent operations (default 50)',
             'default': 50,
-            helpArg: 'CONCURRENCY'
+            helpArg: 'NUM'
         },
         {
             names: ['recursive', 'r'],

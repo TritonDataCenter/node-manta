@@ -6,7 +6,13 @@
 - joyent/node-manta#282 `mchmod` now parses all standard options.  The use of
   the `--` form is encouraged to avoid ambiguities in role versus option names
   (ex: `mchmod -- -read,write ~~/stor/foo.txt`).
-- joyent/node-manta#280 honor options with job expressions
+- joyent/node-manta#280 Ensure that `--disk`, `--memory`, and `--init`
+  options are used with `mjob create MAP_PHASE ^ MAP_PHASE ^^ REDUCE_PHASE`
+  style job creation.
+- joyent/node-manta#279 Improvements to help output for all CLIs.
+  Also add the `mjob create --dry-run ...` option to print the created
+  job object and exit. This is useful for exploring and testing `mjob create`s
+  many options.
 
 ## 3.1.3
 

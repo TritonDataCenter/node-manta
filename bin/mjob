@@ -28,8 +28,9 @@ var sprintf = util.format;
 
 var JOB_DATA_FMT = '/%s/jobs/%s/%s.txt';
 
+var NAME = path.basename(process.argv[1]);
 var LOG = bunyan.createLogger({
-    name: path.basename(process.argv[1]),
+    name: NAME,
     level: (process.env.LOG_LEVEL || 'info'),
     stream: process.stderr
 });
@@ -46,7 +47,7 @@ function assertOpts(thisp, subcmd, opts, cb) {
         return (false);
     }
 
-    manta.handleOptsVersion(opts);
+    manta.cliVersionCheckPrintAndExit(opts);
 
     try {
         manta.checkBinEnv(opts);
@@ -443,7 +444,11 @@ function MJob() {
                 type: 'bool',
                 help: 'Print version and exit.'
             }
-        ]});
+        ],
+        helpOpts: {
+            includeEnv: true
+        }
+    });
 }
 util.inherits(MJob, cmdln.Cmdln);
 
@@ -480,6 +485,9 @@ MJob.prototype.do_addinputs = function do_addinputs(subcmd, opts, args, cb) {
 
 MJob.prototype.do_addinputs.options = manta.DEFAULT_CLI_OPTIONS.concat([
     {
+        group: 'mjob addinputs options'
+    },
+    {
         names: ['batch', 'b'],
         type: 'positiveInteger',
         help: 'number of inputs to submit per batch (default 1000)',
@@ -489,9 +497,9 @@ MJob.prototype.do_addinputs.options = manta.DEFAULT_CLI_OPTIONS.concat([
     {
         names: ['parallel', 'p'],
         type: 'positiveInteger',
-        help: 'limit concurrent operations',
+        help: 'limit concurrent operations (default 25)',
         'default': 25,
-        helpArg: 'CONCURRENCY'
+        helpArg: 'NUM'
     },
     {
         names: ['open', 'o'],
@@ -547,11 +555,14 @@ MJob.prototype.do_cancel = function do_cancel(subcmd, opts, args, cb) {
 
 MJob.prototype.do_cancel.options = manta.DEFAULT_CLI_OPTIONS.concat([
     {
+        group: 'mjob cancel options'
+    },
+    {
         names: ['parallel', 'p'],
         type: 'positiveInteger',
-        help: 'limit concurrent operations',
+        help: 'limit concurrent operations (default 100)',
         'default': 100,
-        helpArg: 'CONCURRENCY'
+        helpArg: 'NUM'
     }
 ]);
 
@@ -702,6 +713,12 @@ MJob.prototype.do_create = function create(subcmd, opts, args, cb) {
         return;
     }
 
+    if (opts.dry_run) {
+        console.log(JSON.stringify(job, null, 4));
+        cb();
+        return;
+    }
+
     var client = createClient(opts);
     client.createJob(job, function (err, id) {
         if (err) {
@@ -759,6 +776,9 @@ MJob.prototype.do_create = function create(subcmd, opts, args, cb) {
 
 MJob.prototype.do_create.options = manta.DEFAULT_CLI_OPTIONS.concat([
     {
+        group: 'mjob create options'
+    },
+    {
         names: ['batch', 'b'],
         type: 'positiveInteger',
         help: 'number of inputs to submit per batch (default 1000)',
@@ -776,47 +796,10 @@ MJob.prototype.do_create.options = manta.DEFAULT_CLI_OPTIONS.concat([
         help: 'do not leave job waiting for inputs'
     },
     {
-        names: ['count'],
-        type: 'positiveInteger',
-        help: 'number of reducers to create',
-        helpArg: 'REDUCERS',
-        'default': 1
-    },
-    {
-        names: ['disk'],
-        type: 'positiveInteger',
-        help: 'amount of disk space available for all phases (gigabytes)',
-        helpArg: 'DISK_GB'
-    },
-    {
-        names: ['memory'],
-        type: 'positiveInteger',
-        help: 'amount of memory available for all phases (megabytes)',
-        helpArg: 'MEMORY_MB'
-    },
-    {
-        names: ['file', 'f'],
-        type: 'string',
-        help: 'manifest file to create job from',
-        helpArg: 'FILE'
-    },
-    {
-        names: ['image'],
-        type: 'string',
-        help: 'Allowed compute image string (semver)',
-        helpArg: 'IMAGE_SEMVER'
-    },
-    {
-        names: ['init'],
-        type: 'string',
-        help: 'command to run before execution; must be valid bash script',
-        helpArg: 'INIT_COMMAND'
-    },
-    {
-        names: ['map', 'm'],
-        type: 'arrayOfString',
-        help: 'map phase(s)',
-        helpArh: 'MAP_COMMAND'
+        names: ['dry-run'],
+        type: 'bool',
+        help: 'Print the job configuration and exit, instead of '
+            + 'creating the job.'
     },
     {
         names: ['name', 'n'],
@@ -833,9 +816,10 @@ MJob.prototype.do_create.options = manta.DEFAULT_CLI_OPTIONS.concat([
     {
         names: ['parallel', 'p'],
         type: 'positiveInteger',
-        help: 'limit concurrent operations (from mjob, not the job)',
+        help: 'limit concurrent operations (by mjob, not the job itself; '
+            + 'default 25)',
         'default': 25,
-        helpArg: 'CONCURRENCY'
+        helpArg: 'NUM'
     },
     {
         names: ['quiet', 'q'],
@@ -844,10 +828,33 @@ MJob.prototype.do_create.options = manta.DEFAULT_CLI_OPTIONS.concat([
         'default': false
     },
     {
+        names: ['watch', 'w'],
+        type: 'bool',
+        help: 'wait for job to complete, and dump outputs'
+    },
+    {
+        group: 'Specify phases'
+    },
+    {
+        names: ['file', 'f'],
+        type: 'string',
+        help: 'manifest file to create job from',
+        helpArg: 'FILE'
+    },
+    {
+        names: ['map', 'm'],
+        type: 'arrayOfString',
+        help: 'map phase(s)',
+        helpArg: 'CMD'
+    },
+    {
         names: ['reduce', 'r'],
         type: 'arrayOfString',
         help: 'reduce phase(s)',
-        helpArh: 'REDUCE_COMMAND'
+        helpArg: 'CMD'
+    },
+    {
+        group: 'Phase properties'
     },
     {
         names: ['asset', 's'],
@@ -856,31 +863,72 @@ MJob.prototype.do_create.options = manta.DEFAULT_CLI_OPTIONS.concat([
         helpArg: 'ASSET_PATH'
     },
     {
-        names: ['watch', 'w'],
-        type: 'bool',
-        help: 'wait for job to complete, and dump outputs'
+        names: ['count'],
+        type: 'positiveInteger',
+        help: 'number of reducers to create',
+        helpArg: 'REDUCERS',
+        'default': 1
+    },
+    {
+        names: ['disk'],
+        type: 'positiveInteger',
+        help: 'amount of disk space available for a phase (gigabytes)',
+        helpArg: 'DISK_GB'
+    },
+    {
+        names: ['image'],
+        type: 'string',
+        help: 'Allowed compute image string (semver)',
+        helpArg: 'IMAGE_SEMVER'
+    },
+    {
+        names: ['init'],
+        type: 'string',
+        help: 'command to run before execution; must be valid bash script',
+        helpArg: 'INIT_COMMAND'
+    },
+    {
+        names: ['memory'],
+        type: 'positiveInteger',
+        help: 'amount of memory available for a phase (megabytes)',
+        helpArg: 'MEMORY_MB'
     }
 ]);
 
-MJob.prototype.do_create.help = (
+MJob.prototype.do_create.help = [
     /* BEGIN JSSTYLED */
-    'Creates a Manta Job.\n' +
-        'You can create a job, feed inputs and wait for completion like this:\n' +
-        'Example:\n' +
-        '    mfind -t o /user/stor | mjob create "grep foo || true" ^^ cat\n' +
-        '\n' +
-        'Usage:\n' +
-        '     mjob create [OPTIONS] [map [^ map] [^^ reduce]]\n' +
-        '\n' +
-        '{{options}}\n' +
-        'The --asset, --count, --disk, --image, --init, and —-memory ' +
-        'options all\n' +
-        'apply to the next phase specified with --map or --reduce.'
+    'Create a Manta Job.',
+    '',
+    'Usage:',
+    '    mjob create [OPTIONS] -m MAP [-m MAP] [-r REDUCE] ...  # option style',
+    '    mjob create [OPTIONS] [MAP [^ MAP] [^^ REDUCE]]        # expression style',
+    '    mjob create [OPTIONS] -f FILE                          # phases in JSON FILE',
+    '',
+    '{{options}}',
+    'Map and reduce phases can be specified (a) via "-f FILE" with a job config',
+    '(b) with "-m" and "-r" options:',
+    '    mjob create -m "grep foo || true" -m "cut -d: -f1" -r cat',
+    'or, (c) via an "expression" style using the "^" and "^^" syntax:',
+    '    mjob create "grep foo || true" ^ "cut -d: -f1" ^^ cat',
+    '',
+    'Phase property options (--asset, --disk, etc.) apply differently depending on',
+    'the usage type: if using options style (-m, -r), they apply to the *next* phase',
+    'specified with -m/-r; if using expression style, they apply to *all* phases.',
+    'For documentation on phase properties, including supported values for --disk',
+    'and --memory see:',
+    '    https://apidocs.joyent.com/manta/jobs-reference.html#job-configuration',
+    '',
+    'Input objects can be fed to a Manta job via stdin to `mjob create`:',
+    '    mfind -t o ~~/stor/data | mjob create -m "grep foo || true" -r sort',
+    'or via `mjob addinputs`:',
+    '    jobId=$(mjob create -m "grep foo || true" -r sort)',
+    '    mfind -t o ~~/stor/data | mjob addinputs $jobId'
     /* END JSSTYLED */
-);
+].join('\n');
 
 
 //-- GetJob
+
 MJob.prototype.do_get = function do_get(subcmd, opts, args, cb) {
     cb = once(cb);
 
@@ -922,11 +970,14 @@ MJob.prototype.do_get = function do_get(subcmd, opts, args, cb) {
 
 MJob.prototype.do_get.options = manta.DEFAULT_CLI_OPTIONS.concat([
     {
+        group: 'mjob get options'
+    },
+    {
         names: ['parallel', 'p'],
         type: 'positiveInteger',
-        help: 'limit concurrent operations',
+        help: 'limit concurrent operations (default 100)',
         'default': 100,
-        helpArg: 'CONCURRENCY'
+        helpArg: 'NUM'
     }
 ]);
 
@@ -969,11 +1020,14 @@ MJob.prototype.do_inputs = function do_inputs(subcmd, opts, args, cb) {
 
 MJob.prototype.do_inputs.options = manta.DEFAULT_CLI_OPTIONS.concat([
     {
+        group: 'mjob inputs options'
+    },
+    {
         names: ['parallel', 'p'],
         type: 'positiveInteger',
-        help: 'limit concurrent operations',
+        help: 'limit concurrent operations (default 100)',
         'default': 100,
-        helpArg: 'CONCURRENCY'
+        helpArg: 'NUM'
     }
 ]);
 
@@ -1015,11 +1069,14 @@ MJob.prototype.do_outputs = function do_outputs(subcmd, opts, args, cb) {
 
 MJob.prototype.do_outputs.options = manta.DEFAULT_CLI_OPTIONS.concat([
     {
+        group: 'mjob outputs options'
+    },
+    {
         names: ['parallel', 'p'],
         type: 'positiveInteger',
-        help: 'limit concurrent operations',
+        help: 'limit concurrent operations (default 100)',
         'default': 100,
-        helpArg: 'CONCURRENCY'
+        helpArg: 'NUM'
     }
 ]);
 
@@ -1061,11 +1118,14 @@ MJob.prototype.do_errors = function do_errors(subcmd, opts, args, cb) {
 
 MJob.prototype.do_errors.options = manta.DEFAULT_CLI_OPTIONS.concat([
     {
+        group: 'mjob errors options'
+    },
+    {
         names: ['parallel', 'p'],
         type: 'positiveInteger',
-        help: 'limit concurrent operations',
+        help: 'limit concurrent operations (default 100)',
         'default': 100,
-        helpArg: 'CONCURRENCY'
+        helpArg: 'NUM'
     }
 ]);
 
@@ -1108,11 +1168,14 @@ MJob.prototype.do_failures = function do_failures(subcmd, opts, args, cb) {
 
 MJob.prototype.do_failures.options = manta.DEFAULT_CLI_OPTIONS.concat([
     {
+        group: 'mjob failures options'
+    },
+    {
         names: ['parallel', 'p'],
         type: 'positiveInteger',
-        help: 'limit concurrent operations',
+        help: 'limit concurrent operations (default 100)',
         'default': 100,
-        helpArg: 'CONCURRENCY'
+        helpArg: 'NUM'
     }
 ]);
 
@@ -1172,6 +1235,9 @@ MJob.prototype.do_list = function do_list(subcmd, opts, args, cb) {
 };
 
 MJob.prototype.do_list.options = manta.DEFAULT_CLI_OPTIONS.concat([
+    {
+        group: 'mjob list options'
+    },
     {
         names: ['name', 'n'],
         type: 'string',
@@ -1250,11 +1316,14 @@ MJob.prototype.do_watch = function do_watch(subcmd, opts, args, cb) {
 
 MJob.prototype.do_watch.options = manta.DEFAULT_CLI_OPTIONS.concat([
     {
+        group: 'mjob watch options'
+    },
+    {
         names: ['parallel', 'p'],
         type: 'positiveInteger',
-        help: 'limit concurrent operations',
+        help: 'limit concurrent operations (default 100)',
         'default': 100,
-        helpArg: 'CONCURRENCY'
+        helpArg: 'NUM'
     }
 ]);
 
@@ -1303,11 +1372,14 @@ MJob.prototype.do_close = function do_close(subcmd, opts, args, cb) {
 
 MJob.prototype.do_close.options = manta.DEFAULT_CLI_OPTIONS.concat([
     {
+        group: 'mjob close options'
+    },
+    {
         names: ['parallel', 'p'],
         type: 'positiveInteger',
-        help: 'limit concurrent operations',
+        help: 'limit concurrent operations (default 100)',
         'default': 100,
-        helpArg: 'CONCURRENCY'
+        helpArg: 'NUM'
     }
 ]);
 
@@ -1382,6 +1454,9 @@ MJob.prototype.do_share = function do_share(subcmd, opts, args, cb) {
 };
 
 MJob.prototype.do_share.options = manta.DEFAULT_CLI_OPTIONS.concat([
+    {
+        group: 'mjob share options'
+    },
     {
         names: [ 'stdout', 's' ],
         type: 'bool',
@@ -1554,6 +1629,9 @@ MJob.prototype.do_cost = function do_cost(subcmd, opts, args, cb) {
 
 MJob.prototype.do_cost.options = manta.DEFAULT_CLI_OPTIONS.concat([
     {
+        group: 'mjob cost options'
+    },
+    {
         names: ['name', 'n'],
         type: 'string',
         help: 'job name',
@@ -1562,9 +1640,9 @@ MJob.prototype.do_cost.options = manta.DEFAULT_CLI_OPTIONS.concat([
     {
         names: ['parallel', 'p'],
         type: 'positiveInteger',
-        help: 'limit concurrent operations',
+        help: 'limit concurrent operations (default 25)',
         'default': 25,
-        helpArg: 'CONCURRENCY'
+        helpArg: 'NUM'
     },
     {
         names: ['quiet', 'q'],
@@ -1594,4 +1672,9 @@ MJob.prototype.do_cost.help = (
 
 ///--- Mainline
 
-cmdln.main(MJob);
+if (require.main === module) {
+    var cli = new MJob();
+    cmdln.main(cli, {
+        showNoCommandErr: true
+    });
+}

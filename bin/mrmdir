@@ -16,8 +16,9 @@ var manta = require('../lib');
 
 ///--- Globals
 
+var NAME = path.basename(process.argv[1]);
 var LOG = bunyan.createLogger({
-    name: path.basename(process.argv[1]),
+    name: NAME,
     level: (process.env.LOG_LEVEL || 'info'),
     stream: process.stderr
 });

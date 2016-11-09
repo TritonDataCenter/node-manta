@@ -33,10 +33,10 @@ bundle installed by default.
 Authenticate using the SSH key described by \fB\fCfingerprint\fR\&.  The key must
 either be in \fB\fC~/.ssh\fR or loaded in the SSH agent via \fB\fCssh\-add\fR\&.
 .TP
-\fB\fC\-p, \-\-parallel concurrency\fR
-Limit concurrent operations to CONCURRENCY.  Default is 50.  This applies to
-operations issued by mjob itself (e.g., to add inputs or poll on the job).  It
-has no effect on the concurrency of the job.
+\fB\fC\-p, \-\-parallel NUM\fR
+Limit concurrent operations to NUM. The default varies by command. This
+applies to operations issued by mjob itself (e.g., to add inputs or poll on
+the job). It has no effect on the concurrency of the job.
 .TP
 \fB\fC\-\-role=ROLE,ROLE,...\fR
 Specify which roles to assume for the request.
@@ -138,6 +138,9 @@ Use num_reducers in the reduce phase.
 \fB\fC\-\-disk disk\fR
 Override the OS quota, and use the specified amount of disk in the next phase.
 This option is specified in gigabytes.
+.TP
+\fB\fC\-\-dry\-run\fR
+Print the job configuration and exit, instead of creating the job.
 .TP
 \fB\fC\-\-memory memory\fR
 Override the OS size, and use the specified amount of DRAM in the next phase.

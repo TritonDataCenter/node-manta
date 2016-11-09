@@ -12,12 +12,12 @@ var dashdash = require('dashdash');
 
 var manta = require('../lib');
 
-var name = path.basename(process.argv[1]);
 
 ///--- Globals
 
+var NAME = path.basename(process.argv[1]);
 var LOG = bunyan.createLogger({
-    name: name,
+    name: NAME,
     level: (process.env.LOG_LEVEL || 'info'),
     stream: process.stderr
 });
@@ -32,7 +32,7 @@ var OPTIONS_PARSER = dashdash.createParser({
 
 function ifError(err) {
     if (err) {
-        console.error('%s: %s', name, err.toString());
+        console.error('%s: %s', NAME, err.toString());
         process.exit(1);
     }
 }

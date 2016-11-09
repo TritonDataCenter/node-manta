@@ -42,10 +42,10 @@ The following options are supported in all commands:
   Authenticate using the SSH key described by `fingerprint`.  The key must
   either be in `~/.ssh` or loaded in the SSH agent via `ssh-add`.
 
-`-p, --parallel concurrency`
-  Limit concurrent operations to CONCURRENCY.  Default is 50.  This applies to
-  operations issued by mjob itself (e.g., to add inputs or poll on the job).  It
-  has no effect on the concurrency of the job.
+`-p, --parallel NUM`
+  Limit concurrent operations to NUM. The default varies by command. This
+  applies to operations issued by mjob itself (e.g., to add inputs or poll on
+  the job). It has no effect on the concurrency of the job.
 
 `--role=ROLE,ROLE,...`
   Specify which roles to assume for the request.
@@ -128,6 +128,9 @@ The following options are supported on `create`:
 `--disk disk`
   Override the OS quota, and use the specified amount of disk in the next phase.
   This option is specified in gigabytes.
+
+`--dry-run`
+  Print the job configuration and exit, instead of creating the job.
 
 `--memory memory`
   Override the OS size, and use the specified amount of DRAM in the next phase.

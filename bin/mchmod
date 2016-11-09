@@ -12,20 +12,19 @@ var dashdash = require('dashdash');
 
 var manta = require('../lib');
 
-var name = path.basename(process.argv[1]);
-
 
 ///--- Globals
 
+var NAME = path.basename(process.argv[1]);
+
 var LOG = bunyan.createLogger({
-    name: path.basename(process.argv[1]),
+    name: NAME,
     level: (process.env.LOG_LEVEL || 'info'),
     stream: process.stderr
 });
 
 var OPTIONS_PARSER = dashdash.createParser({
-    options: manta.DEFAULT_CLI_OPTIONS,
-    allowUnknown: true
+    options: manta.DEFAULT_CLI_OPTIONS
 });
 
 
@@ -34,14 +33,14 @@ var OPTIONS_PARSER = dashdash.createParser({
 
 function ifError(err) {
     if (err) {
-        console.error('%s: %s', name, err.toString());
+        console.error('%s: %s', NAME, err.toString());
         process.exit(1);
     }
 }
 
 
 function parseMchmodOptions(args) {
-    if (args.length < 2) {
+    if (args.length < 1) {
         manta.cli_usage(OPTIONS_PARSER, 'role required',
                                         '-- [+-=]role,... path...');
     }
@@ -133,8 +132,8 @@ function printEntry(obj) {
 
         client.info(p, options, function (err, info, res) {
             if (err && err.name === 'AuthorizationFailedError') {
-                console.error('%s: getobject access required for %s %s', name,
-                    name, options.mchmodOperation);
+                console.error('%s: getobject access required for %s %s', NAME,
+                    NAME, options.mchmodOperation);
                 process.exit(1);
             }
             ifError(err);

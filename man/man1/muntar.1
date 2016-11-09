@@ -62,8 +62,8 @@ bundle installed by default.
 Authenticate using the SSH key described by FINGERPRINT.  The key must
 either be in \fB\fC~/.ssh\fR or loaded in the SSH agent via \fB\fCssh\-add\fR\&.
 .TP
-\fB\fC\-p concurrency, \-\-parallel=oncurrency\fR
-Limit concurrent operations to CONCURRENCY.  Default is 20.
+\fB\fC\-p NUM, \-\-parallel=NUM\fR
+Limit concurrent operations to NUM.  Default is 20.
 .TP
 \fB\fC\-t, \-\-type type\fR
 Specify \fB\fCd\fR for directories, and \fB\fCo\fR for objects.  If specified, only names of
@@ -121,5 +121,4 @@ $ mfind \-vv ~~/stor 2>&1 | bunyan
 .PP
 DSA keys do not work when loaded via the SSH agent.
 .PP
-Report bugs at Github
-\[la]https://github.com/joyent/node-manta/issues\[ra]
+Report bugs at Github \[la]https://github.com/joyent/node-manta/issues\[ra]

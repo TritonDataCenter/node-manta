@@ -68,8 +68,8 @@ OPTIONS
   Only return entries that have a name matching RegExp.  RegExp is a
   Javascript Regular Expression.
 
-`-p, --parallel concurrency`
-  Limit concurrent operations to CONCURRENCY.  Default is 50.
+`-p, --parallel NUM`
+  Limit concurrent operations to NUM.  Default is 50.
 
 `-s, --size SIZE`
   Only list objects that are greater than SIZE bytes.

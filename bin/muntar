@@ -21,9 +21,10 @@ var tar = require('tar');
 
 ///--- Globals
 
+var NAME = mod_path.basename(process.argv[1]);
 var IN_PROGRESS = {};
 var LOG = bunyan.createLogger({
-    name: mod_path.basename(process.argv[1]),
+    name: NAME,
     level: (process.env.LOG_LEVEL || 'info'),
     stream: process.stderr
 });
@@ -31,6 +32,9 @@ var MAX_SOCKETS = parseInt(process.env.MANTA_MAX_SOCKETS || 1000, 10);
 
 var OPTIONS_PARSER = dashdash.createParser({
     options: manta.DEFAULT_CLI_OPTIONS.concat([
+        {
+            group: NAME + ' options'
+        },
         {
             names: ['copies', 'c'],
             type: 'positiveInteger',
@@ -55,7 +59,7 @@ var OPTIONS_PARSER = dashdash.createParser({
             type: 'positiveInteger',
             help: 'limit concurrent operations (default 20)',
             'default': 20,
-            helpArg: 'CONCURRENCY'
+            helpArg: 'NUM'
         },
         {
             names: ['retries', 'r'],

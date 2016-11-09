@@ -41,8 +41,8 @@ OPTIONS
   Authenticate using the SSH key described by FINGERPRINT.  The key must
   either be in `~/.ssh` or loaded in the SSH agent via `ssh-add`.
 
-`-p, --parallel concurrency`
-  Limit concurrent operations to CONCURRENCY.  Default is 50.
+`-p, --parallel NUM`
+  Limit concurrent operations to NUM.  Default is 50.
 
 `-r, --recursive`
   Remove directories and their contents recursively.

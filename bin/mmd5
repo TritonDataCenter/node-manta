@@ -18,10 +18,11 @@ var manta = require('../lib');
 
 ///--- Globals
 
+var NAME = path.basename(process.argv[1]);
 var DIR_CT = 'application/x-json-stream; type=directory';
 var HAD_ERR = false;
 var LOG = bunyan.createLogger({
-    name: path.basename(process.argv[1]),
+    name: NAME,
     level: (process.env.LOG_LEVEL || 'info'),
     stream: process.stderr
 });

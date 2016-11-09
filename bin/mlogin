@@ -12,6 +12,7 @@ var assert = require('assert-plus');
 var bunyan = require('bunyan');
 var dashdash = require('dashdash');
 var libuuid = require('uuid');
+var path = require('path');
 var vasync = require('vasync');
 
 var manta = require('../lib');
@@ -22,8 +23,9 @@ var manta = require('../lib');
 
 var QUIET = false;
 
+var NAME = path.basename(process.argv[1]);
 var LOG = bunyan.createLogger({
-    name: 'mlogin',
+    name: NAME,
     level: 'info'
 });
 
@@ -41,6 +43,9 @@ var CC_NL = '\n'.charCodeAt(0);
 
 var OPTIONS_PARSER = dashdash.createParser({
     options: manta.DEFAULT_CLI_OPTIONS.concat([
+        {
+            group: NAME + ' options'
+        },
         {
             names: [ 'command', 'c' ],
             type: 'string',
@@ -569,6 +574,8 @@ function wrap_run(func) {
 ///--- Mainline
 
 (function main() {
+    var options = parseOptions();
+
     // As this is an interactive process, if we are not attached to
     // a controlling terminal then we cannot usefully run.  Bail out
     // up front, rather than fail later.  If node could be coerced to
@@ -580,8 +587,6 @@ function wrap_run(func) {
             process.exit(1);
         }
     });
-
-    var options = parseOptions();
 
     options.mclient = manta.createBinClient(options);
 

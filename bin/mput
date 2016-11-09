@@ -20,14 +20,18 @@ var manta = require('../lib');
 
 ///--- Globals
 
+var NAME = path.basename(process.argv[1]);
 var LOG = bunyan.createLogger({
-    name: path.basename(process.argv[1]),
+    name: NAME,
     level: (process.env.LOG_LEVEL || 'info'),
     stream: process.stderr
 });
 
 var OPTIONS_PARSER = dashdash.createParser({
     options: manta.DEFAULT_CLI_OPTIONS.concat([
+        {
+            group: NAME + ' options'
+        },
         {
             names: ['copies', 'c'],
             type: 'positiveInteger',
@@ -116,7 +120,7 @@ function parseOptions() {
     manta.cliVersionCheckPrintAndExit(opts);
 
     if (opts.md5 && !opts.file)
-        manta.cli_usage(OPTIONS_PARSER, false, '--md5 requires --file');
+        manta.cli_usage(OPTIONS_PARSER, '--md5 requires --file', 'path...');
 
     if (opts._args.length < 1)
         manta.cli_usage(OPTIONS_PARSER, 'path required', 'path...');
