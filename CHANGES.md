@@ -2,10 +2,18 @@
 
 ## not yet released
 
+(nothing yet)
+
+## 4.0.0
+
 - joyent/node-manta#272 Add `--version` to all tools
-- joyent/node-manta#282 `mchmod` now parses all standard options.  The use of
-  the `--` form is encouraged to avoid ambiguities in role versus option names
-  (ex: `mchmod -- -read,write ~~/stor/foo.txt`).
+- *BREAKING CHANGE* joyent/node-manta#282 `mchmod` now parses all standard
+  options. The use of the `--` form is encouraged to avoid ambiguities in role
+  versus option names (ex: `mchmod -- -read,write ~~/stor/foo.txt`).
+  This is a breaking change for some ambiguous invocations of mchmod that worked
+  by accident before. For example this:
+        mchmod -read,write ~~/stor/foo.txt      # worked before, fails in v4
+        mchmod -- -read,write ~~/stor/foo.txt   # works in both major versions
 - joyent/node-manta#280 Ensure that `--disk`, `--memory`, and `--init`
   options are used with `mjob create MAP_PHASE ^ MAP_PHASE ^^ REDUCE_PHASE`
   style job creation.
