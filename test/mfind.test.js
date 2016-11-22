@@ -135,6 +135,15 @@ test('mfind -j TESTDIR', function (t) {
     });
 });
 
+test('mfind TESTDIR/afile.txt', function (t) {
+    forkExecWait({
+        argv: [MFIND, TESTDIR + '/afile.txt']
+    }, function (err, info) {
+        t.ifError(err, err);
+        t.ok(/afile.txt$/m.test(info.stdout), 'afile.txt in stdout');
+        t.done();
+    });
+});
 
 test('cleanup: rm test tree ' + TESTDIR, function (t) {
     // Sanity checks that we don't `mrm -r` a non-test dir.

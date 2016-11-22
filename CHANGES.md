@@ -2,7 +2,7 @@
 
 ## not yet released
 
-(nothing yet)
+- joyent/node-manta#288 mfind of file blows assertion: "ent (object) is required"
 
 ## 4.0.0
 
