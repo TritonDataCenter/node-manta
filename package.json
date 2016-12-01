@@ -30,7 +30,7 @@
         "restify-clients": "~1.4.1",
         "showdown": "~1.4.2",
         "smartdc-auth": "^2.4.1",
-        "tar": "~2.2.1",
+        "tar-stream": "~1.5.2",
         "uuid": "~2.0.2",
         "vasync": "^1.6.4",
         "verror": "^1.6.1",
