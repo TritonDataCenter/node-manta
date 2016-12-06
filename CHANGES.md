@@ -2,6 +2,10 @@
 
 ## not yet released
 
+(nothing yet)
+
+## 4.1.0
+
 - joyent/node-manta#214 Add basic Bash completion for the `m*` tools.
   "Basic" here means options and mjob subcommands are completed, not
   yet support for completing manta paths.
