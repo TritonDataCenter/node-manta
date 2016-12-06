@@ -3,6 +3,7 @@
  */
 
 var exec = require('child_process').exec;
+var crypto = require('crypto');
 var fs = require('fs');
 var path = require('path');
 
@@ -30,6 +31,11 @@ var CHILD2 = SUBDIR2 + '/child2-' + libuuid.v4().split('-')[0]; // link
 var NOENTSUB1 = SUBDIR1 + '/a/b/c';
 var NOENTSUB2 = SUBDIR1 + '/d/e/f';
 var SPECIALOBJ1 = SUBDIR1 + '/' + 'before-\r-after';
+var UPLOAD1; // committed upload
+var UPLOAD2; // aborted upload
+var PATH1 = ROOT + '/committed-obj';
+var PATH2 = ROOT + '/aborted-obj';
+var ETAGS1 = [];
 
 var SUBDIR1_NOBJECTS = 1;
 var SUBDIR1_NDIRECTORIES = 2;
@@ -716,6 +722,123 @@ test('mkdirp/rmr', function (t) {
         self.client.rmr(SUBDIR1, function (err2) {
             t.ifError(err2);
             t.done();
+        });
+    });
+});
+
+test('create upload', function (t) {
+    var opts = {
+        account: this.client.user
+    };
+
+    this.client.createUpload(PATH1, opts, function (err, obj) {
+        t.ifError(err);
+        t.ok(obj);
+        t.ok(obj.id);
+        UPLOAD1 = obj.id;
+        t.done();
+    });
+});
+
+test('upload part', function (t) {
+    var text = 'The lazy brown fox \nsomething \nsomething foo';
+    var stream = new MemoryStream();
+    var opts = {
+        account: this.client.user,
+        md5: crypto.createHash('md5').update(text).digest('base64'),
+        size: Buffer.byteLength(text),
+        type: 'text/plain'
+    };
+
+    var pn = 0;
+    this.client.uploadPart(stream, UPLOAD1, pn, opts, function (err, res) {
+        t.ifError(err);
+        t.ok(res);
+        t.ok(res.headers && res.headers.etag);
+        ETAGS1[pn] = res.headers.etag;
+        t.done();
+    });
+
+    setImmediate(function () {
+        stream.write(text);
+        stream.end();
+    });
+});
+
+test('get upload', function (t) {
+    var opts = {
+        account: this.client.user
+    };
+
+    this.client.getUpload(UPLOAD1, opts, function (err, upload) {
+        t.ifError(err);
+        t.ok(upload);
+        t.equal(upload.id, UPLOAD1);
+        t.equal(upload.state, 'created');
+        t.done();
+    });
+});
+
+test('commit upload', function (t) {
+    var opts = {
+        account: this.client.user
+    };
+
+    var self = this;
+    self.client.commitUpload(UPLOAD1, ETAGS1, opts, function (err) {
+        t.ifError(err);
+        self.client.getUpload(UPLOAD1, opts, function (err2, upload) {
+            t.ifError(err2);
+            t.ok(upload);
+            t.equal(upload.id, UPLOAD1);
+            t.equal(upload.state, 'finalizing');
+            t.equal(upload.type, 'commit');
+
+            self.client.get(PATH1, function (err3, stream) {
+                t.ifError(err3);
+
+                var text = 'The lazy brown fox \nsomething \nsomething foo';
+                var data = '';
+                stream.setEncoding('utf8');
+                stream.on('data', function (chunk) {
+                    data += chunk;
+                });
+                stream.on('end', function (chunk) {
+                    t.equal(data, text);
+
+                    self.client.unlink(PATH1, opts, function (err4) {
+                        t.ifError(err4);
+                        t.done();
+                    });
+                });
+            });
+        });
+    });
+});
+
+test('abort upload', function (t) {
+    var opts = {
+        account: this.client.user
+    };
+
+    var self = this;
+    this.client.createUpload(PATH2, opts, function (err, obj) {
+        t.ifError(err);
+        t.ok(obj);
+        t.ok(obj.id);
+        UPLOAD2 = obj.id;
+
+        self.client.abortUpload(UPLOAD2, opts, function (err2) {
+            t.ifError(err2);
+            self.client.getUpload(UPLOAD2, opts, function (err3, upload) {
+                t.ifError(err3);
+                t.ok(upload);
+                t.equal(upload.id, UPLOAD2);
+                t.equal(upload.state, 'finalizing');
+                t.equal(upload.type, 'abort');
+
+                t.done();
+            });
         });
     });
 });

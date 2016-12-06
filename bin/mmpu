@@ -1,0 +1,649 @@
+#!/usr/bin/env node
+// -*- mode: js -*-
+/*
+ * Copyright (c) 2017, Joyent, Inc.
+ */
+
+var assert = require('assert');
+var crypto = require('crypto');
+var EventEmitter = require('events').EventEmitter;
+var fs = require('fs');
+var path = require('path');
+var strsplit = require('strsplit');
+var util = require('util');
+
+var bunyan = require('bunyan');
+var cmdln = require('cmdln');
+
+var manta = require('../lib');
+
+
+///--- Globals
+
+var sprintf = util.format;
+
+var NAME = path.basename(process.argv[1]);
+var LOG = bunyan.createLogger({
+    name: NAME,
+    level: (process.env.LOG_LEVEL || 'info'),
+    stream: process.stderr
+});
+
+
+///-- Helpers
+
+function createClient(opts) {
+    return (manta.createBinClient(opts));
+}
+
+
+function assertOpts(thisp, subcmd, opts, cb) {
+    if (opts.help) {
+        setImmediate(function () {
+            thisp.do_help('help', {}, [subcmd], cb.bind(thisp));
+        });
+        return (false);
+    }
+
+    manta.cliVersionCheckPrintAndExit(opts);
+
+    try {
+        manta.checkBinEnv(opts);
+        manta.cli_logger(opts, LOG);
+    } catch (e) {
+        setImmediate(cb.bind(thisp, e));
+        return (false);
+    }
+
+    return (true);
+}
+
+
+function printEntry(obj) {
+    console.log(obj.parent + (obj.name ? ('/' + obj.name) : ''));
+}
+
+///--- CLI
+
+function MMpu() {
+    cmdln.Cmdln.call(this, {
+        name: 'mmpu',
+        desc: 'Manages Manta multipart uploads',
+        options: [
+            {
+                names: ['help', 'h'],
+                type: 'bool',
+                help: 'Show this help message and exit.'
+            },
+            {
+                names: ['version'],
+                type: 'bool',
+                help: 'Print version and exit.'
+            },
+            {
+                names: ['completion'],
+                type: 'bool',
+                help: 'Print bash completion code for this command and exit.',
+                hidden: true
+            }
+        ],
+        helpOpts: {
+            includeEnv: true
+        }
+    });
+}
+util.inherits(MMpu, cmdln.Cmdln);
+
+
+MMpu.prototype.init = function (opts, args, callback) {
+    manta.cliVersionCheckPrintAndExit(opts);
+
+    if (opts.completion) {
+        /*
+         * To ensure that all our stdout is written before 'process.exit()'
+         * terminates, we set stdout to blocking. This is an issue when
+         * (a) node v4 or later is used and (b) at least when exec'd by node
+         * as in test/completion.test.js. See
+         * https://gist.github.com/misterdjules/3aa4c77d8f881ffccba3b6e6f0050d03
+         * for some discussion. An alternative would be to exit the the node
+         * process without 'process.exit'.
+         */
+        if (process.stdout._handle &&
+            typeof (process.stdout._handle.setBlocking) === 'function')
+        {
+            process.stdout._handle.setBlocking(true);
+        }
+        console.log(this.bashCompletion());
+        process.exit(0);
+    }
+
+    cmdln.Cmdln.prototype.init.apply(this, arguments);
+};
+
+
+//-- CreateUpload
+
+MMpu.prototype.do_create = function do_create(subcmd, opts, args, cb) {
+    if (!assertOpts(this, subcmd, opts, cb)) {
+        return;
+    }
+
+    if (args.length < 1) {
+        cb(new Error('Object path must be specified'));
+        return;
+    } else if (args.length > 1) {
+        this.do_help('help', {}, [subcmd], cb);
+        return;
+    }
+
+    var objectPath = args[0];
+    var client = createClient(opts);
+    var headers = {};
+
+    (opts.header || []).forEach(function (h) {
+        if (h.indexOf(':') === -1) {
+            cb(new Error('Header must be of the form "[header]: value"'));
+            return;
+        }
+        var tmp = strsplit(h, ':', 2);
+        headers[tmp[0]] = tmp[1].trim();
+    });
+
+    var createUploadOpts = {
+        headers: headers,
+        account: opts.account,
+        md5: opts.md5,
+        copies: opts.copies,
+        size: opts.size
+    };
+
+    client.createUpload(objectPath, createUploadOpts, function (err, obj) {
+        if (err) {
+            cb(err);
+        } else {
+            console.log(obj.id);
+            cb();
+        }
+
+        client.close();
+    });
+};
+
+
+MMpu.prototype.do_create.options = manta.DEFAULT_CLI_OPTIONS.concat([
+    {
+        group: 'mmpu create options'
+    },
+    {
+        names: ['copies', 'c'],
+        type: 'positiveInteger',
+        default: 2,
+        help: 'number of copies to make',
+        helpArg: 'COPIES'
+    },
+    {
+        names: ['size', 's'],
+        type: 'positiveInteger',
+        help: 'object size',
+        helpArg: 'SIZE'
+    },
+    {
+        names: ['header', 'H'],
+        type: 'arrayOfString',
+        help: 'HTTP headers to include',
+        helpArg: 'HEADER'
+    },
+    {
+        names: ['md5', 'm'],
+        type: 'string',
+        help: 'Calculated md5 sum (as a base 64 digest) of the object to be ' +
+                'uploaded. The server will validate this md5 on commit, and ' +
+                'will reject the commit if it does not match the sum ' +
+                'provided on create.',
+        helpArg: 'MD5'
+    }
+]);
+
+
+//TODO: add some examples here.
+MMpu.prototype.do_create.help = [
+    'Initiate a Manta multipart upload for an object.',
+    '',
+    'You can specify several options here that will be transformed into user',
+    'headers. In particular, the "size" option is transformed into a',
+    '"content-length" header, the "copies" option is transformed into',
+    '"durability-level", and the "md5" option is added as a "content-md5"',
+    'header. These options will overwrite the headers specified in the',
+    '"headers" option, if one is specified. If you wish to add additional',
+    'headers, you should add them there.',
+    '',
+    'This tool prints the upload ID after the upload is created. You should',
+    'save this ID to use for future operations on the upload.',
+    '',
+    'Usage:',
+    '    mmpu create [OPTIONS] PATH',
+    '{{options}}',
+    ''
+].join('\n');
+
+
+//-- UploadPart
+
+MMpu.prototype.do_upload = function do_upload(subcmd, opts, args, cb) {
+    if (!assertOpts(this, subcmd, opts, cb)) {
+        return;
+    }
+
+    if (args.length < 2) {
+        cb(new Error('An upload ID and part number are required'));
+        return;
+    } else if (args.length > 2) {
+        this.do_help('help', {}, [subcmd], cb);
+        return;
+    }
+
+    var regex = /^([0-9]|[1-9][0-9]{0,3})$/;
+    var partNum = args[1];
+    if (!regex.test(partNum)) {
+        cb(new Error('Part number must be in the range: [0, 9999]'));
+        return;
+    }
+
+    partNum = parseInt(partNum, 10);
+    var id = args[0];
+    var client = createClient(opts);
+    var filename = opts.file;
+
+    function createFileStream(file, size) {
+        var f_opts = {
+            start: 0,
+            end: size > 0 ? (size - 1) : 0
+         };
+
+        return (fs.createReadStream(file, f_opts));
+    }
+
+    function uploadPart(stream, uploadId, num, options, stats) {
+        stream.pause();
+        client.uploadPart(stream, uploadId, num, options, function (err, res) {
+            if (err) {
+                cb(err);
+            } else {
+                console.log(res.headers.etag);
+                cb();
+            }
+
+            client.close();
+        });
+    }
+
+    var uploadPartOpts = {
+        account: opts.account,
+        headers: opts.headers
+    };
+
+    if (filename) {
+        fs.stat(filename, function (err, stats) {
+            if (!stats.isFile()) {
+                client.close();
+                cb(new Error(filename + ' is not a file'));
+                return;
+            }
+
+            var fstream = createFileStream(filename, stats.size);
+            fstream.on('open', function () {
+                var drawProgBar = !opts.quiet && Boolean(process.stderr.isTTY);
+                if (opts.progress || drawProgBar) {
+                    var bar = new manta.ProgressBar({
+                        filename: opts.file,
+                        size: stats ? stats.size : undefined,
+                        nosize: stats ? false : true,
+                        devtty: opts.progress
+                    });
+                    fstream.on('data', function (data) {
+                        bar.advance(data.length);
+                    });
+                    fstream.once('end', function () {
+                        bar.end();
+                    });
+                }
+
+                uploadPart(fstream, id, partNum, uploadPartOpts, stats);
+            });
+       });
+    } else {
+        uploadPart(process.stdin, id, partNum, uploadPartOpts);
+    }
+};
+
+
+MMpu.prototype.do_upload.options = manta.DEFAULT_CLI_OPTIONS.concat([
+    {
+        group: 'mmpu upload options'
+    },
+    {
+        names: ['file', 'f'],
+        type: 'string',
+        help: 'local file to upload',
+        helpArg: 'FILE',
+        completionType: 'file'
+    },
+    {
+        names: ['quiet', 'q'],
+        type: 'bool',
+        help: 'disable the progress bar'
+    },
+    {
+        names: ['progress'],
+        type: 'bool',
+        help: 'force the progress bar to draw, even when stderr redirected'
+    }
+]);
+
+MMpu.prototype.do_upload.help = [
+    'Upload a part to a multipart upload.',
+    '',
+    'Usage:',
+    '    mmpu upload [OPTIONS] UPLOAD_ID PART_NUMBER',
+    '    mmpu upload [OPTIONS] UPLOAD_ID PART_NUMBER -f FILE',
+    '',
+    '{{options}}'
+].join('\n');
+
+
+
+//-- Abort
+
+MMpu.prototype.do_abort = function do_abort(subcmd, opts, args, cb) {
+    if (!assertOpts(this, subcmd, opts, cb)) {
+        return;
+    }
+
+    if (args.length < 1) {
+        cb(new Error('An upload ID is required'));
+        return;
+    } else if (args.length > 1) {
+        this.do_help('help', {}, [subcmd], cb);
+        return;
+    }
+
+    var id = args[0];
+    var client = createClient(opts);
+
+    var abortUploadOpts = {
+        account: opts.account
+    };
+
+    client.abortUpload(id, abortUploadOpts, function (err) {
+        if (err) {
+            cb(err);
+        } else {
+            cb();
+        }
+
+        client.close();
+    });
+};
+
+MMpu.prototype.do_abort.options = manta.DEFAULT_CLI_OPTIONS;
+
+MMpu.prototype.do_abort.help = [
+    'Abort a multipart upload.',
+    '',
+    'Usage:',
+    '    mmpu abort [OPTIONS] UPLOAD_ID',
+    '',
+    '{{options}}'
+].join('\n');
+
+
+//-- Commit
+
+MMpu.prototype.do_commit = function do_commit(subcmd, opts, args, cb) {
+    if (!assertOpts(this, subcmd, opts, cb)) {
+        return;
+    }
+
+    if (args.length < 1) {
+        cb(new Error('An upload ID is required'));
+        return;
+    }
+
+    var parts = [];
+    var id = args[0];
+    for (var i = 1; i < args.length; i++) {
+        parts[i - 1] = args[i];
+    }
+
+    var client = createClient(opts);
+
+    var commitUploadOpts = {
+        account: opts.account
+    };
+
+    client.commitUpload(id, parts, commitUploadOpts, function (err) {
+        if (err) {
+            cb(err);
+        } else {
+            cb();
+        }
+
+        client.close();
+    });
+};
+
+
+MMpu.prototype.do_commit.help = [
+    'Commit a multipart upload.',
+    '',
+    'The arguments to this command are first the upload ID, followed by all',
+    'of the etags of the parts you are committing for the upload, ordered by',
+    'part number.',
+    '',
+    'For example, suppose you have an upload with the id',
+    'be5f05d6-7daa-6869-d19b-c1f7fbcf6d8d and the following etags:',
+    '   part 0: f14a41dc-7d28-6fdb-e07c-d54c0adcdf35',
+    '   part 1: e2893e52-9ba3-64fe-eec9-b4663835ad01',
+    '   part 2: 73b44fa7-fbd3-efea-b7d0-cd8098e1d928',
+    '',
+    'To commit this upload, you would run:',
+    '   $ mmpu commit be5f05d6-7daa-6869-d19b-c1f7fbcf6d8d \\',
+    '        f14a41dc-7d28-6fdb-e07c-d54c0adcdf35 \\',
+    '        e2893e52-9ba3-64fe-eec9-b4663835ad01 \\',
+    '        73b44fa7-fbd3-efea-b7d0-cd8098e1d928',
+    '',
+    'Note that the multipart upload API does not require that you commit',
+    'all parts that have been uploaded, as long as you commit zero or more',
+    'consecutive parts and meet part size constraints. So the following',
+    'commands for the above upload are also valid but would create a different',
+    'object than the first example:',
+    '',
+    '   $ mmpu commit be5f05d6-7daa-6869-d19b-c1f7fbcf6d8d',
+    '',
+    '   $ mmpu commit be5f05d6-7daa-6869-d19b-c1f7fbcf6d8d \\',
+    '        f14a41dc-7d28-6fdb-e07c-d54c0adcdf35',
+    '        e2893e52-9ba3-64fe-eec9-b4663835ad01',
+    '',
+    '   $ mmpu commit be5f05d6-7daa-6869-d19b-c1f7fbcf6d8d \\',
+    '        f14a41dc-7d28-6fdb-e07c-d54c0adcdf35 \\',
+    '        e2893e52-9ba3-64fe-eec9-b4663835ad01',
+    '',
+    'Usage:',
+    '    mmpu commit [OPTIONS] UPLOAD_ID [ETAG_0] [ETAG_1] ...',
+    ''
+].join('\n');
+
+
+//-- GetMPU
+
+MMpu.prototype.do_get = function do_get(subcmd, opts, args, cb) {
+    if (!assertOpts(this, subcmd, opts, cb)) {
+        return;
+    }
+
+    if (args.length < 1) {
+        cb(new Error('An upload ID is required'));
+        return;
+    } else if (args.length > 1) {
+        this.do_help('help', {}, [subcmd], cb);
+        return;
+    }
+
+    var id = args[0];
+    var client = createClient(opts);
+
+    var getUploadOpts = {
+        account: opts.account
+    };
+
+    client.getUpload(id, getUploadOpts, function (err, upload) {
+        if (err) {
+            cb(err);
+        } else {
+            console.log(JSON.stringify(upload, null, 2));
+            cb();
+        }
+
+        client.close();
+    });
+};
+
+
+MMpu.prototype.do_get.options = manta.DEFAULT_CLI_OPTIONS;
+
+
+MMpu.prototype.do_get.help = [
+    'Fetch information about a multipart upload.',
+    '',
+    'Usage:',
+    '    mmpu get [OPTIONS] UPLOAD_ID',
+    '',
+    '{{options}}'
+].join('\n');
+
+
+//-- ListMPU
+
+MMpu.prototype.do_list = function do_list(subcmd, opts, args, cb) {
+    if (!assertOpts(this, subcmd, opts, cb)) {
+        return;
+    }
+
+    if (args.length > 0) {
+        this.do_help('help', {}, [subcmd], cb);
+        return;
+    }
+
+    var url = '/' + opts.account + '/uploads';
+    var client = createClient(opts);
+
+    var ftwOpts = {
+        mindepth: 1,
+        maxdepth: 2
+    };
+
+    if (opts.includeParts) {
+        ftwOpts.maxdepth = 3;
+    }
+
+    client.ftw(url, ftwOpts, function (err, res) {
+        if (err) {
+            client.close();
+            cb(err);
+        } else {
+            res.on('entry', printEntry);
+            res.on('end', function () {
+                client.close();
+                cb();
+            });
+        }
+    });
+};
+
+
+MMpu.prototype.do_list.options = manta.DEFAULT_CLI_OPTIONS.concat([
+    {
+        group: 'mmpu list options'
+    },
+    {
+        names: ['includeParts', 'p'],
+        type: 'bool',
+        default: false,
+        help: 'list uploaded parts in addition to uploads',
+        helpArg: 'INCLUDE_PARTS'
+    }
+]);
+
+
+MMpu.prototype.do_list.help = [
+    'Lists all uploads for $MANTA_USER.',
+    '',
+    'Usage:',
+    '    mmpu list [OPTIONS]',
+    '',
+    '{{options}}'
+].join('\n');
+
+
+
+//-- ListParts
+
+MMpu.prototype.do_parts = function do_parts(subcmd, opts, args, cb) {
+    if (!assertOpts(this, subcmd, opts, cb)) {
+        return;
+    }
+
+    if (args.length < 1 || args[0].length < 2) {
+        cb(new Error('A valid upload ID is required'));
+        return;
+    } else if (args.length > 2) {
+        this.do_help('help', {}, [subcmd], cb);
+        return;
+    }
+
+    var id = args[0];
+    var prefix = id.charAt(0);
+    var url = '/' + opts.account + '/uploads/' + prefix + '/' + id;
+    var client = createClient(opts);
+
+    var ftwOpts = {
+        minDepth: 0,
+        maxDepth: 1
+    };
+
+    client.ftw(url, ftwOpts, function (err, res) {
+        if (err) {
+            client.close();
+            cb(err);
+        } else {
+            res.on('entry', printEntry);
+            res.on('end', function () {
+                client.close();
+                cb();
+            });
+        }
+    });
+};
+
+
+MMpu.prototype.do_parts.options = manta.DEFAULT_CLI_OPTIONS;
+
+
+MMpu.prototype.do_parts.help = [
+    'Lists all parts that have been uploaded to a multipart upload.',
+    '',
+    'Usage:',
+    '    mmpu parts [OPTIONS] UPLOAD_ID',
+    ''
+].join('\n');
+
+
+///--- Mainline
+
+if (require.main === module) {
+    var cli = new MMpu();
+    cli.showErrStack = false;
+    cmdln.main(cli, {
+        showNoCommandErr: false
+    });
+}
