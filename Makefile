@@ -65,22 +65,26 @@ test: deps
 # This requires a "test/node.paths" file that looks something like
 # "test/node.paths.example".
 #
+# Note: 'test4' is here last on the assumption that Node v4 is the most common
+# current node version for a developer, so a 'make testall' will leave one
+# with a node_modules/ for that version.
+#
 .PHONY: testall
-testall: test6 test5 test4 test012 test010
+testall: test7 test6 test012 test010 test4
+
+.PHONY: test7
+test7:
+	@([[ -f test/node.paths ]] || (echo "no test/node.paths" && exit 1) \
+		&& echo "# Test with node `$(shell awk '/^7/ { print $$2 }' test/node.paths)/node --version`" \
+		&& PATH="$(shell awk '/^7/ { print $$2 }' test/node.paths):$(PATH)" \
+			NPM_CONFIG_LOGLEVEL=silent NPM_CONFIG_PROGRESS=false \
+			make clean test)
 
 .PHONY: test6
 test6:
 	@([[ -f test/node.paths ]] || (echo "no test/node.paths" && exit 1) \
 		&& echo "# Test with node `$(shell awk '/^6/ { print $$2 }' test/node.paths)/node --version`" \
 		&& PATH="$(shell awk '/^6/ { print $$2 }' test/node.paths):$(PATH)" \
-			NPM_CONFIG_LOGLEVEL=silent NPM_CONFIG_PROGRESS=false \
-			make clean test)
-
-.PHONY: test5
-test5:
-	@([[ -f test/node.paths ]] || (echo "no test/node.paths" && exit 1) \
-		&& echo "# Test with node `$(shell awk '/^5/ { print $$2 }' test/node.paths)/node --version`" \
-		&& PATH="$(shell awk '/^5/ { print $$2 }' test/node.paths):$(PATH)" \
 			NPM_CONFIG_LOGLEVEL=silent NPM_CONFIG_PROGRESS=false \
 			make clean test)
 
