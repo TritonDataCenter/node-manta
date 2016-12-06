@@ -76,6 +76,7 @@ function parseOptions() {
         manta.cli_usage(OPTIONS_PARSER, false, 'path...');
 
     manta.cliVersionCheckPrintAndExit(opts);
+    manta.cliCompletionCheckPrintAndExit(opts, OPTIONS_PARSER, NAME, ['mdir']);
 
     opts.headers = {};
     (opts.header || []).forEach(function (h) {

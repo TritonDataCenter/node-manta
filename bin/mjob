@@ -443,6 +443,12 @@ function MJob() {
                 names: ['version'],
                 type: 'bool',
                 help: 'Print version and exit.'
+            },
+            {
+                names: ['completion'],
+                type: 'bool',
+                help: 'Print bash completion code for this command and exit.',
+                hidden: true
             }
         ],
         helpOpts: {
@@ -454,6 +460,26 @@ util.inherits(MJob, cmdln.Cmdln);
 
 MJob.prototype.init = function (opts, args, callback) {
     manta.cliVersionCheckPrintAndExit(opts);
+
+    if (opts.completion) {
+        /*
+         * To ensure that all our stdout is written before 'process.exit()'
+         * terminates, we set stdout to blocking. This is an issue when
+         * (a) node v4 or later is used and (b) at least when exec'd by node
+         * as in test/completion.test.js. See
+         * https://gist.github.com/misterdjules/3aa4c77d8f881ffccba3b6e6f0050d03
+         * for some discussion. An alternative would be to exit the the node
+         * process without 'process.exit'.
+         */
+        if (process.stdout._handle &&
+            typeof (process.stdout._handle.setBlocking) === 'function')
+        {
+            process.stdout._handle.setBlocking(true);
+        }
+        console.log(this.bashCompletion());
+        process.exit(0);
+    }
+
     cmdln.Cmdln.prototype.init.apply(this, arguments);
 };
 

@@ -71,6 +71,7 @@ function parseOptions() {
         manta.cli_usage(OPTIONS_PARSER, false, 'path...');
 
     manta.cliVersionCheckPrintAndExit(opts);
+    manta.cliCompletionCheckPrintAndExit(opts, OPTIONS_PARSER, NAME, ['mpath']);
 
     if (opts._args.length < 1)
         manta.cli_usage(OPTIONS_PARSER, 'path required', 'path...');

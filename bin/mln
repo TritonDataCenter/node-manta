@@ -66,6 +66,8 @@ function parseOptions() {
         manta.cli_usage(OPTIONS_PARSER, false, 'source dest');
 
     manta.cliVersionCheckPrintAndExit(opts);
+    manta.cliCompletionCheckPrintAndExit(opts, OPTIONS_PARSER, NAME,
+        ['mpath', 'mpath', 'none']);
 
     if (opts._args.length < 1)
         manta.cli_usage(OPTIONS_PARSER, 'source required', 'source dest');

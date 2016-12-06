@@ -10,6 +10,28 @@ project.  See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines.
 
     $ npm install manta -g
 
+
+### Bash completion
+
+Optionally install Bash completion. This is done by `source`ing the
+"share/manta.completion" file that is installed with the tools. If you
+installed with `npm install manta -g` as above, then that is:
+
+```bash
+source $(npm prefix -g)/lib/node_modules/manta/share/manta.completion
+```
+
+Put that (or the equivalent) in your "~/.bashrc" file to make it permanent.
+
+You can verify that completions are working by typing the `TAB` key with
+the following:
+
+    $ mls --<TAB>
+    --account   --insecure  --long      --role      --type      --verbose
+    --fulljson  --json      --marker    --subuser   --url       --version
+    --help      --keyId     --reverse   --time      --user
+
+
 # Usage
 
 First setup your environment to match your Joyent Manta account:

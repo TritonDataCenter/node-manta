@@ -2,6 +2,9 @@
 
 ## not yet released
 
+- joyent/node-manta#214 Add basic Bash completion for the `m*` tools.
+  "Basic" here means options and mjob subcommands are completed, not
+  yet support for completing manta paths.
 - joyent/node-manta#288 mfind of file blows assertion: "ent (object) is required"
 
 ## 4.0.0

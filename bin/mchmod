@@ -79,6 +79,7 @@ function parseOptions() {
     }
 
     manta.cliVersionCheckPrintAndExit(opts);
+    manta.cliCompletionCheckPrintAndExit(opts, OPTIONS_PARSER, NAME, ['mpath']);
 
     var mchmodOpts = parseMchmodOptions(opts._args);
     opts.mchmodOperation = mchmodOpts.operation;

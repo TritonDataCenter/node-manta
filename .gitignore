@@ -10,3 +10,4 @@ smf/manifests/bapi.xml
 /manta-*.tgz
 /test/node.paths
 /npm-debug.log
+/share/manta.completion

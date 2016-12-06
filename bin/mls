@@ -99,6 +99,7 @@ function parseOptions() {
         manta.cli_usage(OPTIONS_PARSER, false, '[PATH]...');
 
     manta.cliVersionCheckPrintAndExit(opts);
+    manta.cliCompletionCheckPrintAndExit(opts, OPTIONS_PARSER, NAME, ['mpath']);
 
     opts.paths = [];
     if (opts._args.length < 1) {

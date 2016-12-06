@@ -1,5 +1,5 @@
 #
-# Copyright 2015 Joyent, Inc.
+# Copyright 2016 Joyent, Inc.
 #
 
 #
@@ -34,11 +34,14 @@ MAN_OUTDIR      := man/man1
 MAN_OUTPAGES=$(MAN_PAGES:%.md=$(MAN_OUTDIR)/%.1)
 MAN_ROOT        := docs/man
 
+COMPLETION_CMDS := $(shell find bin -type f)
+COMPLETION_FILE=share/manta.completion
+
 #
 # Repo-specific targets
 #
 .PHONY: all
-all: $(SMF_MANIFESTS) deps
+all: $(SMF_MANIFESTS) deps completion
 
 .PHONY: deps
 deps: | $(REPO_DEPS) $(NPM_EXEC)
@@ -116,6 +119,24 @@ $(MAN_OUTDIR)/%.1: $(MAN_ROOT)/%.md | $(MAN_OUTDIR)
 manpages: $(MAN_OUTPAGES)
 
 
+#
+# Each m* tool has a '--completion' option to emit Bash completion code. We
+# gather all those to a share/manta.completion file for users to source.
+#
+
+.PHONY: completion
+completion: $(COMPLETION_FILE)
+
+$(COMPLETION_FILE): $(COMPLETION_CMDS) lib/create_client.js
+	echo "# node-manta tools v$(shell cat package.json | json version) completion" >$@
+	echo $(COMPLETION_CMDS) | xargs -n1 basename | sed -E 's/(.*)/#   \1(1)/' >>$@
+	echo "" >>$@
+	for cmd in $(COMPLETION_CMDS); do \
+		$$cmd --completion | grep -v '^#' >>$@; \
+	done
+
+CLEAN_FILES += $(COMPLETION_FILE)
+
 # Ensure CHANGES.md and package.json have the same version.
 .PHONY: versioncheck
 versioncheck:
@@ -125,7 +146,7 @@ versioncheck:
 check:: versioncheck
 
 .PHONY: cutarelease
-cutarelease: versioncheck
+cutarelease: $(COMPLETION_FILE) versioncheck
 	[[ -z `git status --short` ]]  # If this fails, the working dir is dirty.
 	@which json 2>/dev/null 1>/dev/null && \
 	    ver=$(shell json -f package.json version) && \
