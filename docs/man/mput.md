@@ -53,6 +53,22 @@ OPTIONS
 `-c, --copies file`
   Create COPIES copies as a replication factor (default 2).
 
+`-e, --encrypt`
+  Encrypt the file using the provided key, key ID, and algorithm. Any encrypted
+  file will be stored with a m-encrypt-type header set to client/1.
+
+`--encrypt-cipher=CIPHER`
+  Encryption algorithm to use.
+
+`--encrypt-hmac=HMAC`
+  HMAC algorithm to use for none authentication ciphers (default HmacSHA256).
+
+`--encrypt-key=KEY`
+  Base64 encoded key used to encrypt the file.
+
+`--encrypt-key-id=ID`
+  Value to uniquely identify the key used for encryption.
+
 `-f, --file file`
   Create contents of object from file.
 
@@ -96,6 +112,15 @@ OPTIONS
 ENVIRONMENT
 -----------
 
+`MANTA_ENCRYPT_CIPHER`
+  In place of `--encrypt-cipher`
+
+`MANTA_ENCRYPT_KEY`
+  In place of `--encrypt-key`
+
+`MANTA_ENCRYPT_KEY_ID`
+  In place of `--encrypt-key-id`
+
 `MANTA_USER`
   In place of `-a, --account`
 
@@ -116,6 +141,58 @@ ENVIRONMENT
 
 The shortcut `~~` is equivalent to `/:login`
 where `:login` is the account login name.
+
+CIPHER STRINGS
+--------------
+
+Below is a list of supported cipher strings to use in the `--encrypt-cipher`
+option. Each uses a 16 byte block size and a 16 byte initialization vector.
+The strings are case-insensitive as well.
+
+`AES128/GCM/NoPadding`
+  16 byte key size
+
+`AES192/GCM/NoPadding`
+  24 byte key size
+
+`AES256/GCM/NoPadding`
+  32 byte key size
+
+`AES128/CTR/NoPadding`
+  16 byte key size
+
+`AES192/CTR/NoPadding`
+  24 byte key size
+
+`AES256/CTR/NoPadding`
+  32 byte key size
+
+`AES128/CBC/PKCS5Padding`
+  16 byte key size
+
+`AES192/CBC/PKCS5Padding`
+  24 byte key size
+
+`AES256/CBC/PKCS5Padding`
+  32 byte key size
+
+HMAC STRINGS
+------------
+
+Below is a list of supported HMAC strings to use when using not using a GCM
+algorithm.
+
+`HmacMD5`
+  MD5 digest of 16 bytes
+
+`HmacSHA1`
+  SHA1 digest of 20 bytes
+
+`HmacSHA256`
+  SHA256 digest of 32 bytes
+
+`HmacSHA512`
+  SHA512 digest of 64 bytes
 
 DIAGNOSTICS
 -----------

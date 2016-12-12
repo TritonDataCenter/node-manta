@@ -87,7 +87,7 @@ A full set of commands for interacting with Manta is in `bin`.
 # More documentation
 
 Docs can be found here:
-[http://apidocs.joyent.com/manta/](http://apidocs.joyent.com/manta/)
+[https://apidocs.joyent.com/manta/](https://apidocs.joyent.com/manta/)
 
 
 # Testing

@@ -30,6 +30,45 @@ var LOG = bunyan.createLogger({
 var OPTIONS_PARSER = dashdash.createParser({
     options: manta.DEFAULT_CLI_OPTIONS.concat([
         {
+            group: 'Client-side encryption options'
+        },
+        {
+            names: ['encrypt', 'e'],
+            type: 'bool',
+            help: 'Encrypt the file before storing it in Manta, using ' +
+            '--encrypt-* options.'
+        },
+        {
+            names: ['encrypt-cipher'],
+            type: 'string',
+            env: 'MANTA_ENCRYPT_CIPHER',
+            helpArg: 'CIPHER',
+            help: 'Algorithm to use for encrypting file.'
+        },
+        {
+            names: ['encrypt-hmac'],
+            type: 'string',
+            env: 'MANTA_ENCRYPT_HMAC',
+            helpArg: 'HMAC',
+            help: 'HMAC type to use when encrypting a file. Types are ' +
+                'HmacMD5, HmacSHA1, HmacSHA256, and HmacSHA512'
+        },
+        {
+            names: ['encrypt-key'],
+            type: 'string',
+            env: 'MANTA_ENCRYPT_KEY',
+            helpArg: 'KEY',
+            help: 'Base64 secret key for encrypting content.'
+        },
+        {
+            names: ['encrypt-key-id'],
+            type: 'string',
+            env: 'MANTA_ENCRYPT_KEY_ID',
+            helpArg: 'KEY_ID',
+            help: 'Key identifier. This can be used for locating the key ' +
+                'for decryption.'
+        },
+        {
             group: NAME + ' options'
         },
         {
@@ -146,6 +185,21 @@ function parseOptions() {
         opts['role-tag'] = opts['role-tag'][0].split(/\s*,\s*/);
     }
 
+    if (opts.encrypt) {
+        if (!opts.encrypt_key || !opts.encrypt_key_id || !opts.encrypt_cipher) {
+            manta.cli_usage(OPTIONS_PARSER, 'encrypt requires --encrypt-key, ' +
+              '--encrypt-key-id, and --encrypt-cipher or related ' +
+              'environment variables');
+        }
+
+        opts.encrypt = {
+            key: (new Buffer(opts.encrypt_key, 'base64').toString()),
+            keyId: opts.encrypt_key_id,
+            cipher: opts.encrypt_cipher,
+            hmacType: opts.encrypt_hmac
+        };
+    }
+
     return (opts);
 }
 
@@ -244,7 +298,7 @@ function printEntry(obj) {
                 };
                 var fstream = fs.createReadStream(options.file, f_opts);
                 fstream.pause();
-                fstream.on('open', function () {
+                fstream.once('open', function () {
                     put(fstream, stats, cb);
                 });
             }

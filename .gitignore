@@ -11,3 +11,4 @@ smf/manifests/bapi.xml
 /test/node.paths
 /npm-debug.log
 /share/manta.completion
+.DS_Store

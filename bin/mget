@@ -8,6 +8,7 @@ var fs = require('fs');
 var http = require('http');
 var path = require('path-platform');
 var url = require('url');
+var util = require('util');
 
 var bunyan = require('bunyan');
 var dashdash = require('dashdash');
@@ -25,8 +26,46 @@ var LOG = bunyan.createLogger({
     stream: process.stderr
 });
 
+
+var ENCRYPT_AUTH_MODES = ['MandatoryAuthentication', 'OptionalAuthentication'];
+
+dashdash.addOptionType({
+    name: 'encryptAuthMode',
+    takesArg: true,
+    helpArg: 'MODE',
+    parseArg: function parseEncryptAuthMode(option, optstr, arg) {
+        manta.encryptValidateAuthMode(arg);
+        return (arg);
+    }
+});
+
 var OPTIONS_PARSER = dashdash.createParser({
     options: manta.DEFAULT_CLI_OPTIONS.concat([
+        {
+            group: 'Client-side encryption options'
+        },
+        {
+            names: ['decrypt', 'e'],
+            type: 'bool',
+            help: 'Expect the object to be encrypted, and decrypt it.'
+        },
+        {
+            names: ['encrypt-key'],
+            type: 'string',
+            env: 'MANTA_ENCRYPT_KEY',
+            helpArg: 'KEY',
+            help: 'Base64 secret key for decrypting remote encrypted objects.'
+        },
+        {
+            names: ['encrypt-auth-mode'],
+            type: 'encryptAuthMode',
+            env: 'MANTA_ENCRYPT_AUTH_MODE',
+            helpArg: 'MODE',
+            help: 'Whether decryption will enforce authentication '
+                + '("MandatoryAuthentication", the default) or allow some '
+                + 'operations, e.g. range requests, which cannot enforce '
+                + 'authentication ("OptionalAuthentication")'
+        },
         {
             group: NAME + ' options'
         },
@@ -55,6 +94,11 @@ var OPTIONS_PARSER = dashdash.createParser({
             names: ['remote-name', 'O'],
             type: 'bool',
             help: 'write output to a file using remote object name as filename'
+        },
+        {
+            names: ['include'],
+            type: 'bool',
+            help: 'Include the HTTP-header in the output.'
         }
     ])
 });
@@ -114,14 +158,35 @@ function parseOptions() {
         opts.headers[tmp[0]] = tmp[1].trim();
     });
 
+    if (opts.decrypt) {
+        if (!opts.encrypt_key) {
+            manta.cli_usage(OPTIONS_PARSER, 'decryption requires ' +
+                '--encrypt-key or the MANTA_ENCRYPT_KEY environment variable');
+        }
+        var base64Key = new Buffer(opts.encrypt_key, 'base64');
+        opts.encrypt = {
+            getKey: function (keyId, cb) {
+                cb(null, base64Key);
+            },
+            authMode: opts.encrypt_auth_mode
+        };
+    }
+
     return (opts);
 }
 
 
-function printEntry(obj) {
-    console.log('%j', obj);
+// The same as `printEntry` from minfo.
+function printHeaders(res) {
+    console.log('HTTP/%s %s %s',
+                res.httpVersion,
+                res.statusCode,
+                http.STATUS_CODES[res.statusCode]);
+    Object.keys(res.headers).forEach(function (k) {
+        console.log('%s: %s', k, res.headers[k]);
+    });
+    console.log();
 }
-
 
 
 ///--- Mainline
@@ -143,6 +208,10 @@ function printEntry(obj) {
         client.get(p, function (err, stream, res) {
             ifError(err);
 
+            if (opts.include) {
+                printHeaders(res);
+            }
+
             var bar;
             var src = stream;
             if (opts.progress || drawProgressBar) {
@@ -161,6 +230,10 @@ function printEntry(obj) {
                 bar = new manta.ProgressBar(baropts);
                 src = stream.pipe(bar.stream());
             }
+
+            src.on('error', function (srcErr) {
+                ifError(srcErr);
+            });
 
             src.pipe(out);
 

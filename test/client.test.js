@@ -20,11 +20,15 @@ var manta = require('../lib');
 
 var log = logging.createLogger();
 
+// Only GCM encryption supported after node v1.0.0
+var NODE_MAJOR = parseInt(process.versions.node.split('.')[0], 10);
+
 var JOB;
 var ROOT = '/' + (process.env.MANTA_USER || 'admin') + '/stor';
 var PUBLIC = '/' + (process.env.MANTA_USER || 'admin') + '/public';
 var SUBDIR1 = ROOT + '/node-manta-test-client-' + libuuid.v4().split('-')[0];
 var SUBDIR2 = SUBDIR1 + '/subdir2-' + libuuid.v4().split('-')[0]; // directory
+var SUBDIRCSE = ROOT + '/node-manta-test-cse-' + libuuid.v4().split('-')[0];
 var CHILD1 = SUBDIR1 + '/child1-' + libuuid.v4().split('-')[0]; // object
 var CHILD2 = SUBDIR2 + '/child2-' + libuuid.v4().split('-')[0]; // link
 var NOENTSUB1 = SUBDIR1 + '/a/b/c';
@@ -33,6 +37,7 @@ var SPECIALOBJ1 = SUBDIR1 + '/' + 'before-\r-after';
 
 var SUBDIR1_NOBJECTS = 1;
 var SUBDIR1_NDIRECTORIES = 2;
+var CSE_KEY = 'FFFFFFFBD96783C6C91E222211112222';
 
 
 /*
@@ -52,6 +57,9 @@ module.exports.setUp = function (cb) {
     var self = this;
     var url = process.env.MANTA_URL || 'http://localhost:8080';
     var user = process.env.MANTA_USER || 'admin';
+    function getKey(keyId, next) {
+        next(null, CSE_KEY);
+    }
 
     function createClient(signer) {
         self.client = manta.createClient({
@@ -61,7 +69,10 @@ module.exports.setUp = function (cb) {
                                     false : true),
             sign: signer,
             url: url,
-            user: user
+            user: user,
+            encrypt: {
+                getKey: getKey
+            }
         });
 
         cb();
@@ -129,6 +140,13 @@ test('mkdir (sub)', function (t) {
     });
 });
 
+test('mkdir (cse)', function (t) {
+    this.client.mkdir(SUBDIRCSE, function (err) {
+        t.ifError(err);
+        t.done();
+    });
+});
+
 
 test('put', function (t) {
     var text = 'The lazy brown fox \nsomething \nsomething foo';
@@ -154,6 +172,59 @@ test('#231: put (special characters)', function (t) {
 
     this.client.put(SPECIALOBJ1, stream, {size: size}, function (err) {
         t.ifError(err);
+        t.done();
+    });
+
+    process.nextTick(function () {
+        stream.write(text);
+        stream.end();
+    });
+});
+
+test('put (encrypt stream)', function (t) {
+    var text = 'The lazy brown fox \nsomething \nsomething foo';
+    var stream = new MemoryStream();
+    var fpath = SUBDIRCSE + '/encrypted';
+    var options = {
+        encrypt: {
+            key: CSE_KEY,
+            keyId: 'dev/test',
+            cipher: 'AES256/CTR/NoPadding'
+        }
+    };
+
+    this.client.put(fpath, stream, options, function (err, res) {
+        t.ifError(err);
+        t.ok(res.req._headers['m-encrypt-key-id']);
+        t.done();
+    });
+
+    process.nextTick(function () {
+        stream.write(text);
+        stream.end();
+    });
+});
+
+test('put (encrypt stream and metadata)', function (t) {
+    var text = 'The lazy brown fox \nsomething \nsomething foo';
+    var stream = new MemoryStream();
+    var fpath = SUBDIRCSE + '/metadata';
+    var options = {
+        encrypt: {
+            key: CSE_KEY,
+            keyId: 'dev/test',
+            cipher: 'AES256/CTR/NoPadding'
+        },
+        headers: {
+            'e-hello1': 'world1',
+            'e-hello2': 'world2'
+        }
+    };
+
+    this.client.put(fpath, stream, options, function (err, res) {
+        t.ifError(err);
+        t.ok(res.req._headers['m-encrypt-key-id']);
+        t.ok(res.req._headers['m-encrypt-metadata']);
         t.done();
     });
 
@@ -195,6 +266,229 @@ test('#231: get (special characters)', function (t) {
         });
     });
 });
+
+test('get (range)', function (t) {
+    this.client.get(SPECIALOBJ1, { headers: { range: 'bytes=0-1' } },
+        function (err, stream) {
+
+        t.ifError(err);
+
+        var data = '';
+        stream.setEncoding('utf8');
+        stream.on('data', function (chunk) {
+            data += chunk;
+        });
+        stream.on('end', function (chunk) {
+            t.equal(data, 'my');
+            t.done();
+        });
+    });
+});
+
+test('get (decrypt stream & metadata)', function (t) {
+    var self = this;
+    var text = 'The lazy brown fox \nsomething \nsomething foo';
+    var stream = new MemoryStream();
+    var fpath = SUBDIRCSE + '/todecrypt-metadata';
+    var key = CSE_KEY;
+    var options = {
+        encrypt: {
+            key: key,
+            keyId: 'dev/test',
+            cipher: 'AES256/CTR/NoPadding'
+        },
+        headers: {
+            'e-hello1': 'world1',
+            'e-hello2': 'world2'
+        }
+    };
+
+    self.client.put(fpath, stream, options, function (putErr, putRes) {
+        t.ifError(putErr);
+        t.ok(putRes.req._headers['m-encrypt-key-id']);
+        setTimeout(function () {
+          self.client.get(fpath, function (getErr, decrypted, getRes) {
+              t.ifError(getErr);
+
+              var result = '';
+              decrypted.on('data', function (data) {
+                  result += data.toString();
+              });
+
+              decrypted.on('error', function (decErr) {
+                  t.ifError(decErr);
+              });
+
+              decrypted.once('end', function () {
+                  t.ok(result === text);
+                  t.ok(getRes.headers['e-hello1'] === 'world1');
+                  t.ok(getRes.headers['e-hello2'] === 'world2');
+                  t.done();
+              });
+          });
+        }, 10);
+    });
+
+    process.nextTick(function () {
+        stream.write(text);
+        stream.end();
+    });
+});
+
+
+test('get (decrypt stream with range)', function (t) {
+    var self = this;
+    var text = 'The lazy brown fox \nsomething \nsomething foo';
+    var stream = new MemoryStream();
+    var fpath = SUBDIRCSE + '/todecrypt-range';
+    var key = CSE_KEY;
+    var options = {
+        encrypt: {
+            key: key,
+            keyId: 'dev/test',
+            cipher: 'AES256/CTR/NoPadding'
+        },
+        headers: {
+            'e-hello1': 'world1',
+            'e-hello2': 'world2'
+        }
+    };
+
+    self.client.put(fpath, stream, options, function (putErr, putRes) {
+
+        t.ifError(putErr);
+        t.ok(putRes.req._headers['m-encrypt-key-id']);
+        setTimeout(function () {
+          self.client.get(fpath, { headers: { range: 'bytes=0-10' } },
+              function (getErr, decrypted, getRes) {
+
+              t.ifError(getErr);
+
+              var result = '';
+              getRes.on('data', function (data) {
+                  result += data.toString();
+              });
+
+              decrypted.on('error', function (decErr) {
+                  t.ifError(decErr);
+              });
+
+              getRes.once('end', function () {
+                  t.ok(result);
+                  t.ok(getRes.headers['e-hello1'] === 'world1');
+                  t.ok(getRes.headers['e-hello2'] === 'world2');
+                  t.done();
+              });
+          });
+        }, 10);
+    });
+
+    process.nextTick(function () {
+        stream.write(text);
+        stream.end();
+    });
+});
+
+
+test('get (decrypt stream) by overriding getKey()', function (t) {
+    var self = this;
+    var text = 'The lazy brown fox';
+    var stream = new MemoryStream();
+    var fpath = SUBDIRCSE + '/todecrypt_getKey';
+    var key = 'FFFFFFFBD96783C6C91E222211111111';
+    var options = {
+        encrypt: {
+            key: key,
+            keyId: 'dev/test',
+            cipher: 'AES256/CTR/NoPadding'
+        }
+    };
+
+    function getKey(keyId, next) {
+        next(null, key);
+    }
+
+    self.client.put(fpath, stream, options, function (putErr, putRes) {
+        t.ifError(putErr);
+        t.ok(putRes.req._headers['m-encrypt-key-id']);
+        setTimeout(function () {
+          self.client.get(fpath, {encrypt: {getKey: getKey}},
+              function (getErr, decrypted, getRes) {
+
+              t.ifError(getErr);
+
+              var result = '';
+              decrypted.on('data', function (data) {
+                result += data.toString();
+              });
+
+              decrypted.once('end', function () {
+                t.ok(result === text);
+                t.done();
+              });
+          });
+        }, 10);
+    });
+
+    process.nextTick(function () {
+        stream.write(text);
+        stream.end();
+    });
+});
+
+if (NODE_MAJOR) {
+    test('get (decrypt stream) with AEAD mode', function (t) {
+        var self = this;
+        var text = 'The lazy brown fox \nsomething \nsomething foo';
+        var stream = new MemoryStream();
+        var fpath = SUBDIRCSE + '/todecrypt-aead';
+        var key = CSE_KEY;
+        var options = {
+            encrypt: {
+                key: key,
+                keyId: 'dev/test',
+                cipher: 'AES256/GCM/NoPadding'
+            },
+            headers: {
+                'e-hello1': 'world1',
+                'e-hello2': 'world2',
+                'e-hello3': 'world3'
+            }
+        };
+
+        self.client.put(fpath, stream, options, function (putErr, putRes) {
+            t.ifError(putErr);
+            t.ok(putRes.req._headers['m-encrypt-key-id']);
+            setTimeout(function () {
+              self.client.get(fpath, function (getErr, decrypted, getRes) {
+                  t.ifError(getErr);
+
+                  var result = '';
+                  decrypted.on('data', function (data) {
+                      result += data.toString();
+                  });
+
+                  decrypted.on('error', function (decErr) {
+                      t.ifError(decErr);
+                  });
+
+                  decrypted.once('end', function () {
+                      t.ok(result === text);
+                      t.ok(getRes.headers['e-hello1'] === 'world1');
+                      t.ok(getRes.headers['e-hello2'] === 'world2');
+                      t.ok(getRes.headers['e-hello3'] === 'world3');
+                      t.done();
+                  });
+              });
+            }, 10);
+        });
+
+        process.nextTick(function () {
+            stream.write(text);
+            stream.end();
+        });
+    });
+}
 
 
 test('#231: rm (special characters)', function (t) {

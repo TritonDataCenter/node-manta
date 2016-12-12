@@ -45,6 +45,16 @@ OPTIONS
 `-a, --account login`
   Authenticate as account (login name).
 
+`--encrypt-key=KEY`
+  Base64 encoded key used to encrypt the file. Will decrypt the stored object
+  when it's encrypted. If this value is missing then the original encrypted
+  object is returned.
+
+`--encrypt-auth-mode=MODE`
+  Determines if the decrypted object size is strictly enforced to be the same
+  as the original (pre-encrypted) object size. Defaults to
+  "MandatoryAuthentication", "OptionalAuthentication" disables strict mode.
+
 `-H, --headers`
   Print HTTP headers on stderr.
 
@@ -60,9 +70,6 @@ OPTIONS
   Authenticate using the SSH key described by FINGERPRINT.  The key must
   either be in `~/.ssh` or loaded in the SSH agent via `ssh-add`.
 
-`--role=ROLE,ROLE,...`
-  Specify which roles to assume for the request.
-
 `-o, --output file`
   Write output to &lt;file&gt; instead of stdout.
 
@@ -72,6 +79,9 @@ OPTIONS
 
 `-q, --quiet`
   Do not display a progress meter.
+
+`--role=ROLE,ROLE,...`
+  Specify which roles to assume for the request.
 
 `--user user`
   Authenticate as user under account.
@@ -84,11 +94,12 @@ OPTIONS
 
 ENVIRONMENT
 -----------
-`MANTA_USER`
-  In place of `-a, --account`
 
-`MANTA_SUBUSER`
-  In place of `--user`.
+`MANTA_ENCRYPT_KEY`
+  In place of `--encrypt-key`
+
+`MANTA_ENCRYPT_AUTH_MODE`
+  In place of `--encrypt-auth-mode`
 
 `MANTA_KEY_ID`
   In place of `-k, --key`.
@@ -96,11 +107,17 @@ ENVIRONMENT
 `MANTA_ROLE`
   In place of `--role`.
 
-`MANTA_URL`
-  In place of `-u, --url`.
+`MANTA_SUBUSER`
+  In place of `--user`.
 
 `MANTA_TLS_INSECURE`
   In place of `-i, --insecure`.
+
+`MANTA_URL`
+  In place of `-u, --url`.
+
+`MANTA_USER`
+  In place of `-a, --account`
 
 The shortcut `~~` is equivalent to `/:login`
 where `:login` is the account login name.
