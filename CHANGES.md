@@ -2,7 +2,7 @@
 
 ## not yet released
 
-(nothing yet)
+- joyent/node-manta#293 '~~/' works, '~~' does now too.
 
 ## 4.1.0
 
