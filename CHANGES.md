@@ -2,7 +2,11 @@
 
 ## not yet released
 
+## 4.1.1
+
 - joyent/node-manta#293 '~~/' works, '~~' does now too.
+- joyent/node-manta#294 content-length and transfer-encoding chunked must not
+  be used together
 
 ## 4.1.0
 
