@@ -2,7 +2,7 @@
 // -*- mode: js -*-
 // vim: set syntax=javascript ts=4 sts=4 sw=4 et:
 /*
- * Copyright 2016 Joyent, Inc.
+ * Copyright 2017 Joyent, Inc.
  */
 
 var net = require('net');
@@ -26,7 +26,8 @@ var QUIET = false;
 var NAME = path.basename(process.argv[1]);
 var LOG = bunyan.createLogger({
     name: NAME,
-    level: 'info'
+    level: process.env.LOG_LEVEL || bunyan.INFO,
+    stream: process.stderr
 });
 
 var JOB_POLL_PERIOD = 1000 * 5;
@@ -104,14 +105,14 @@ function _endl() {
     if (!endl_needed)
         return;
     endl_needed = false;
-    process.stderr.write('\n\n');
+    process.stdout.write('\n\n');
 }
 
 function _log(str) {
     if (QUIET)
         return;
     _endl();
-    process.stderr.write(' * ' + str + '\n');
+    process.stdout.write(' * ' + str + '\n');
 }
 
 function parseOptions() {
@@ -367,7 +368,7 @@ function connect_medusa(opts, next) {
                     if (waitcount === 0)
                         _log('session established');
                     else
-                        process.stderr.write(' established\n');
+                        process.stdout.write(' established\n');
                     endl_needed = false;
 
                     start_session(opts);
@@ -376,9 +377,9 @@ function connect_medusa(opts, next) {
                         return;
                     endl_needed = true;
                     if (waitcount++ === 0) {
-                        process.stderr.write(' * waiting for session...  ');
+                        process.stdout.write(' * waiting for session...  ');
                     } else {
-                        process.stderr.write('\b' + spinner[
+                        process.stdout.write('\b' + spinner[
                             waitcount % spinner.length]);
                     }
                 }
@@ -582,7 +583,12 @@ function wrap_run(func) {
     // up front, rather than fail later.  If node could be coerced to
     // open("/dev/tty"), we could grab the controlling TTY even if the
     // standard descriptors have been redirected, a la SSH, etc.
-    [ 'stdin', 'stdout', 'stderr' ].forEach(function (ttyname) {
+    //
+    // Note that we explicitly don't check "stderr" here, so that
+    // the user can redirect bunyan logs from an mlogin session
+    // without interfering with the regular interactive use of
+    // the session.
+    [ 'stdin', 'stdout' ].forEach(function (ttyname) {
         if (!Boolean(process[ttyname].isTTY)) {
             _log('ERROR: ' + ttyname + ' is not a TTY; aborting.');
             process.exit(1);

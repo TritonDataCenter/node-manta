@@ -2,6 +2,9 @@
 
 ## not yet released
 
+- joyent/node-manta#230 Allow redirection of `mlogin` debug log output on
+  `stderr`; e.g., `LOG_LEVEL=trace mlogin -v 2> >(bunyan -o short)`.
+
 ## 4.1.1
 
 - joyent/node-manta#293 '~~/' works, '~~' does now too.
