@@ -68,17 +68,15 @@ function mjobExec(args, opts, cb) {
 // ---- tests
 
 /*
- * Note the usage of '-or date' cuddled like that is ensuring we aren't
+ * Note the usage of '-or "echo hello"' cuddled like that is ensuring we aren't
  * hitting <https://github.com/trentm/node-dashdash/issues/8>.
  */
-test('mjob create --close -or date', function (t) {
-    var args = ['create', '--close', '-or', 'date'];
+test('mjob create --close -or "echo hello"', function (t) {
+    var args = ['create', '--close', '-or', 'echo hello'];
     mjobExec(args, function (err, stdout, stderr) {
         t.ifError(err, err);
         t.equal(stderr, '', 'stderr is empty: ' + stderr);
-        // Example: 'Fri Jun 24 19:05:33 UTC 2016\n'
-        t.ok(/^\w{3} \w{3} [ \d]{2} [ :\d]{8} UTC \d{4}\n$/.test(stdout),
-            'stdout is a date: ' + stdout);
+        t.equal(stdout, 'hello\n', 'stdout mismatch');
         t.done();
     });
 });

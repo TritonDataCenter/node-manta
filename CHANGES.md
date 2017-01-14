@@ -4,6 +4,7 @@
 
 - joyent/node-manta#230 Allow redirection of `mlogin` debug log output on
   `stderr`; e.g., `LOG_LEVEL=trace mlogin -v 2> >(bunyan -o short)`.
+- joyent/node-manta#298 mjob-simple fails because of GNU date regression
 
 ## 4.1.1
 
