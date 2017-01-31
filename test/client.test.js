@@ -57,8 +57,7 @@ module.exports.setUp = function (cb) {
         self.client = manta.createClient({
             connectTimeout: 1000,
             log: log,
-            rejectUnauthorized: (process.env.MANTA_TLS_INSECURE ?
-                                    false : true),
+            rejectUnauthorized: (process.env.MANTA_TLS_INSECURE ? false : true),
             sign: signer,
             url: url,
             user: user
@@ -747,7 +746,8 @@ test('#180: Invalid key results in no client error', function (t) {
                 user: process.env.MANTA_USER
             }),
             user: process.env.MANTA_USER,
-            url: process.env.MANTA_URL
+            url: process.env.MANTA_URL,
+            rejectUnauthorized: (process.env.MANTA_TLS_INSECURE ? false : true)
         });
     });
     t.done();
@@ -758,6 +758,7 @@ test('MANTA-2812 null signer', function (t) {
         sign: function (data, cb) { cb(null, null); },
         url: process.env.MANTA_URL,
         user: process.env.MANTA_USER,
+        rejectUnauthorized: (process.env.MANTA_TLS_INSECURE ? false : true),
         agent: false
     });
     c.ls(ROOT, function (err) {
@@ -776,6 +777,7 @@ test('MANTA-2812 undefined signer', function (t) {
         sign: undefined,
         url: process.env.MANTA_URL,
         user: process.env.MANTA_USER,
+        rejectUnauthorized: (process.env.MANTA_TLS_INSECURE ? false : true),
         agent: false
     });
     c.ls(ROOT, function (err) {
