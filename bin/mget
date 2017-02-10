@@ -1,22 +1,20 @@
 #!/usr/bin/env node
 // -*- mode: js -*-
 /*
- * Copyright 2016 Joyent, Inc.
+ * Copyright 2017 Joyent, Inc.
  */
 
 var fs = require('fs');
-var http = require('http');
 var path = require('path-platform');
-var url = require('url');
 
+var assert = require('assert-plus');
 var bunyan = require('bunyan');
 var dashdash = require('dashdash');
+var progbar = require('progbar');
+var vasync = require('vasync');
 
 var manta = require('../lib');
 
-
-
-///--- Globals
 
 var NAME = path.basename(process.argv[1]);
 var LOG = bunyan.createLogger({
@@ -59,9 +57,6 @@ var OPTIONS_PARSER = dashdash.createParser({
     ])
 });
 
-
-
-///--- Functions
 
 function ifError(err) {
     if (err) {
@@ -118,73 +113,112 @@ function parseOptions() {
 }
 
 
-function printEntry(obj) {
-    console.log('%j', obj);
+function downloadOne(dlo, done) {
+    assert.object(dlo, 'dlo');
+    assert.bool(dlo.dlo_progress, 'dlo.dlo_progress');
+    assert.bool(dlo.dlo_devtty, 'dlo.dlo_devtty');
+    assert.string(dlo.dlo_path, 'dlo.dlo_path');
+    assert.object(dlo.dlo_client, 'dlo.dlo_client');
+    assert.object(dlo.dlo_output, 'dlo.dlo_output');
+    assert.func(done, 'done');
+
+    dlo.dlo_client.get(dlo.dlo_path, function (err, stream, res) {
+        if (err) {
+            done(err);
+            return;
+        }
+
+        var bar;
+        var src = stream;
+        if (dlo.dlo_progress) {
+            var baropts = {
+                filename: dlo.dlo_path,
+                devtty: dlo.dlo_devtty
+            };
+            var clen = parseInt(res.headers['content-length'], 10);
+            if (clen >= 0) {
+                baropts.size = clen;
+            } else {
+                baropts.nosize = true;
+            }
+            bar = new progbar.ProgressBar(baropts);
+
+            /*
+             * We insert the progress bar stream between the response from
+             * Manta and the local destination.  Note that we _do_ propagate
+             * the "end" event here (see below), as that is what directs the
+             * progress bar to finish drawing and clean up.
+             */
+            src = stream.pipe(bar.stream());
+        }
+
+        /*
+         * The default behaviour of Stream#pipe() is to propagate the "end"
+         * event automatically from source to destination stream.  As we are
+         * potentially concatenating several response streams into one
+         * target location, we need to disable this behaviour.  We then call
+         * Stream#end() manually once all streams are complete.
+         */
+        src.pipe(dlo.dlo_output, { end: false });
+
+        src.on('end', function () {
+            done();
+        });
+    });
 }
 
-
-
-///--- Mainline
 
 (function main() {
     var opts = parseOptions();
     var client = manta.createBinClient(opts);
-    var i = -1;
-    var out = process.stdout;
     var drawProgressBar = true;
 
-    function get() {
-        var p = opts.paths[++i];
-        if (!p) {
-            client.close();
-            return;
-        }
+    var downloadAll = function (output, closeOutput) {
+        assert.object(output, 'output');
+        assert.bool(closeOutput, 'closeOutput');
 
-        client.get(p, function (err, stream, res) {
+        vasync.forEachPipeline({
+            inputs: opts.paths,
+            func: function (p, next) {
+                downloadOne({
+                    dlo_client: client,
+                    dlo_progress: opts.progress || drawProgressBar,
+                    dlo_devtty: opts.progress || false,
+                    dlo_path: p,
+                    dlo_output: output
+                }, next);
+            }
+        }, function (err) {
             ifError(err);
 
-            var bar;
-            var src = stream;
-            if (opts.progress || drawProgressBar) {
-                var baropts = {
-                    filename: p,
-                    devtty: opts.progress
-                };
-                var clen =
-                    parseInt(res.headers['content-length'],
-                             10);
-                if (clen >= 0) {
-                    baropts.size = clen;
-                } else {
-                    baropts.nosize = true;
-                }
-                bar = new manta.ProgressBar(baropts);
-                src = stream.pipe(bar.stream());
+            if (closeOutput) {
+                output.end();
             }
-
-            src.pipe(out);
-
-            src.on('end', function () {
-                get();
-            });
+            client.close();
         });
-    }
+    };
 
     if (opts.quiet || !Boolean(process.stderr.isTTY))
         drawProgressBar = false;
 
     if (opts.output) {
-        out = fs.createWriteStream(opts.output);
-        out.on('open', get.bind(this));
+        var file = fs.createWriteStream(opts.output);
+        file.on('open', function () {
+            downloadAll(file, true);
+        });
     } else {
-        if (out.isTTY) {
+        /*
+         * If no output file was selected, fall back to stdout.  Note
+         * that Node does not allow the consumer to call Stream#end()
+         * on the stdout stream.
+         */
+        if (process.stdout.isTTY) {
             /*
-             * If we're outputting to a TTY, then we don't
-             * want to draw the progress bar as it will likely
-             * clobber the output.
+             * If we're outputting to a TTY, then we don't want to draw the
+             * progress bar as it will likely clobber the output.
              */
             drawProgressBar = false;
         }
-        get();
+        downloadAll(process.stdout, false);
     }
 })();
