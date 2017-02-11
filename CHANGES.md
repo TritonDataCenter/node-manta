@@ -4,6 +4,8 @@ See `CONTRIBUTING.md` for details on how to update this file
 
 ## not yet released
 
+- MANTA-3071 Fix case where a transient error in one request to the Manta
+  server can make `mls` exit 0 without reporting results.
 - [#313](https://github.com/joyent/node-manta/issues/313) mget -H option documented incorrectly
 - [#358](https://github.com/joyent/node-manta/issues/358) mchmod command stopped working after v5.1.1
 - [#361](https://github.com/joyent/node-manta/issues/361) expires-relative short option has wrong case in man page

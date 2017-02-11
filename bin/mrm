@@ -87,12 +87,19 @@ function ifError(err) {
             return;
         }
 
-        client.info(p, function (err, info) {
-            if (err) {
-                client.get(p, function (err2) {
-                    ifError(err2);
-                    // We *shouldn't* ever hit this...
-                    ifError(err);
+        client.info(p, function (infoErr, info) {
+            if (infoErr) {
+                /*
+                 * The first request done by `client.info` is a HEAD, for
+                 * which there is no response body with good error details.
+                 * Fallback to `client.get` to hopefully get helpful error
+                 * details.
+                 *
+                 * If `client.get` succeeds (e.g. if infoErr was transient),
+                 * then use the `infoErr` we have.
+                 */
+                client.get(p, {returnErrorOnly: true}, function (getErr) {
+                    ifError(getErr || infoErr);
                 });
                 return;
             }

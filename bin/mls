@@ -225,13 +225,24 @@ function printEntry(opts, obj) {
     }
 
     options.paths.forEach(function (p) {
-        client.ls(p, options, function (err, res) {
-            if (err) {
-                if (err.name === 'InvalidDirectoryError') {
-                    printEntry(options, err.info);
+        client.ls(p, options, function (lsErr, res) {
+            if (lsErr) {
+                if (lsErr.name === 'InvalidDirectoryError') {
+                    printEntry(options, lsErr.info);
                     cb();
                 } else {
-                    client.get(p, cb);
+                    /*
+                     * The first request done by `client.ls` is a HEAD, for
+                     * which there is no response body with good error details.
+                     * Fallback to `client.get` to hopefully get helpful error
+                     * details.
+                     *
+                     * If `client.get` succeeds (e.g. if lsErr was transient),
+                     * then use the lsErr that we have.
+                     */
+                    client.get(p, {returnErrorOnly: true}, function (getErr) {
+                        cb(getErr || lsErr);
+                    });
                 }
                 return;
             }
