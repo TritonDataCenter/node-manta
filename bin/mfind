@@ -88,12 +88,9 @@ var TOTAL_ENTRIES = 0;
 
 ///--- Functions
 
-function ifError(err) {
-    if (err) {
-        console.error('mfind: ' +
-                      (process.env.DEBUG === '1' ? err.stack : err.toString()));
-        process.exit(1);
-    }
+function printError(epath, err) {
+    console.error('mfind: in ' + epath + ': ' +
+                  (process.env.DEBUG === '1' ? err.stack : err.toString()));
 }
 
 
@@ -134,7 +131,8 @@ function printEntry(opts, obj) {
     } else {
         console.log(obj.parent + (obj.name ? ('/' + obj.name) : ''));
     }
-    if (opts.limit && (++TOTAL_ENTRIES >= opts.limit)) {
+    ++TOTAL_ENTRIES;
+    if (opts.limit && TOTAL_ENTRIES >= opts.limit) {
         process.exit(0);
     }
 }
@@ -148,8 +146,14 @@ function printEntry(opts, obj) {
     var options = parseOptions();
     var client = manta.createBinClient(options);
     var print = printEntry.bind(null, options);
+    var lastError;
 
-    barrier.once('drain', client.close.bind(client));
+    barrier.once('drain', function () {
+        client.close();
+        if (lastError !== undefined) {
+            process.exit(1);
+        }
+    });
 
     options.paths.forEach(function (p) {
         barrier.start(p);
@@ -161,8 +165,19 @@ function printEntry(opts, obj) {
                     print(err.info);
                     barrier.done(p);
                     return;
+                } else if (err.name === 'NotFoundError') {
+                    if (err.path === undefined)
+                        err.path = p;
+                    printError(err.path, err);
+                    lastError = err;
+                    barrier.done(p);
+                    return;
                 } else {
-                    ifError(err);
+                    var epath = p;
+                    if (err.path !== undefined)
+                        epath = err.path;
+                    printError(epath, err);
+                    process.exit(1);
                 }
             }
 

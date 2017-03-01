@@ -27,6 +27,7 @@ var MMKDIR = path.resolve(BINDIR, 'mmkdir');
 var MPUT = path.resolve(BINDIR, 'mput');
 var MRM = path.resolve(BINDIR, 'mrm');
 
+var OPER;
 var TESTDIR = format('/%s/stor/node-manta-test-mfind-%s',
     process.env.MANTA_USER || 'admin',
     libuuid.v4().split('-')[0]);
@@ -96,6 +97,19 @@ test('setup: create test tree at ' + TESTDIR, function (t) {
     });
 });
 
+test('check if operator (mfind forbidden)', function (t) {
+    forkExecWait({
+        argv: [MFIND, '-t', 'd', '--maxdepth=1', '/poseidon/stor']
+    }, function (err, info) {
+        if (err) {
+            OPER = false;
+            t.ok(/Forbidden/m.test(info.stderr), 'Forbidden in stderr');
+        } else {
+            OPER = true;
+        }
+        t.done();
+    });
+});
 
 test('mfind TESTDIR', function (t) {
     forkExecWait({
@@ -141,6 +155,51 @@ test('mfind TESTDIR/afile.txt', function (t) {
     }, function (err, info) {
         t.ifError(err, err);
         t.ok(/afile.txt$/m.test(info.stdout), 'afile.txt in stdout');
+        t.done();
+    });
+});
+
+test('mfind TESTDIR/notafile.txt', function (t) {
+    forkExecWait({
+        argv: [MFIND, TESTDIR + '/notafile.txt']
+    }, function (err, info) {
+        t.ok(err);
+        t.equal(info.status, 1);
+        t.ok(/notafile\.txt/m.test(info.stderr), 'notafile.txt in stderr');
+        t.ok(/NotFound/m.test(info.stderr), 'NotFound in stderr');
+        t.done();
+    });
+});
+
+test('mfind TESTDIR/notafile.txt TESTDIR/afile.txt', function (t) {
+    forkExecWait({
+        argv: [MFIND, TESTDIR + '/notafile.txt', TESTDIR + '/afile.txt']
+    }, function (err, info) {
+        t.ok(err);
+        t.equal(info.status, 1);
+        t.ok(/afile.txt$/m.test(info.stdout), 'afile.txt in stdout');
+        t.ok(/notafile\.txt/m.test(info.stderr), 'notafile.txt in stderr');
+        t.ok(/NotFound/m.test(info.stderr), 'NotFound in stderr');
+        t.done();
+    });
+});
+
+test('mfind /poseidon/stor TESTDIR/afile.txt', function (t) {
+    if (OPER === true) {
+        console.log('WARNING: skipping mfind forbidden test: user is an ' +
+            'operator');
+        t.done();
+        return;
+    }
+    forkExecWait({
+        argv: [MFIND, '-p', '1', '/poseidon/stor', TESTDIR + '/afile.txt']
+    }, function (err, info) {
+        t.ok(err);
+        t.equal(info.status, 1);
+        /* XXX: Flakey due to node-manta#300 (can't control parallelism) */
+        /* t.ok(!/afile.txt$/m.test(info.stdout), 'afile.txt in stdout'); */
+        t.ok(/poseidon\/stor/m.test(info.stderr), 'poseidon/stor in stderr');
+        t.ok(/Forbidden/m.test(info.stderr), 'Forbidden in stderr');
         t.done();
     });
 });

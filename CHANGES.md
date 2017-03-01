@@ -2,9 +2,15 @@
 
 ## not yet released
 
+## 4.2.0
+
+Minor bump due to relaxation of API requirements in `mfind` (NotFound
+errors are no longer fatal unless none of the arguments are found)
+
 - joyent/node-manta#230 Allow redirection of `mlogin` debug log output on
   `stderr`; e.g., `LOG_LEVEL=trace mlogin -v 2> >(bunyan -o short)`.
 - joyent/node-manta#298 mjob-simple fails because of GNU date regression
+- joyent/node-manta#281 mfind NotFound errors should not be fatal
 
 ## 4.1.1
 
