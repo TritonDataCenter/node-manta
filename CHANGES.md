@@ -2,6 +2,10 @@
 
 ## not yet released
 
+## 4.3.0
+
+- MANTA-2169: Support multipart upload of a single file to Manta
+
 ## 4.2.0
 
 Minor bump due to relaxation of API requirements in `mfind` (NotFound
