@@ -2,6 +2,11 @@
 
 ## not yet released
 
+## 4.4.0
+
+- joyent/node-manta#308 `mmpu commit` does not parse options
+- joyent/node-manta#309 MPU tests are out of sync with Muskie master branch implementation
+
 ## 4.3.0
 
 - MANTA-2169: Support multipart upload of a single file to Manta
