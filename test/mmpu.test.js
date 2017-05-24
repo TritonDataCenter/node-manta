@@ -508,8 +508,8 @@ test('mmpu commit C_ID C_ETAG0', function (t) {
                 cb(err);
             } else {
                 var upload = JSON.parse(info.stdout);
-                t.ok(upload.state, 'finalizing');
-                t.ok(upload.type, 'commit');
+                t.ok(upload.state, 'done');
+                t.ok(upload.result, 'committed');
                 cb();
             }
         });
@@ -585,8 +585,8 @@ test('mmpu abort A_ID', function (t) {
                 cb(err);
             } else {
                 var upload = JSON.parse(info.stdout);
-                t.ok(upload.state, 'finalizing');
-                t.ok(upload.type, 'abort');
+                t.ok(upload.state, 'done');
+                t.ok(upload.result, 'aborted');
                 cb();
             }
         });

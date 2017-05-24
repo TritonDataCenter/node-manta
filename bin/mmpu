@@ -222,6 +222,7 @@ MMpu.prototype.do_create.help = [
     '',
     'Usage:',
     '    mmpu create [OPTIONS] PATH',
+    '',
     '{{options}}',
     ''
 ].join('\n');
@@ -433,6 +434,9 @@ MMpu.prototype.do_commit = function do_commit(subcmd, opts, args, cb) {
 };
 
 
+MMpu.prototype.do_commit.options = manta.DEFAULT_CLI_OPTIONS;
+
+
 MMpu.prototype.do_commit.help = [
     'Commit a multipart upload.',
     '',
@@ -470,6 +474,8 @@ MMpu.prototype.do_commit.help = [
     '',
     'Usage:',
     '    mmpu commit [OPTIONS] UPLOAD_ID [ETAG_0] [ETAG_1] ...',
+    '',
+    '{{options}}',
     ''
 ].join('\n');
 
@@ -634,7 +640,8 @@ MMpu.prototype.do_parts.help = [
     '',
     'Usage:',
     '    mmpu parts [OPTIONS] UPLOAD_ID',
-    ''
+    '',
+    '{{options}}'
 ].join('\n');
 
 

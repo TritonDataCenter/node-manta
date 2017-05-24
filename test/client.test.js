@@ -791,8 +791,8 @@ test('commit upload', function (t) {
             t.ifError(err2);
             t.ok(upload);
             t.equal(upload.id, UPLOAD1);
-            t.equal(upload.state, 'finalizing');
-            t.equal(upload.type, 'commit');
+            t.equal(upload.state, 'done');
+            t.equal(upload.result, 'committed');
 
             self.client.get(PATH1, function (err3, stream) {
                 t.ifError(err3);
@@ -834,8 +834,8 @@ test('abort upload', function (t) {
                 t.ifError(err3);
                 t.ok(upload);
                 t.equal(upload.id, UPLOAD2);
-                t.equal(upload.state, 'finalizing');
-                t.equal(upload.type, 'abort');
+                t.equal(upload.state, 'done');
+                t.equal(upload.result, 'aborted');
 
                 t.done();
             });
