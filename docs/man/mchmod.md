@@ -66,7 +66,7 @@ ENVIRONMENT
 -----------
 
 `MANTA_USER`
-  In place of `-a, --account`
+  In place of `-a, --account`.
 
 `MANTA_SUBUSER`
   In place of `--user`.

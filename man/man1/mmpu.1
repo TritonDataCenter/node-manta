@@ -1,0 +1,271 @@
+.TH mmpu 1 "June 2017" Manta "Manta Commands"
+.SH NAME
+.PP
+mmpu \- manage manta multipart uploads
+.SH SYNOPSIS
+.PP
+\fB\fCmmpu\fR [OPTION...] command [command\-specific arguments]
+.SH DESCRIPTION
+.PP
+mmpu allows you to interact with Manta's multipart upload API. The multipart
+upload API allows you to upload an object to Manta in chunks, or "parts",
+instead of through a single PUT request.  After all parts have been uploaded,
+you can "commit" your multipart upload, exposing your uploaded object as a
+single file in Manta.  Using mmpu, you can create multipart uploads, upload
+parts to them, and commit or "abort" (cancel) them. You may also list
+non\-garbage collected uploads and see uploaded parts for a given MPU.
+.PP
+The primary reference for a multipart upload is its UUID.  Most commands operate
+on multipart uploads by UUID.  Parts of a given upload are usually referenced by
+their part number (beginning with the first part at 0).
+.PP
+The final object created by a committed multipart upload is referred to as the
+"target object" of the multipart upload.  Additionally, a multipart upload is
+often referred to as an "MPU" or just an "upload".
+.SH COMMON OPTIONS
+.PP
+The following options are supported in all commands:
+.TP
+\fB\fC\-a, \-\-account login\fR
+Authenticate as account (login name).
+.TP
+\fB\fC\-h, \-\-help\fR
+Print a help message and exit.
+.TP
+\fB\fC\-i, \-\-insecure\fR
+This option explicitly allows "insecure" SSL connections and transfers.  All
+SSL connections are attempted to be made secure by using the CA certificate
+bundle installed by default.
+.TP
+\fB\fC\-k, \-\-key fingerprint\fR
+Authenticate using the SSH key described by \fB\fCfingerprint\fR\&.  The key must
+either be in \fB\fC~/.ssh\fR or loaded in the SSH agent via \fB\fCssh\-add\fR\&.
+.TP
+\fB\fC\-\-role=ROLE,ROLE,...\fR
+Specify which roles to assume for the request.
+.TP
+\fB\fC\-\-user user\fR
+Authenticate as user under account.
+.TP
+\fB\fC\-u, \-\-url url\fR
+Manta base URL (such as \fB\fChttps://manta.us\-east.joyent.com\fR).
+.TP
+\fB\fC\-v, \-\-verbose\fR
+Print debug output to stderr.  Repeat option to increase verbosity.
+.SH COMMANDS
+.PP
+The following commands and options are supported:
+.SS create [OPTIONS...] PATH
+.PP
+Creates a multipart upload, that, when committed, will be exposed as a Manta
+object at PATH.  When this command completes successfully, it prints a
+multipart upload UUID to stdout.  You should save this UUID for use in other
+commands.
+.PP
+For example, if you wanted to create a multipart upload for which the target
+object will be stored at ~~/stor/foo.txt, you would run:
+.PP
+.RS
+.nf
+$ mmpu create ~~/stor/foo.txt
+.fi
+.RE
+.PP
+Since objects created through the multipart upload API should be
+indistinguishable from objects created through a normal Manta PUT, the \fB\fCcreate\fR
+command supports similar options that you might use for \fB\fCmput\fR\&.  For example,
+to create a multipart upload that has 3 copies of the target object, and stores
+some additional headers on the target object metadata, you would run:
+.PP
+.RS
+.nf
+$ mmpu create ~~/stor/foo.txt \-c 3 \-H 'content\-type: text/plain' \\
+                                   \-H 'access\-control\-allow\-origin: *'
+.fi
+.RE
+.PP
+You may also add additional data integrity checks that will be validated
+for your target object when you commit your upload.  For example, if you want
+to verify that your target object ~~/stor/foo.txt is 15728640 bytes and has
+the content\-md5 value "FLFyNOI3UFQhtkkrjXV1Bw==", you would run:
+.PP
+.RS
+.nf
+$ mmpu create ~~/stor/foo.txt \-s 15728650 \\
+                              \-m 'FLFyNOI3UFQhtkkrjXV1Bw=='
+.fi
+.RE
+.PP
+The following options are supported on \fB\fCcreate\fR:
+.TP
+\fB\fC\-c, \-\-copies num_copies\fR
+Specify the number of copies of the target object to store.
+.TP
+\fB\fC\-H, \-\-header header\fR
+Specify an HTTP header to store in the target object's metadata.  As with all
+Manta objects, you may store up to 4 KB of headers on the target object.
+.TP
+\fB\fC\-m, \-\-md5 md5\fR
+Validate the \fB\fCcontent\-md5\fR of the target object against the given md5 string.
+If the MD5 of the target object differs from the provided MD5 when the object
+is committed, the commit will fail.
+.IP
+Note that the behavior of this option differs from the similar option for
+\fB\fCmput\fR\&.
+.TP
+\fB\fC\-s, \-\-size size\fR
+Validate the size of the target object against \fB\fCsize\fR\&.  If the size of the
+target object differs from this size when the object is committed, the commit
+will fail.
+.SS upload [\-f file] [OPTIONS...] MPU PART_NUM
+.PP
+Uploads the contents of stdin, or from the file specified with \fB\fC\-f\fR, to the
+specified part for a given upload.
+.PP
+Note that parts are zero\-indexed.  For example, if you wanted to upload the
+first part of upload be5f05d6\-7daa\-6869\-d19b\-c1f7fbcf6d8d, and the part's
+contents are stored locally at ./part0.txt, you could run the following
+equivalent commands:
+.PP
+.RS
+.nf
+$ cat part0.txt | mmpu upload be5f05d6\-7daa\-6869\-d19b\-c1f7fbcf6d8d 0
+.fi
+.RE
+.PP
+Or:
+.PP
+.RS
+.nf
+$ mmpu upload \-f part0.txt be5f05d6\-7daa\-6869\-d19b\-c1f7fbcf6d8d 0
+.fi
+.RE
+.PP
+When this command completes successfully, it prints the etag of the part
+that was uploaded to stdout.  You should save this etag to use when committing
+the upload.
+.PP
+The following options are supported on \fB\fCupload\fR:
+.TP
+\fB\fC\-f, \-\-file file\fR
+Upload the contents of \fB\fCfile\fR as the part, instead of the contents of stdin.
+.TP
+\fB\fC\-\-progress\fR
+Force the progress bar to draw, even when stderr is redirected.
+.TP
+\fB\fC\-q, \-\-quiet\fR
+Do not display a progress meter.
+.SS commit MPU [ETAG...]
+.PP
+Commits a given upload with the parts specified.  The parts are represented by
+their position in the argument list, which indicates their part number (with
+part 0 being the first argument after the upload ID, the second part the next
+argument after that, and so on), and their contents are represented by their
+etag.  If the etag provided for a part does not match the etag of the part when
+the commit process fetches its metadata, an error will be returned.
+.PP
+For example, if you want to commit an upload with id
+be5f05d6\-7daa\-6869\-d19b\-c1f7fbcf6d8d and the following parts:
+    part 0: etag f14a41dc\-7d28\-6fdb\-e07c\-d54c0adcdf35
+    part 1: etag e2893e52\-9ba3\-64fe\-eec9\-b4663835ad01
+    part 2: etag 73b44fa7\-fbd3\-efea\-b7d0\-cd8098e1d928
+.PP
+You would run:
+    $ mmpu commit be5f05d6\-7daa\-6869\-d19b\-c1f7fbcf6d8d \[rs]
+                  f14a41dc\-7d28\-6fdb\-e07c\-d54c0adcdf35 \[rs]
+                  e2893e52\-9ba3\-64fe\-eec9\-b4663835ad01 \[rs]
+                  73b44fa7\-fbd3\-efea\-b7d0\-cd8098e1d928
+.PP
+The multipart upload API does not require that you commit all parts uploaded,
+as long as zero or more consecutive parts are committed, and all parts meet
+part size restraints.  So the following commands committing the same upload as
+above are also valid, but would create a different target object than the
+first example.
+.PP
+This command would commit a zero\-byte target object:
+    $ mmpu commit be5f05d6\-7daa\-6869\-d19b\-c1f7fbcf6d8d
+.PP
+This would create an object consisting of only the first two parts:
+    $ mmpu commit be5f05d6\-7daa\-6869\-d19b\-c1f7fbcf6d8d \[rs]
+                  f14a41dc\-7d28\-6fdb\-e07c\-d54c0adcdf35 \[rs]
+                  e2893e52\-9ba3\-64fe\-eec9\-b4663835ad01
+.PP
+Once the commit process has begun for a given MPU, it cannot be aborted, or
+committed with a different set of parts than it was initially committed with,
+but you may retry the commit if needed.
+.PP
+To see the current status of an upload, use the \fB\fCget\fR command.
+.SS abort MPU
+.PP
+Aborts a multipart upload.
+.PP
+Once an upload has begun aborting, it may not be committed, but you may retry
+the abort operation if needed.  To see the current status of an upload, use the
+\fB\fCget\fR command.
+.SS get MPU
+.PP
+Fetches a JSON blob information about an upload, including its status: created,
+finalizing, or done (committed or aborted).  A finalizing upload is one
+that began the process of being committed or aborted, but has not finished,
+either because the request is still in progress or because the request failed.
+.SS list
+.PP
+Lists all multipart uploads for a user (note, this can also be done with a
+normal \fB\fCmfind\fR call).  Note that these uploads may be in any state; their
+presence merely indicates they have not been garbage collected yet.
+.PP
+If you wish to list all parts that have been uploaded as well, you can run:
+.PP
+.RS
+.nf
+$ mmpu list \-p
+.fi
+.RE
+.PP
+To see the parts of only one upload, you should use the \fB\fCparts\fR command.
+.PP
+The following options are supported on \fB\fClist\fR:
+.TP
+\fB\fC\-p, \-\-includeParts\fR
+List parts in additional to uploads.
+.SS parts MPU
+.PP
+Lists all parts that have been uploaded to a given multipart upload.
+.SH ENVIRONMENT
+.TP
+\fB\fCMANTA_USER\fR
+In place of \fB\fC\-a, \-\-account\fR\&.
+.TP
+\fB\fCMANTA_SUBUSER\fR
+In place of \fB\fC\-\-user\fR\&.
+.TP
+\fB\fCMANTA_KEY_ID\fR
+In place of \fB\fC\-k, \-\-key\fR\&.
+.TP
+\fB\fCMANTA_ROLE\fR
+In place of \fB\fC\-\-role\fR\&.
+.TP
+\fB\fCMANTA_URL\fR
+In place of \fB\fC\-u, \-\-url\fR\&.
+.TP
+\fB\fCMANTA_TLS_INSECURE\fR
+In place of \fB\fC\-i, \-\-insecure\fR\&.
+.PP
+The shortcut \fB\fC~~\fR is equivalent to \fB\fC/:login\fR
+where \fB\fC:login\fR is the account login name.
+.SH DIAGNOSTICS
+.PP
+When using the \fB\fC\-v\fR option, diagnostics will be sent to stderr in bunyan
+output format.  As an example of tracing all information about a request,
+try:
+.PP
+.RS
+.nf
+$ mmpu create \-vv ~~/stor/foo 2>&1 | bunyan
+.fi
+.RE
+.SH BUGS
+.PP
+DSA keys do not work when loaded via the SSH agent.
+.PP
+Report bugs at Github \[la]https://github.com/joyent/node-manta/issues\[ra]

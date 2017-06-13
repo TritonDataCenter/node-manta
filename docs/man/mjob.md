@@ -317,10 +317,10 @@ ENVIRONMENT
 -----------
 
 `MANTA_USER`
-  In place of `-a, --account`
+  In place of `-a, --account`.
 
 `MANTA_SUBUSER`
-  In place of `--user`
+  In place of `--user`.
 
 `MANTA_KEY_ID`
   In place of `-k, --key`.

@@ -7,9 +7,10 @@ var crypto = require('crypto');
 var fs = require('fs');
 var path = require('path');
 
+var bunyan = require('bunyan');
+var jsprim = require('jsprim');
 var libuuid = require('uuid');
 var MemoryStream = require('readable-stream/passthrough.js');
-var bunyan = require('bunyan');
 
 var logging = require('./lib/logging');
 var manta = require('../lib');
@@ -35,6 +36,7 @@ var UPLOAD1; // committed upload
 var UPLOAD2; // aborted upload
 var PATH1 = ROOT + '/committed-obj';
 var PATH2 = ROOT + '/aborted-obj';
+var PATH3 = ROOT + '/#311-test';
 var ETAGS1 = [];
 
 var SUBDIR1_NOBJECTS = 1;
@@ -733,6 +735,11 @@ test('create upload', function (t) {
 
     this.client.createUpload(PATH1, opts, function (err, obj) {
         t.ifError(err);
+        if (err) {
+            t.done();
+            return;
+        }
+
         t.ok(obj);
         t.ok(obj.id);
         UPLOAD1 = obj.id;
@@ -753,6 +760,11 @@ test('upload part', function (t) {
     var pn = 0;
     this.client.uploadPart(stream, UPLOAD1, pn, opts, function (err, res) {
         t.ifError(err);
+        if (err) {
+            t.done();
+            return;
+        }
+
         t.ok(res);
         t.ok(res.headers && res.headers.etag);
         ETAGS1[pn] = res.headers.etag;
@@ -772,6 +784,11 @@ test('get upload', function (t) {
 
     this.client.getUpload(UPLOAD1, opts, function (err, upload) {
         t.ifError(err);
+        if (err) {
+            t.done();
+            return;
+        }
+
         t.ok(upload);
         t.equal(upload.id, UPLOAD1);
         t.equal(upload.state, 'created');
@@ -787,8 +804,16 @@ test('commit upload', function (t) {
     var self = this;
     self.client.commitUpload(UPLOAD1, ETAGS1, opts, function (err) {
         t.ifError(err);
+        if (err) {
+            t.done();
+            return;
+        }
         self.client.getUpload(UPLOAD1, opts, function (err2, upload) {
             t.ifError(err2);
+            if (err2) {
+                t.done();
+                return;
+            }
             t.ok(upload);
             t.equal(upload.id, UPLOAD1);
             t.equal(upload.state, 'done');
@@ -796,6 +821,10 @@ test('commit upload', function (t) {
 
             self.client.get(PATH1, function (err3, stream) {
                 t.ifError(err3);
+                if (err3) {
+                    t.done();
+                    return;
+                }
 
                 var text = 'The lazy brown fox \nsomething \nsomething foo';
                 var data = '';
@@ -808,6 +837,10 @@ test('commit upload', function (t) {
 
                     self.client.unlink(PATH1, opts, function (err4) {
                         t.ifError(err4);
+                        if (err4) {
+                            t.done();
+                            return;
+                        }
                         t.done();
                     });
                 });
@@ -824,19 +857,97 @@ test('abort upload', function (t) {
     var self = this;
     this.client.createUpload(PATH2, opts, function (err, obj) {
         t.ifError(err);
+        if (err) {
+            t.done();
+            return;
+        }
+
         t.ok(obj);
         t.ok(obj.id);
         UPLOAD2 = obj.id;
 
         self.client.abortUpload(UPLOAD2, opts, function (err2) {
             t.ifError(err2);
+            if (err2) {
+                t.done();
+                return;
+            }
             self.client.getUpload(UPLOAD2, opts, function (err3, upload) {
                 t.ifError(err3);
+                if (err3) {
+                    t.done();
+                    return;
+                }
                 t.ok(upload);
                 t.equal(upload.id, UPLOAD2);
                 t.equal(upload.state, 'done');
                 t.equal(upload.result, 'aborted');
 
+                t.done();
+            });
+        });
+    });
+});
+
+test('#311: create upload with special headers', function (t) {
+    /*
+     * Test adding some headers to the target object that are also parsed by
+     * the Manta client, to ensure the headers for the target object are sent
+     * in the body of the `mpu-create` request, not as headers on the request
+     * itself.
+     */
+    var headers = {
+        'accept':  'acceptstring',
+        'role': 'rolestring',
+        'content-length': 10,
+        'content-md5': 'md5string',
+        'content-type': 'text/plain',
+        'expect': '100-continue',
+        'location': 'locationstring',
+        'x-request-id': 'requestidstring'
+    };
+
+    var self = this;
+    var createOpts = {
+        account: self.client.user,
+        headers: headers
+    };
+
+    self.client.createUpload(PATH3, createOpts, function (err, obj) {
+        t.ifError(err);
+        if (err) {
+            t.done();
+            return;
+        }
+
+        t.ok(obj);
+        t.ok(obj.id);
+        var id = obj.id;
+
+        var getOpts = {
+            account: self.client.user
+        };
+        self.client.getUpload(id, getOpts, function (err2, upload) {
+            t.ifError(err2);
+            if (err2) {
+                t.done();
+                return;
+            }
+
+            t.ok(upload);
+            t.equal(upload.id, id);
+            t.ok(upload.headers);
+            t.ok(jsprim.deepEqual(headers, upload.headers));
+
+            var abortOpts = {
+                account: self.client.user
+            };
+            self.client.abortUpload(id, abortOpts, function (err3) {
+                t.ifError(err3);
+                if (err3) {
+                    t.done();
+                    return;
+                }
                 t.done();
             });
         });

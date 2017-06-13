@@ -2,6 +2,11 @@
 
 ## not yet released
 
+## 4.4.1
+
+- joyent/node-manta#302 Create a manual page for `mmpu`
+- joyent/node-manta#311 `createUpload` incorrectly handles some target object headers
+
 ## 4.4.0
 
 - joyent/node-manta#308 `mmpu commit` does not parse options

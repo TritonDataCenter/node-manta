@@ -205,7 +205,6 @@ MMpu.prototype.do_create.options = manta.DEFAULT_CLI_OPTIONS.concat([
 ]);
 
 
-//TODO: add some examples here.
 MMpu.prototype.do_create.help = [
     'Initiate a Manta multipart upload for an object.',
     '',
@@ -466,7 +465,6 @@ MMpu.prototype.do_commit.help = [
     '',
     '   $ mmpu commit be5f05d6-7daa-6869-d19b-c1f7fbcf6d8d \\',
     '        f14a41dc-7d28-6fdb-e07c-d54c0adcdf35',
-    '        e2893e52-9ba3-64fe-eec9-b4663835ad01',
     '',
     '   $ mmpu commit be5f05d6-7daa-6869-d19b-c1f7fbcf6d8d \\',
     '        f14a41dc-7d28-6fdb-e07c-d54c0adcdf35 \\',

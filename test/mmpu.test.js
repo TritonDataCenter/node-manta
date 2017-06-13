@@ -121,12 +121,12 @@ test('mmpu get C_ID', function (t) {
             }
 
             var headers = upload.headers;
+            t.ok(headers);
             if (!headers) {
                 t.done();
                 return;
             }
 
-            t.ok(headers);
             t.equal(headers['durability-level'], 1);
             t.equal(headers['content-length'], TEXT_SIZE);
             t.equal(headers['content-md5'], TEXT_MD5);
