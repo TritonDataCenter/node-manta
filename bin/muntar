@@ -8,6 +8,7 @@ var fs = require('fs');
 var url = require('url');
 
 var mod_path = require('path');
+var strsplit = require('strsplit');
 
 var bunyan = require('bunyan');
 var dashdash = require('dashdash');
@@ -19,67 +20,73 @@ var http = require('http');
 var https = require('https');
 var tar = require('tar');
 
+
 ///--- Globals
 
-var NAME = mod_path.basename(process.argv[1]);
 var IN_PROGRESS = {};
-var LOG = bunyan.createLogger({
-    name: NAME,
-    level: (process.env.LOG_LEVEL || 'info'),
-    stream: process.stderr
-});
 var MAX_SOCKETS = parseInt(process.env.MANTA_MAX_SOCKETS || 1000, 10);
-
-var OPTIONS_PARSER = dashdash.createParser({
-    options: manta.DEFAULT_CLI_OPTIONS.concat([
-        {
-            group: NAME + ' options'
-        },
-        {
-            names: ['copies', 'c'],
-            type: 'positiveInteger',
-            help: 'number of copies to make',
-            helpArg: 'COPIES',
-            'default': 2
-        },
-        {
-            names: ['file', 'f'],
-            type: 'string',
-            help: 'local file to upload (required)',
-            helpArg: 'FILE'
-        },
-        {
-            names: ['header', 'H'],
-            type: 'arrayOfString',
-            help: 'HTTP headers to include',
-            helpArg: 'HEADER'
-        },
-        {
-            names: ['parallel', 'p'],
-            type: 'positiveInteger',
-            help: 'limit concurrent operations (default 20)',
-            'default': 20,
-            helpArg: 'NUM'
-        },
-        {
-            names: ['retries', 'r'],
-            type: 'positiveInteger',
-            help: 'number of retries on error (default 3)',
-            'default': 3,
-            helpArg: 'RETRIES'
-        },
-        {
-            names: ['role-tag'],
-            type: 'arrayOfString',
-            help: 'role tags to apply to the destination object',
-            helpArg: 'TAG,TAG...'
-        }
-    ])
-});
-
 
 
 ///--- Functions
+
+/**
+ * Create a dashdash options parser for this command
+ *
+ * @param {String} name: Required. The command name.
+ * @returns {Object} A dashdash options parser for the command.
+ */
+function optionsParser(name) {
+    var parser = dashdash.createParser({
+        options: manta.DEFAULT_CLI_OPTIONS.concat([
+            {
+                group: name + ' options'
+            },
+            {
+                names: ['copies', 'c'],
+                type: 'positiveInteger',
+                help: 'number of copies to make',
+                helpArg: 'COPIES',
+                default: 2
+            },
+            {
+                names: ['file', 'f'],
+                type: 'string',
+                help: 'local file to upload (required)',
+                helpArg: 'FILE'
+            },
+            {
+                names: ['header', 'H'],
+                type: 'arrayOfString',
+                help: 'HTTP headers to include',
+                helpArg: 'HEADER'
+            },
+            {
+                names: ['parallel', 'p'],
+                type: 'positiveInteger',
+                help: 'limit concurrent operations (default 20)',
+                default: 20,
+                helpArg: 'NUM'
+            },
+            {
+                names: ['retries', 'r'],
+                type: 'positiveInteger',
+                help: 'number of retries on error (default 3)',
+                default: 3,
+                helpArg: 'RETRIES'
+            },
+            {
+                names: ['role-tag'],
+                type: 'arrayOfString',
+                help: 'role tags to apply to the destination object',
+                helpArg: 'TAG,TAG...'
+            }
+        ])
+    });
+
+    return (parser);
+
+}
+
 
 function ifError(err) {
     if (err) {
@@ -89,44 +96,19 @@ function ifError(err) {
 }
 
 
-function parseOptions() {
-    var opts;
-
-    try {
-        opts = OPTIONS_PARSER.parse(process.argv);
-        manta.checkBinEnv(opts);
-    } catch (e) {
-        manta.cli_usage(OPTIONS_PARSER, e.message, 'path');
-    }
-
-    manta.cli_logger(opts, LOG);
-
-    if (opts.help)
-        manta.cli_usage(OPTIONS_PARSER, false, 'path');
-
-    manta.cliVersionCheckPrintAndExit(opts);
-    manta.cliCompletionCheckPrintAndExit(opts, OPTIONS_PARSER, NAME,
-        ['mpath', 'none']);
-
+/**
+ * Handle command-specific options parsing and checking.
+ *
+ * @param {Object} opts: Required. A parsed options object.
+ * @param {Object} parser: Required. A dashdash option parser.
+ * @returns {Object} A possibly mutated version of the `opts` input parameter.
+ */
+function parseCmdOptions(opts, parser) {
     if (!opts.file)
-        manta.cli_usage(OPTIONS_PARSER, 'file is a required argument', 'path');
-
-    if (opts._args.length < 1)
-        manta.cli_usage(OPTIONS_PARSER, 'path required', 'path');
+        manta.cli_usage(parser, 'file is a required argument', 'path');
 
     ifError(manta.assertPath(opts._args[0], true));
     opts.path = manta.path(opts._args[0], true);
-
-    opts.headers = {};
-    (opts.header || []).forEach(function (h) {
-        if (h.indexOf(':') === -1) {
-            manta.cli_usage(OPTIONS_PARSER,
-                            'header must be in the form of "[header]: value"',
-                            'path...');
-        }
-        var tmp = h.split(':');
-        opts.headers[tmp[0]] = tmp[1].trim();
-    });
 
     if (opts['role-tag'] && opts['role-tag'].length === 1) {
         /* JSSTYLED */
@@ -186,7 +168,7 @@ function put(client, path, stream, opts, cb) {
  * pausing the tar parsing, each worker needs to take its own pass through
  * the tarball.
  */
-function worker(client, tarball, callback) {
+function worker(client, tarball, callback, log) {
     var entry = 0;
     var inflight = 1;
     var stream = fs.createReadStream(tarball.file);
@@ -223,12 +205,12 @@ function worker(client, tarball, callback) {
                     tarball.retry[_entry] = 0;
 
                 if (tarball.retry[_entry]++ >= tarball.options.retries) {
-                    LOG.debug({ err: err, num: tarball.retry[_entry] },
+                    log.debug({ err: err, num: tarball.retry[_entry] },
                         'put to ' + path + ' failed; aborting');
                     ifError(err);
                 }
 
-                LOG.debug({ err: err, num: tarball.retry[_entry] },
+                log.debug({ err: err, num: tarball.retry[_entry] },
                     'put to ' + path + ' failed; retrying');
                 e.resume();
             }
@@ -272,7 +254,22 @@ function worker(client, tarball, callback) {
 ///--- Mainline
 
 (function main() {
-    var options = parseOptions();
+    var name = mod_path.basename(process.argv[1]);
+    var log = bunyan.createLogger({
+        name: name,
+        level: (process.env.LOG_LEVEL || 'info'),
+        stream: process.stderr
+    });
+    var parser = optionsParser(name);
+    var argTypes = ['mpath', 'none'];
+    var parseArgs = {
+        name: name,
+        parser: parser,
+        argTypes: argTypes,
+        parseCmdOptions: parseCmdOptions,
+        log: log
+    };
+    var options = manta.parseOptions(parseArgs);
 
     http.globalAgent.maxSockets = MAX_SOCKETS;
     https.globalAgent.maxSockets = MAX_SOCKETS;
@@ -298,7 +295,7 @@ function worker(client, tarball, callback) {
             return;
         }
 
-        worker(client, tarball, lastdone);
+        worker(client, tarball, lastdone, log);
     }
 
     function cb() {
@@ -309,5 +306,5 @@ function worker(client, tarball, callback) {
     }
 
     for (var i = 0; i < options.parallel; i++)
-        worker(client, tarball, cb);
+        worker(client, tarball, cb, log);
 })();

@@ -6,6 +6,7 @@
 
 var fs = require('fs');
 var path = require('path-platform');
+var strsplit = require('strsplit');
 
 var assert = require('assert-plus');
 var bunyan = require('bunyan');
@@ -16,46 +17,51 @@ var vasync = require('vasync');
 var manta = require('../lib');
 
 
-var NAME = path.basename(process.argv[1]);
-var LOG = bunyan.createLogger({
-    name: NAME,
-    level: (process.env.LOG_LEVEL || 'info'),
-    stream: process.stderr
-});
+/**
+ * Create a dashdash options parser for this command
+ *
+ * @param {String} name: Required. The command name.
+ * @returns {Object} A dashdash options parser for the command.
+ */
+function optionsParser(name) {
+    var parser = dashdash.createParser({
+        options: manta.DEFAULT_CLI_OPTIONS.concat([
+            {
+                group: name + ' options'
+            },
+            {
+                names: ['header', 'H'],
+                type: 'arrayOfString',
+                help: 'HTTP headers to include',
+                helpArg: 'HEADER'
+            },
+            {
+                names: ['quiet', 'q'],
+                type: 'bool',
+                help: 'disable the progress bar'
+            },
+            {
+                names: ['progress'],
+                type: 'bool',
+                help: 'force the progress bar to draw, even when \
+                       stderr redirected'
+            },
+            {
+                names: ['output', 'o'],
+                type: 'string',
+                help: 'write output to <file> instead of stdout'
+            },
+            {
+                names: ['remote-name', 'O'],
+                type: 'bool',
+                help: 'write output to a file using remote object name as \
+                       filename'
+            }
+        ])
+    });
 
-var OPTIONS_PARSER = dashdash.createParser({
-    options: manta.DEFAULT_CLI_OPTIONS.concat([
-        {
-            group: NAME + ' options'
-        },
-        {
-            names: ['header', 'H'],
-            type: 'arrayOfString',
-            help: 'HTTP headers to include',
-            helpArg: 'HEADER'
-        },
-        {
-            names: ['quiet', 'q'],
-            type: 'bool',
-            help: 'disable the progress bar'
-        },
-        {
-            names: ['progress'],
-            type: 'bool',
-            help: 'force the progress bar to draw, even when stderr redirected'
-        },
-        {
-            names: ['output', 'o'],
-            type: 'string',
-            help: 'write output to <file> instead of stdout'
-        },
-        {
-            names: ['remote-name', 'O'],
-            type: 'bool',
-            help: 'write output to a file using remote object name as filename'
-        }
-    ])
-});
+    return (parser);
+}
 
 
 function ifError(err) {
@@ -63,53 +69,6 @@ function ifError(err) {
         console.error('mget: ' + err.toString());
         process.exit(1);
     }
-}
-
-
-function parseOptions() {
-    var opts;
-
-    try {
-        opts = OPTIONS_PARSER.parse(process.argv);
-        manta.checkBinEnv(opts);
-    } catch (e) {
-        manta.cli_usage(OPTIONS_PARSER, e.message, 'path...');
-    }
-
-    manta.cli_logger(opts, LOG);
-
-    if (opts.help)
-        manta.cli_usage(OPTIONS_PARSER, false, 'path...');
-
-    manta.cliVersionCheckPrintAndExit(opts);
-    manta.cliCompletionCheckPrintAndExit(opts, OPTIONS_PARSER, NAME, ['mpath']);
-
-    if (opts._args.length < 1)
-        manta.cli_usage(OPTIONS_PARSER, 'path required', 'path...');
-
-    opts.paths = opts._args;
-
-    if (opts.remote_name) {
-        if (opts.paths.length !== 1) {
-            manta.cli_usage(OPTIONS_PARSER, '--remote-name only works with ' +
-              'a single object path', 'path...');
-        } else {
-            opts.output = path.posix.basename(opts.paths[0]);
-        }
-    }
-
-    opts.headers = {};
-    (opts.header || []).forEach(function (h) {
-        if (h.indexOf(':') === -1) {
-            manta.cli_usage(OPTIONS_PARSER,
-                            'header must be in the form of "[header]: value"',
-                            'path...');
-        }
-        var tmp = h.split(':');
-        opts.headers[tmp[0]] = tmp[1].trim();
-    });
-
-    return (opts);
 }
 
 
@@ -168,8 +127,43 @@ function downloadOne(dlo, done) {
 }
 
 
+/**
+ * Handle command-specific options parsing and checking.
+ *
+ * @param {Object} opts: Required. A parsed options object.
+ * @param {Object} parser: Required. A dashdash option parser.
+ * @returns {Object} A possibly mutated version of the `opts` input parameter.
+ */
+function parseCmdOptions(opts, parser) {
+    if (opts.remote_name) {
+        if (opts.paths.length !== 1) {
+            manta.cli_usage(parser, '--remote-name only works with ' +
+                            'a single object path', 'path...');
+        } else {
+            opts.output = path.posix.basename(opts.paths[0]);
+        }
+    }
+
+    return (opts);
+}
+
+
 (function main() {
-    var opts = parseOptions();
+    var name = path.basename(process.argv[1]);
+    var log = bunyan.createLogger({
+        name: name,
+        level: (process.env.LOG_LEVEL || 'info'),
+        stream: process.stderr
+    });
+    var parser = optionsParser(name);
+    var parseArgs = {
+        name: name,
+        parser: parser,
+        argTypes: ['mpath'],
+        parseCmdOptions: parseCmdOptions,
+        log: log
+    };
+    var opts = manta.parseOptions(parseArgs);
     var client = manta.createBinClient(opts);
     var drawProgressBar = true;
 

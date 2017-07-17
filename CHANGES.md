@@ -2,6 +2,10 @@
 
 ## not yet released
 
+## 4.4.2
+
+- joyent/node-manta#312 Custom header input should tolerate ':' characters
+
 ## 4.4.1
 
 - joyent/node-manta#302 Create a manual page for `mmpu`

@@ -7,6 +7,7 @@
 var crypto = require('crypto');
 var fs = require('fs');
 var path = require('path');
+var strsplit = require('strsplit');
 var url = require('url');
 
 var backoff = require('backoff');
@@ -17,72 +18,72 @@ var once = require('once');
 var manta = require('../lib');
 
 
-
-///--- Globals
-
-var NAME = path.basename(process.argv[1]);
-var LOG = bunyan.createLogger({
-    name: NAME,
-    level: (process.env.LOG_LEVEL || 'info'),
-    stream: process.stderr
-});
-
-var OPTIONS_PARSER = dashdash.createParser({
-    options: manta.DEFAULT_CLI_OPTIONS.concat([
-        {
-            group: NAME + ' options'
-        },
-        {
-            names: ['copies', 'c'],
-            type: 'positiveInteger',
-            help: 'number of copies to make',
-            helpArg: 'COPIES',
-            'default': 2
-        },
-        {
-            names: ['file', 'f'],
-            type: 'string',
-            help: 'local file to upload',
-            helpArg: 'FILE'
-        },
-        {
-            names: ['header', 'H'],
-            type: 'arrayOfString',
-            help: 'HTTP headers to include',
-            helpArg: 'HEADER'
-        },
-        {
-            names: ['md5', 'm'],
-            type: 'bool',
-            help: 'calculate MD5 and then upload (requires -f/--file)'
-        },
-        {
-            names: ['parents', 'p'],
-            type: 'bool',
-            help: 'create parent directories as needed'
-        },
-        {
-            names: ['quiet', 'q'],
-            type: 'bool',
-            help: 'disable the progress bar'
-        },
-        {
-            names: ['progress'],
-            type: 'bool',
-            help: 'force the progress bar to draw, even when stderr redirected'
-        },
-        {
-            names: ['role-tag'],
-            type: 'arrayOfString',
-            help: 'role tags to apply to the created object',
-            helpArg: 'TAG,TAG...'
-        }
-    ])
-});
-
-
-
 ///--- Functions
+
+/**
+ * Create a dashdash options parser for this command
+ *
+ * @param {String} name: Required. The command name.
+ * @returns {Object} A dashdash options parser for the command.
+ */
+function optionsParser(name) {
+    var parser = dashdash.createParser({
+        options: manta.DEFAULT_CLI_OPTIONS.concat([
+            {
+                group: name + ' options'
+            },
+            {
+                names: ['copies', 'c'],
+                type: 'positiveInteger',
+                help: 'number of copies to make',
+                nhelpArg: 'COPIES',
+                default: 2
+            },
+            {
+                names: ['file', 'f'],
+                type: 'string',
+                help: 'local file to upload',
+                helpArg: 'FILE'
+            },
+            {
+                names: ['header', 'H'],
+                type: 'arrayOfString',
+                help: 'HTTP headers to include',
+                helpArg: 'HEADER'
+            },
+            {
+                names: ['md5', 'm'],
+                type: 'bool',
+                help: 'calculate MD5 and then upload (requires -f/--file)'
+            },
+            {
+                names: ['parents', 'p'],
+                type: 'bool',
+                help: 'create parent directories as needed'
+            },
+            {
+                names: ['quiet', 'q'],
+                type: 'bool',
+                help: 'disable the progress bar'
+            },
+            {
+                names: ['progress'],
+                type: 'bool',
+                help: 'force the progress bar to draw, even when \
+                       stderr redirected'
+            },
+            {
+                names: ['role-tag'],
+                type: 'arrayOfString',
+                help: 'role tags to apply to the created object',
+                helpArg: 'TAG,TAG...'
+            }
+        ])
+    });
+
+    return (parser);
+}
+
 
 function ifError(err) {
     if (!err)
@@ -102,44 +103,19 @@ function ifError(err) {
 }
 
 
-function parseOptions() {
-    var opts;
-
-    try {
-        opts = OPTIONS_PARSER.parse(process.argv);
-        manta.checkBinEnv(opts);
-    } catch (e) {
-        manta.cli_usage(OPTIONS_PARSER, e.message, 'path...');
-    }
-
-    manta.cli_logger(opts, LOG);
-
-    if (opts.help)
-        manta.cli_usage(OPTIONS_PARSER, false, 'path...');
-
-    manta.cliVersionCheckPrintAndExit(opts);
-    manta.cliCompletionCheckPrintAndExit(opts, OPTIONS_PARSER, NAME,
-        ['mpath', 'none']);
-
+/**
+ * Handle command-specific options parsing and checking.
+ *
+ * @param {Object} opts: Required. A parsed options object.
+ * @param {Object} parser: Required. A dashdash option parser.
+ * @returns {Object} A possibly mutated version of the `opts` input parameter.
+ */
+function parseCmdOptions(opts, parser) {
     if (opts.md5 && !opts.file)
-        manta.cli_usage(OPTIONS_PARSER, '--md5 requires --file', 'path...');
-
-    if (opts._args.length < 1)
-        manta.cli_usage(OPTIONS_PARSER, 'path required', 'path...');
+        manta.cli_usage(parser, '--md5 requires --file', 'path...');
 
     ifError(manta.assertPath(opts._args[0], true));
     opts.path = manta.path(opts._args[0], true);
-
-    opts.headers = {};
-    (opts.header || []).forEach(function (h) {
-        if (h.indexOf(':') === -1) {
-            manta.cli_usage(OPTIONS_PARSER,
-                            'header must be in the form of "[header]: value"',
-                            'path...');
-        }
-        var tmp = h.split(':');
-        opts.headers[tmp[0]] = tmp[1].trim();
-    });
 
     if (opts['role-tag'] && opts['role-tag'].length === 1) {
         /* JSSTYLED */
@@ -155,12 +131,26 @@ function printEntry(obj) {
 }
 
 
-
 ///--- Mainline
 
 (function main() {
     var bar = null;
-    var options = parseOptions();
+    var argTypes = ['mpath', 'none'];
+    var name = path.basename(process.argv[1]);
+    var log = bunyan.createLogger({
+        name: name,
+        level: (process.env.LOG_LEVEL || 'info'),
+        stream: process.stderr
+    });
+    var parser = optionsParser(name);
+    var parseArgs = {
+        name: name,
+        parser: parser,
+        argTypes: argTypes,
+        parseCmdOptions: parseCmdOptions,
+        log: log
+    };
+    var options = manta.parseOptions(parseArgs);
 
     var client = manta.createBinClient(options);
     var headers = options.headers || {};
@@ -276,7 +266,7 @@ function printEntry(obj) {
                     // precondition was not met, then bail out without retrying:
                     if (error && error.name === 'PreconditionFailedError')
                         ifError(error);
-                    LOG.debug({
+                    log.debug({
                         err: error,
                         num: num,
                         delay: delay
