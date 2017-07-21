@@ -2,6 +2,10 @@
 
 ## not yet released
 
+## 4.4.3
+
+- joyent/node-manta#244 mlogin could disable Manta's abort-on-core behavior
+
 ## 4.4.2
 
 - joyent/node-manta#312 Custom header input should tolerate ':' characters

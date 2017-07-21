@@ -116,7 +116,7 @@ function _log(str) {
 }
 
 function parseOptions() {
-    var opts;
+    var opts, usercmd;
 
     try {
         opts = OPTIONS_PARSER.parse(process.argv);
@@ -149,12 +149,20 @@ function parseOptions() {
         opts.path = manta.path(opts._args[0], true);
     }
 
-    if (opts.command) {
-        opts.arguments = [ '-c', opts.command ];
+    /*
+     * The default behavior in Manta jobs is that if a process dumps core, then
+     * the whole task is aborted.  That's not appropriate (and pretty annoying)
+     * for interactive use, so we run the command in our own contract that will
+     * ignore when a process dumps core.
+     */
+    usercmd = opts.command;
+    opts.command = '/usr/bin/ctrun';
+    opts.arguments = [ '-i', 'core', '-l', 'child', '/bin/bash' ];
+    if (usercmd) {
+        opts.arguments.push('-c', usercmd);
     } else {
-        opts.arguments = [ '--norc' ];
+        opts.arguments.push('--norc');
     }
-    opts.command = '/bin/bash';
 
     opts.running = true;
     opts.cancel_job = false;
