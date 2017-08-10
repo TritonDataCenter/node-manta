@@ -70,13 +70,13 @@ test: deps
 # with a node_modules/ for that version.
 #
 .PHONY: testall
-testall: test7 test6 test012 test010 test4
+testall: test8 test6 test012 test010 test4
 
-.PHONY: test7
-test7:
+.PHONY: test8
+test8:
 	@([[ -f test/node.paths ]] || (echo "no test/node.paths" && exit 1) \
-		&& echo "# Test with node `$(shell awk '/^7/ { print $$2 }' test/node.paths)/node --version`" \
-		&& PATH="$(shell awk '/^7/ { print $$2 }' test/node.paths):$(PATH)" \
+		&& echo "# Test with node `$(shell awk '/^8/ { print $$2 }' test/node.paths)/node --version`" \
+		&& PATH="$(shell awk '/^8/ { print $$2 }' test/node.paths):$(PATH)" \
 			NPM_CONFIG_LOGLEVEL=silent NPM_CONFIG_PROGRESS=false \
 			make clean test)
 
