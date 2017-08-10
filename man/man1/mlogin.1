@@ -1,4 +1,4 @@
-.TH mlogin 1 "June 2013" Manta "Manta Commands"
+.TH mlogin 1 "August 2017" Manta "Manta Commands"
 .SH NAME
 .PP
 mlogin \- manta interactive session client
@@ -16,6 +16,9 @@ experience and explore the compute zone environment hands on.  It can also
 become part of a workflow using interactive terminal utilities on large Manta
 objects without the need to download or transfer the data \-\- e.g. the the use
 of \fB\fCmdb\fR (the Modular Debugger) on crash dumps and core files.
+.PP
+Note that \fB\fCmlogin\fR makes use of publicly\-readable assets stored under the
+"poseidon" account, which is provided by the system.
 .SH EXAMPLES
 .PP
 The default mode of \fB\fCmlogin\fR is to create a reduce job with no input keys.  This

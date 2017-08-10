@@ -2,6 +2,8 @@
 
 ## not yet released
 
+- joyent/node-manta#321 document mlogin's use of poseidon assets
+
 ## 4.4.3
 
 - joyent/node-manta#244 mlogin could disable Manta's abort-on-core behavior

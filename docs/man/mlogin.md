@@ -1,4 +1,4 @@
-mlogin 1 "June 2013" Manta "Manta Commands"
+mlogin 1 "August 2017" Manta "Manta Commands"
 ===========================================
 
 NAME
@@ -23,6 +23,10 @@ experience and explore the compute zone environment hands on.  It can also
 become part of a workflow using interactive terminal utilities on large Manta
 objects without the need to download or transfer the data -- e.g. the the use
 of `mdb` (the Modular Debugger) on crash dumps and core files.
+
+Note that `mlogin` makes use of publicly-readable assets stored under the
+"poseidon" account, which is provided by the system.
+
 
 EXAMPLES
 --------
