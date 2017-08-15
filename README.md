@@ -168,3 +168,13 @@ Here is how to cut a release:
 
    This will run a couple checks (clean working copy, versions in package.json
    and CHANGES.md match), then will git tag and npm publish.
+
+# Supported Node.js Versions
+
+Currently, node-manta is officially supported on the following node versions:
+
+* v0.10 (latest tested 0.10.48)
+* v0.12 (latest tested 0.12.18)
+* v4.8 (latest tested 4.8.4)
+* v6.11 (latest tested 6.11.2)
+* v8.3 (latest tested 8.3.0)
