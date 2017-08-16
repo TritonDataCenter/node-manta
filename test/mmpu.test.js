@@ -35,6 +35,8 @@ var MGET = path.resolve(BINDIR, 'mget');
 var MMPU = path.resolve(BINDIR, 'mmpu');
 var MRM = path.resolve(BINDIR, 'mrm');
 
+var MPU_ENABLED;
+
 // mmpu subcommands
 var CREATE = 'create';
 var UPLOAD = 'upload';
@@ -92,6 +94,16 @@ test('mmpu create C_OBJ_PATH -c 1 -H m-custom-header:foo -s TEXT_SIZE ' +
     forkExecWait({
         argv: argv
     }, function (err, info) {
+        if (err && info.stderr === 'mmpu create: error: multipart upload is ' +
+            'not supported for this Manta deployment\n') {
+            MPU_ENABLED = false;
+            console.log('WARNING: skipping test: multipart ' +
+                'upload is not enabled on this Manta deployment');
+            t.done();
+            return;
+        }
+        MPU_ENABLED = true;
+
         t.ifError(err, err);
         if (!err) {
             t.ok(info);
@@ -105,6 +117,13 @@ test('mmpu create C_OBJ_PATH -c 1 -H m-custom-header:foo -s TEXT_SIZE ' +
 // Get the upload we are going to commit, and verify the attributes match
 // what was specified on create.
 test('mmpu get C_ID', function (t) {
+    if (!MPU_ENABLED) {
+        console.log('WARNING: skipping test: multipart ' +
+            'upload is not enabled on this Manta deployment');
+        t.done();
+        return;
+    }
+
     var argv = [ MMPU, GET, C_ID ];
 
     forkExecWait({
@@ -145,6 +164,13 @@ test('mmpu get C_ID', function (t) {
 // Check that the values specified as flags overwrite the header values.
 test('mmpu create A_OBJ_PATH -c 1 -s TEXT_SIZE -m TEXT_MD5' +
 '-H durability-level 3 -H content-length:10 -H content-md5:foo', function (t) {
+    if (!MPU_ENABLED) {
+        console.log('WARNING: skipping test: multipart ' +
+            'upload is not enabled on this Manta deployment');
+        t.done();
+        return;
+    }
+
     var argv = [
         MMPU, CREATE, A_OBJ_PATH,
         '-c', '1',
@@ -172,6 +198,13 @@ test('mmpu create A_OBJ_PATH -c 1 -s TEXT_SIZE -m TEXT_MD5' +
 // Get the upload we are going to abort, and verify the attributes match
 // what was specified on create.
 test('mmpu get A_IDJ', function (t) {
+    if (!MPU_ENABLED) {
+        console.log('WARNING: skipping test: multipart ' +
+            'upload is not enabled on this Manta deployment');
+        t.done();
+        return;
+    }
+
     var argv = [ MMPU, GET, A_ID ];
 
     forkExecWait({
@@ -211,6 +244,13 @@ test('mmpu get A_IDJ', function (t) {
 
 // Check that no parts have been uploaded for C_ID.
 test('mmpu parts C_ID: pre-upload', function (t) {
+    if (!MPU_ENABLED) {
+        console.log('WARNING: skipping test: multipart ' +
+            'upload is not enabled on this Manta deployment');
+        t.done();
+        return;
+    }
+
     var argv = [ MMPU, PARTS, C_ID ];
 
     forkExecWait({
@@ -230,6 +270,13 @@ test('mmpu parts C_ID: pre-upload', function (t) {
 
 // Check that no parts have been uploaded for A_ID.
 test('mmpu parts A_ID: pre-upload', function (t) {
+    if (!MPU_ENABLED) {
+        console.log('WARNING: skipping test: multipart ' +
+            'upload is not enabled on this Manta deployment');
+        t.done();
+        return;
+    }
+
     var argv = [ MMPU, PARTS, A_ID ];
 
     forkExecWait({
@@ -249,6 +296,13 @@ test('mmpu parts A_ID: pre-upload', function (t) {
 
 // Check that we see the new uploads in `mmpu list`.
 test('mmpu list', function (t) {
+    if (!MPU_ENABLED) {
+        console.log('WARNING: skipping test: multipart ' +
+            'upload is not enabled on this Manta deployment');
+        t.done();
+        return;
+    }
+
     var argv = [ MMPU, LIST ];
 
     forkExecWait({
@@ -284,6 +338,13 @@ test('mmpu list', function (t) {
 
 // Upload a part from a file to the commit object.
 test('mmpu upload C_ID 0 -f tmpFile', function (t) {
+    if (!MPU_ENABLED) {
+        console.log('WARNING: skipping test: multipart ' +
+            'upload is not enabled on this Manta deployment');
+        t.done();
+        return;
+    }
+
     var tmpFile = '/var/tmp/node-manta-mmpu-test-tmp-file-' + process.pid;
 
     function mkTmpFile(_, cb) {
@@ -327,6 +388,13 @@ test('mmpu upload C_ID 0 -f tmpFile', function (t) {
 
 // Upload a part from a stream to the abort object.
 test('mmpu upload A_ID 0', function (t) {
+    if (!MPU_ENABLED) {
+        console.log('WARNING: skipping test: multipart ' +
+            'upload is not enabled on this Manta deployment');
+        t.done();
+        return;
+    }
+
     var argv = [ MMPU, UPLOAD, A_ID,
         '0'
     ];
@@ -352,6 +420,13 @@ test('mmpu upload A_ID 0', function (t) {
 
 // Check that one part has been uploaded for C_ID.
 test('mmpu parts C_ID: post-upload', function (t) {
+    if (!MPU_ENABLED) {
+        console.log('WARNING: skipping test: multipart ' +
+            'upload is not enabled on this Manta deployment');
+        t.done();
+        return;
+    }
+
     var argv = [ MMPU, PARTS, C_ID ];
 
     forkExecWait({
@@ -372,6 +447,13 @@ test('mmpu parts C_ID: post-upload', function (t) {
 
 // Check that one part has been uploaded for A_ID.
 test('mmpu parts A_ID: post-upload', function (t) {
+    if (!MPU_ENABLED) {
+        console.log('WARNING: skipping test: multipart ' +
+            'upload is not enabled on this Manta deployment');
+        t.done();
+        return;
+    }
+
     var argv = [ MMPU, PARTS, A_ID ];
 
     forkExecWait({
@@ -393,6 +475,13 @@ test('mmpu parts A_ID: post-upload', function (t) {
 
 // Check that `mmpu list -p` now includes the parts that have been uploaded.
 test('mmpu list -p', function (t) {
+    if (!MPU_ENABLED) {
+        console.log('WARNING: skipping test: multipart ' +
+            'upload is not enabled on this Manta deployment');
+        t.done();
+        return;
+    }
+
     var argv = [ MMPU, LIST, '-p' ];
 
     forkExecWait({
@@ -438,6 +527,13 @@ test('mmpu list -p', function (t) {
 // Check that `mmpu list` (without -p) does not show the parts that have been
 // uploaded.
 test('mmpu list: post part upload', function (t) {
+    if (!MPU_ENABLED) {
+        console.log('WARNING: skipping test: multipart ' +
+            'upload is not enabled on this Manta deployment');
+        t.done();
+        return;
+    }
+
     var argv = [ MMPU, LIST ];
 
     forkExecWait({
@@ -484,6 +580,13 @@ test('mmpu list: post part upload', function (t) {
 // Commit the object, do an mget of it to verify it's the object we expect,
 // and remove it to clean up.
 test('mmpu commit C_ID C_ETAG0', function (t) {
+    if (!MPU_ENABLED) {
+        console.log('WARNING: skipping test: multipart ' +
+            'upload is not enabled on this Manta deployment');
+        t.done();
+        return;
+    }
+
     function commit(_, cb) {
         var argv = [ MMPU, COMMIT, C_ID, C_ETAG0 ];
 
@@ -561,6 +664,13 @@ test('mmpu commit C_ID C_ETAG0', function (t) {
 
 // Abort the object being uploaded to A_OBJ_PATH.
 test('mmpu abort A_ID', function (t) {
+    if (!MPU_ENABLED) {
+        console.log('WARNING: skipping test: multipart ' +
+            'upload is not enabled on this Manta deployment');
+        t.done();
+        return;
+    }
+
     function abort(_, cb) {
         var argv = [ MMPU, ABORT, A_ID ];
 

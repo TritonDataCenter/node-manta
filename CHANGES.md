@@ -2,6 +2,28 @@
 
 ## not yet released
 
+## 5.0.0
+
+If you do not check explicitly for `ResourceNotFoundErrors` from multipart
+upload operations, this major bump will not affect you. Code that checks for a
+`ResourceNotFoundError` in the error cause chain using
+[VError](https://github.com/joyent/node-verror)'s `findCauseByName` or
+`hasCauseWithName` will continue to work.
+
+Major bump due to a change in the errors that may be returned from client
+multipart upload operations. In particular, if Manta returns a
+`ResourceNotFoundError` for an MPU operation, it is presumed that the Manta
+deployment does not have the multipart upload API enabled. The client will now
+return a `FeatureNotSupportedError` from the methods `createUpload`,
+`uploadPart`, `abortUpload`, `getUpload`, and `commitUpload` in this case, with
+the `ResourceNotFoundError` preserved in the call chain.
+Code that specifically checks for the error name `ResourceNotFoundError` to
+detect whether multipart upload is supported should be updated appropriately
+to use VError.hasCauseWithName.
+
+- joyent/node-manta#320 client should detect if MPU is enabled
+- joyent/node-manta#319 MPU-related tests should detect if MPU is supported
+
 ## 4.5.0
 
 Minor bump due to a backwards-compatible addition to the `commitUpload` method

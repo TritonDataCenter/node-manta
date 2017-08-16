@@ -11,6 +11,7 @@ var bunyan = require('bunyan');
 var jsprim = require('jsprim');
 var libuuid = require('uuid');
 var MemoryStream = require('readable-stream/passthrough.js');
+var verror = require('verror');
 
 var logging = require('./lib/logging');
 var manta = require('../lib');
@@ -32,6 +33,7 @@ var CHILD2 = SUBDIR2 + '/child2-' + libuuid.v4().split('-')[0]; // link
 var NOENTSUB1 = SUBDIR1 + '/a/b/c';
 var NOENTSUB2 = SUBDIR1 + '/d/e/f';
 var SPECIALOBJ1 = SUBDIR1 + '/' + 'before-\r-after';
+var MPU_ENABLED;
 var UPLOAD1; // committed upload
 var UPLOAD2; // aborted upload
 var PATH1 = ROOT + '/committed-obj';
@@ -734,6 +736,15 @@ test('create upload', function (t) {
     };
 
     this.client.createUpload(PATH1, opts, function (err, obj) {
+        if (err && verror.hasCauseWithName(err, 'FeatureNotSupportedError')) {
+            MPU_ENABLED = false;
+            console.log('WARNING: skipping test "create upload": multipart ' +
+                'upload is not enabled on this Manta deployment');
+            t.done();
+            return;
+        }
+        MPU_ENABLED = true;
+
         t.ifError(err);
         if (err) {
             t.done();
@@ -748,6 +759,13 @@ test('create upload', function (t) {
 });
 
 test('upload part', function (t) {
+    if (!MPU_ENABLED) {
+        console.log('WARNING: skipping test "upload part": multipart ' +
+            'upload is not enabled on this Manta deployment');
+        t.done();
+        return;
+    }
+
     var text = 'The lazy brown fox \nsomething \nsomething foo';
     var stream = new MemoryStream();
     var opts = {
@@ -778,6 +796,13 @@ test('upload part', function (t) {
 });
 
 test('get upload', function (t) {
+    if (!MPU_ENABLED) {
+        console.log('WARNING: skipping test "get upload": multipart ' +
+            'upload is not enabled on this Manta deployment');
+        t.done();
+        return;
+    }
+
     var opts = {
         account: this.client.user
     };
@@ -797,6 +822,13 @@ test('get upload', function (t) {
 });
 
 test('commit upload', function (t) {
+    if (!MPU_ENABLED) {
+        console.log('WARNING: skipping test "commit upload": multipart ' +
+            'upload is not enabled on this Manta deployment');
+        t.done();
+        return;
+    }
+
     var opts = {
         account: this.client.user
     };
@@ -852,6 +884,13 @@ test('commit upload', function (t) {
 });
 
 test('errant commit upload returns undefined res', function (t) {
+    if (!MPU_ENABLED) {
+        console.log('WARNING: skipping test "commit upload": multipart ' +
+            'upload is not enabled on this Manta deployment');
+        t.done();
+        return;
+    }
+
     var opts = {
         account: this.client.user
     };
@@ -864,6 +903,13 @@ test('errant commit upload returns undefined res', function (t) {
 });
 
 test('abort upload', function (t) {
+    if (!MPU_ENABLED) {
+        console.log('WARNING: skipping test "abort upload": multipart ' +
+            'upload is not enabled on this Manta deployment');
+        t.done();
+        return;
+    }
+
     var opts = {
         account: this.client.user
     };
@@ -904,6 +950,14 @@ test('abort upload', function (t) {
 });
 
 test('#311: create upload with special headers', function (t) {
+    if (!MPU_ENABLED) {
+        console.log('WARNING: skipping test: "#311: create upload with ' +
+            'special headers": multipart upload is not enabled on this ' +
+            'Manta deployment');
+        t.done();
+        return;
+    }
+
     /*
      * Test adding some headers to the target object that are also parsed by
      * the Manta client, to ensure the headers for the target object are sent
