@@ -802,12 +802,14 @@ test('commit upload', function (t) {
     };
 
     var self = this;
-    self.client.commitUpload(UPLOAD1, ETAGS1, opts, function (err) {
+    self.client.commitUpload(UPLOAD1, ETAGS1, opts, function (err, res) {
         t.ifError(err);
         if (err) {
             t.done();
             return;
         }
+        t.ok(res);
+        t.equal(res.statusCode, 201);
         self.client.getUpload(UPLOAD1, opts, function (err2, upload) {
             t.ifError(err2);
             if (err2) {
@@ -846,6 +848,18 @@ test('commit upload', function (t) {
                 });
             });
         });
+    });
+});
+
+test('errant commit upload returns undefined res', function (t) {
+    var opts = {
+        account: this.client.user
+    };
+    var self = this;
+    self.client.commitUpload(libuuid.v4(), ETAGS1, opts, function (err, res) {
+        t.ok(err);
+        t.ok(res === undefined);
+        t.done();
     });
 });
 

@@ -2,6 +2,15 @@
 
 ## not yet released
 
+## 4.5.0
+
+Minor bump due to a backwards-compatible addition to the `commitUpload` method
+on the client. The `commitUpload` method now passes the response from the server
+to the callback.
+
+- joyent/node-manta#323 return response argument from client.commitUpload
+- joyent/node-manta#318 node-manta nodejs version support
+- joyent/node-manta#322 test7 make target should be test8 given node v8
 - joyent/node-manta#321 document mlogin's use of poseidon assets
 
 ## 4.4.3

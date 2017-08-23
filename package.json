@@ -7,7 +7,7 @@
         "type": "git",
         "url": "git://github.com/joyent/node-manta.git"
     },
-    "version": "4.4.3",
+    "version": "4.5.0",
     "main": "./lib/index.js",
     "dependencies": {
         "assert-plus": "^1.0.0",
