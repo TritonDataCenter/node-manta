@@ -2,6 +2,8 @@
 
 ## not yet released
 
+- joyent/node-manta#325 ask server for fully qualified upload path
+
 ## 5.0.0
 
 If you do not check explicitly for `ResourceNotFoundErrors` from multipart

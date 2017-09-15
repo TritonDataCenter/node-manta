@@ -118,7 +118,8 @@ versions. First you must create "test/node.paths" (based on
 # License
 
 The MIT License (MIT)
-Copyright 2016 Joyent
+
+Copyright (c) 2017, Joyent, Inc.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
