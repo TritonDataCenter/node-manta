@@ -2,7 +2,17 @@
 
 ## not yet released
 
+## 5.1.0
+
+Minor version bump due to a backwards-compatible addition to the multipart
+upload client operations. The client operations now allow for a
+`partsDirectory` string on the options object for multipart upload methods,
+which is used as the URL of the request. Otherwise, the parts directory is
+resolved using the server's redirect endpoint.
+
 - joyent/node-manta#325 ask server for fully qualified upload path
+- joyent/node-manta#326 client could support accepting fully qualified upload
+  directory as input to MPU operations
 
 ## 5.0.0
 

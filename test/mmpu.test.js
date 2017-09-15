@@ -56,6 +56,10 @@ var A_OBJ_PATH = format('/%s/stor/node-manta-test-mmpu-%s-abort',
 var C_ID;
 var A_ID;
 
+// upload paths
+var C_UPLOADPATH;
+var A_UPLOADPATH;
+
 // part etags
 var C_ETAG0;
 var A_ETAG0;
@@ -70,11 +74,6 @@ var TEXT_MD5 = crypto.createHash('md5').update(TEXT).digest('base64');
 
 function test(name, testfunc) {
     module.exports[name] = testfunc;
-}
-
-function uploadPath(id) {
-    var prefix = id.charAt(0);
-    return ('/' + MANTA_USER + '/uploads/' + prefix + '/' + id);
 }
 
 
@@ -151,6 +150,8 @@ test('mmpu get C_ID', function (t) {
             t.equal(headers['content-md5'], TEXT_MD5);
             t.equal(headers['m-custom-header'], 'foo');
             t.equal(upload.state, 'created');
+
+            C_UPLOADPATH = upload.partsDirectory;
         } else {
             console.log(err);
             console.log(info.stderr);
@@ -197,7 +198,7 @@ test('mmpu create A_OBJ_PATH -c 1 -s TEXT_SIZE -m TEXT_MD5' +
 
 // Get the upload we are going to abort, and verify the attributes match
 // what was specified on create.
-test('mmpu get A_IDJ', function (t) {
+test('mmpu get A_ID', function (t) {
     if (!MPU_ENABLED) {
         console.log('WARNING: skipping test: multipart ' +
             'upload is not enabled on this Manta deployment');
@@ -230,8 +231,9 @@ test('mmpu get A_IDJ', function (t) {
             t.equal(headers['durability-level'], 1);
             t.equal(headers['content-length'], TEXT_SIZE);
             t.equal(headers['content-md5'], TEXT_MD5);
-
             t.equal(upload.state, 'created');
+
+            A_UPLOADPATH = upload.partsDirectory;
         } else {
             console.log(err);
             console.log(info.stderr);
@@ -310,12 +312,13 @@ test('mmpu list', function (t) {
     }, function (err, info) {
         t.ifError(err, err);
 
-        var c = uploadPath(C_ID);
-        var a = uploadPath(A_ID);
         var cFound, aFound = false;
 
         if (!err) {
             var split = info.stdout.split('\n');
+            var c = C_UPLOADPATH;
+            var a = A_UPLOADPATH;
+
             split.forEach(function (line) {
                 if (line === c) {
                     cFound = true;
@@ -434,7 +437,7 @@ test('mmpu parts C_ID: post-upload', function (t) {
     }, function (err, info) {
         t.ifError(err, err);
         if (!err) {
-            var expectedStdout = uploadPath(C_ID) + '/0\n';
+            var expectedStdout = C_UPLOADPATH + '/0\n';
             t.equal(info.stdout, expectedStdout);
         } else {
             console.log(err);
@@ -461,7 +464,7 @@ test('mmpu parts A_ID: post-upload', function (t) {
     }, function (err, info) {
         t.ifError(err, err);
         if (!err) {
-            var expectedStdout = uploadPath(A_ID) + '/0\n';
+            var expectedStdout = A_UPLOADPATH + '/0\n';
             t.equal(info.stdout, expectedStdout);
         } else {
             console.log(err);
@@ -489,8 +492,8 @@ test('mmpu list -p', function (t) {
     }, function (err, info) {
         t.ifError(err, err);
 
-        var c = uploadPath(C_ID);
-        var a = uploadPath(A_ID);
+        var c = C_UPLOADPATH;
+        var a = A_UPLOADPATH;
         var c0 = c + '/0';
         var a0 = a + '/0';
 
@@ -541,8 +544,8 @@ test('mmpu list: post part upload', function (t) {
     }, function (err, info) {
         t.ifError(err, err);
 
-        var c = uploadPath(C_ID);
-        var a = uploadPath(A_ID);
+        var c = C_UPLOADPATH;
+        var a = A_UPLOADPATH;
         var c0 = c + '/0';
         var a0 = a + '/0';
 

@@ -605,25 +605,35 @@ MMpu.prototype.do_parts = function do_parts(subcmd, opts, args, cb) {
         return;
     }
 
-    var id = args[0];
-    var prefix = id.charAt(0);
-    var url = '/' + opts.account + '/uploads/' + prefix + '/' + id;
     var client = createClient(opts);
 
-    var ftwOpts = {
-        minDepth: 0,
-        maxDepth: 1
+    var id = args[0];
+    var getUploadOpts = {
+        account: opts.account
     };
 
-    client.ftw(url, ftwOpts, function (err, res) {
+    client.getUpload(id, getUploadOpts, function (err, upload) {
         if (err) {
             client.close();
             cb(err);
         } else {
-            res.on('entry', printEntry);
-            res.on('end', function () {
-                client.close();
-                cb();
+            var url = upload.partsDirectory;
+            var ftwOpts = {
+                minDepth: 0,
+                maxDepth: 1
+            };
+
+            client.ftw(url, ftwOpts, function (err2, res) {
+                if (err2) {
+                    client.close();
+                    cb(err2);
+                } else {
+                    res.on('entry', printEntry);
+                    res.on('end', function () {
+                        client.close();
+                        cb();
+                    });
+                }
             });
         }
     });
