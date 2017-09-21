@@ -120,7 +120,6 @@ function parseOptions() {
 
     try {
         opts = OPTIONS_PARSER.parse(process.argv);
-        manta.checkBinEnv(opts);
     } catch (e) {
         manta.cli_usage(OPTIONS_PARSER, e.message, 'path...');
     }
@@ -192,6 +191,12 @@ function parseOptions() {
 
     opts.config_key = '/' + opts.account + '/stor/medusa-config-' +
         libuuid.v4() + '.json';
+
+    try {
+        manta.checkBinEnv(opts);
+    } catch (e) {
+        manta.cli_usage(OPTIONS_PARSER, e.message, 'path...');
+    }
 
     return (opts);
 }

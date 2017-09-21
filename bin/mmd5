@@ -47,7 +47,6 @@ function parseOptions() {
 
     try {
         opts = OPTIONS_PARSER.parse(process.argv);
-        manta.checkBinEnv(opts);
     } catch (e) {
         manta.cli_usage(OPTIONS_PARSER, e.message, 'path...');
     }
@@ -65,6 +64,12 @@ function parseOptions() {
 
     opts.parallel = 10;
     opts.paths = opts._args;
+
+    try {
+        manta.checkBinEnv(opts);
+    } catch (e) {
+        manta.cli_usage(OPTIONS_PARSER, e.message, 'path...');
+    }
 
     return (opts);
 }

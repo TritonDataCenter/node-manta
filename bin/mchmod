@@ -65,7 +65,6 @@ function parseOptions() {
 
     try {
         opts = OPTIONS_PARSER.parse(process.argv);
-        manta.checkBinEnv(opts);
     } catch (e) {
         manta.cli_usage(OPTIONS_PARSER, e.message,
                                         '-- [+-=]role,... path...');
@@ -94,6 +93,13 @@ function parseOptions() {
         ifError(manta.assertPath(p, true));
         return (manta.path(p, true));
     });
+
+    try {
+        manta.checkBinEnv(opts);
+    } catch (e) {
+        manta.cli_usage(OPTIONS_PARSER, e.message,
+                        '-- [+-=]role,... path...');
+    }
 
     return (opts);
 }

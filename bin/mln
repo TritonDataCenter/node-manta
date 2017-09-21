@@ -55,7 +55,6 @@ function parseOptions() {
 
     try {
         opts = OPTIONS_PARSER.parse(process.argv);
-        manta.checkBinEnv(opts);
     } catch (e) {
         manta.cli_usage(OPTIONS_PARSER, e.message, 'source dest');
     }
@@ -80,6 +79,12 @@ function parseOptions() {
     if (opts['role-tag'] && opts['role-tag'].length === 1) {
         /* JSSTYLED */
         opts['role-tag'] = opts['role-tag'][0].split(/\s*,\s*/);
+    }
+
+    try {
+        manta.checkBinEnv(opts);
+    } catch (e) {
+        manta.cli_usage(OPTIONS_PARSER, e.message, 'source dest');
     }
 
     return (opts);
