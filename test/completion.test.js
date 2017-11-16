@@ -34,6 +34,10 @@ function test(name, testfunc) {
 fs.readdirSync(binDir).forEach(function (name) {
     var cmd = path.join(binDir, name);
 
+    if (name.charAt(0) == '.') {
+    	return;
+    }
+
     test(name + ' --completion', function (t) {
         exec(cmd + ' --completion', function (err, stdout, stderr) {
             t.ifError(err);
