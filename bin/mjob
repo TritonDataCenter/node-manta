@@ -15,8 +15,10 @@ var backoff = require('backoff');
 var bunyan = require('bunyan');
 var cmdln = require('cmdln');
 var LineStream = require('lstream');
+var jsprim = require('jsprim');
 var moment = require('moment');
 var once = require('once');
+var vasync = require('vasync');
 
 var manta = require('../lib');
 
@@ -344,10 +346,14 @@ function jobWatch(opts, cb) {
 
     var client = opts.client;
     var job = opts.job;
+    var accum = new JobStateAccumulator({
+        'client': client,
+        'log': client.log.child({ 'component': 'accum' }) /* XXX */
+    });
 
     var monitor = backoff.exponential({
         initialDelay: 100,
-        maxDelay: opts.baropts ? 101 : 10000
+        maxDelay: opts.baropts ? 101 : 2000
     });
 
     var bar;
@@ -366,19 +372,23 @@ function jobWatch(opts, cb) {
                 cb(err);
             } else if (status.state !== 'done' &&
                 status.state !== 'archiving') {
+                accum.updateJobState(status);
                 if (bar) {
                     bar.advance(status.stats.tasksDone - tasksDone);
                     tasksDone = status.stats.tasksDone;
                 }
                 monitor.backoff();
             } else {
+                accum.on('end', function () {
+                    cb(null, status);
+                });
+                accum.updateJobState(status);
                 if (bar) {
                     bar.advance(status.stats.tasksDone - tasksDone);
                 }
                 monitor.reset(); // stop monitoring
                 monitor.removeAllListeners('fail');
                 monitor.removeAllListeners('ready');
-                cb(null, status);
             }
         });
     });
@@ -388,6 +398,11 @@ function jobWatch(opts, cb) {
     });
 
     monitor.backoff();
+
+    accum.on('jobError', function onNewJobError(err) {
+        console.error('found new class of error: %s: %s',
+            err.code, err.message);
+    });
 }
 
 
@@ -1695,6 +1710,182 @@ MJob.prototype.do_cost.help = (
     '\n' +
     '{{options}}'
 );
+
+/*
+ * A JobStateAccumulator is an object that keeps track of the job's state over
+ * time.  Callers invoke updateJobState() whenever they have an updated copy of
+ * the job state.  This emits events:
+ *
+ *     'jobError'        whenever a new class of error is emitted by the job
+ *                       The argument is an object describing the error, as it's
+ *                       returned from the API.  This is not actually a
+ *                       JavaScript error.
+ *
+ *     'end'             when the job has completed and no other events will be
+ *                       emitted
+ *
+ * Errors cause warnings to be emitted to stderr, but do not get thrown or
+ * propagated to the caller, since there's nothing to do but wait until we try
+ * again next time.
+ */
+function JobStateAccumulator(args)
+{
+    assert.object(args, 'args');
+    assert.object(args.client, 'args.client');
+    assert.object(args.log, 'args.log');
+
+    this.jsa_last = null;
+    this.jsa_errors = {};
+    this.jsa_fetching = false;
+    this.jsa_pending = false;
+    this.jsa_lasttime = false;
+    this.jsa_client = args.client;
+    this.jsa_log = args.log;
+
+    EventEmitter.call(this);
+}
+
+util.inherits(JobStateAccumulator, EventEmitter);
+
+/*
+ * Update the job's state.  "job" should be the job's status, as returned by the
+ * Manta API.
+ *
+ * If new errors are detected, we will fetch them, categorize them, and emit
+ * "jobError" for errors that we have not seen before.
+ */
+JobStateAccumulator.prototype.updateJobState = function (job)
+{
+    var checkerrors = false;
+    var prev = this.jsa_last;
+
+    assert.object(job, 'job');
+    assert.string(job.id, 'job.id');
+    assert.string(job.state, 'job.state');
+    assert.object(job.stats, 'job.stats');
+    assert.number(job.stats.errors, 'job.stats.errors');
+    assert.number(job.stats.outputs, 'job.stats.outputs');
+    assert.number(job.stats.retries, 'job.stats.retries');
+    assert.number(job.stats.tasks, 'job.stats.tasks');
+    assert.number(job.stats.tasksDone, 'job.stats.tasksDone');
+
+    this.jsa_log.trace({ 'job': job }, 'new job state');
+
+    this.jsa_last = job;
+    if (prev !== null && prev.state === 'done') {
+        this.jsa_log.trace({ 'job': job }, 'was already done');
+        return;
+    }
+
+    if (job.state == 'done' ||
+        (prev !== null && job.stats.errors > prev.stats.errors)) {
+        this.jsa_log.trace('will check errors');
+        checkerrors = true;
+    }
+
+    if (job.state == 'done') {
+        this.jsa_log.trace('last time');
+        this.jsa_lasttime = true;
+    }
+
+    if (!checkerrors) {
+        return;
+    }
+
+    if (this.jsa_fetching) {
+        this.jsa_log.trace('already pending');
+        this.jsa_pending = true;
+        return;
+    }
+
+    this.jsa_fetching = true;
+    this.fetchErrorDetails();
+};
+
+/*
+ * [internal] Fetch list of errors for the job.
+ */
+JobStateAccumulator.prototype.fetchErrorDetails = function ()
+{
+    var jobid;
+    var self = this;
+
+    jobid = this.jsa_last.id;
+    this.jsa_client.jobErrors(jobid, function onJobErrors(err, stream) {
+        if (err) {
+            /* TODO */
+            /*
+             * XXX probably shouldn't have updated "last" because we think we've
+             * fetched the last error, but haven't.
+             */
+            console.error('warn: fetching job errors: %s', err.message);
+            self.fetchDone();
+            return;
+        }
+
+        stream.on('error', function onError(stream_error) {
+            /* TODO */
+            /* XXX see above */
+            console.error('warn: processing job errors: %s',
+                stream_error.message);
+            self.fetchDone();
+        });
+
+        stream.on('end', function onEndErrors() {
+            self.fetchDone();
+        });
+
+        stream.on('err', function onJobError(job_error) {
+            self.fetchGotJobError(job_error);
+        });
+    });
+};
+
+/*
+ * [internal] Invoked when a single fetch operation completes.
+ */
+JobStateAccumulator.prototype.fetchDone = function ()
+{
+    assert.ok(this.jsa_fetching);
+    this.jsa_log.trace('fetch done');
+    if (this.jsa_lasttime) {
+        this.jsa_log.debug('last fetch done');
+        this.emit('end');
+    } if (this.jsa_pending) {
+        this.jsa_log.trace('taking immediate lap');
+        this.jsa_pending = false;
+        this.fetchErrorDetails();
+    } else {
+        this.jsa_fetching = false;
+    }
+};
+
+/*
+ * [internal] Invoked when we found an error from the job.  This may be invoked
+ * multiple times for the same error.
+ */
+JobStateAccumulator.prototype.fetchGotJobError = function (job_error)
+{
+    var key;
+
+    /*
+     * Right now, we group most errors by their code.  For UserTaskErrors, we
+     * additionally group them by the message so that different exit statuses
+     * are all reported.
+     */
+    assert.string(job_error.code, 'job_error.code');
+    key = job_error.code == 'UserTaskError' ?
+        job_error.code + '/' + job_error.message : job_error.code;
+
+    if (jsprim.hasKey(this.jsa_errors, key)) {
+        this.jsa_log.trace({ 'error': job_error }, 'dup error');
+        return;
+    }
+
+    this.jsa_log.trace({ 'error': job_error }, 'new error');
+    this.jsa_errors[key] = job_error;
+    this.emit('jobError', job_error);
+};
 
 ///--- Mainline
 
