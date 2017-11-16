@@ -75,7 +75,7 @@ test('mjob create --close -or "echo hello"', function (t) {
     var args = ['create', '--close', '-or', 'echo hello'];
     mjobExec(args, function (err, stdout, stderr) {
         t.ifError(err, err);
-        t.equal(stderr, '', 'stderr is empty: ' + stderr);
+	t.ok(/^[a-zA-Z0-9-]+$/.test(stderr.trim()));
         t.equal(stdout, 'hello\n', 'stdout mismatch');
         t.done();
     });
