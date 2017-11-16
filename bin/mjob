@@ -799,7 +799,6 @@ MJob.prototype.do_create = function create(subcmd, opts, args, cb) {
                 'client': client,
                 'log': client.log.child({ 'component': 'accum' })
     });
-    opts.accumulator = accum;
     client.createJob(job, function (err, id) {
         if (err) {
             cb(err);
@@ -808,8 +807,8 @@ MJob.prototype.do_create = function create(subcmd, opts, args, cb) {
 
         if (!opts.cat_outputs)
             console.log(id);
-	else
-	    console.error(id);
+        else
+            console.error(id);
 
         if (process.stdin.isTTY) {
             if (!opts.close && !opts.open)
@@ -825,6 +824,7 @@ MJob.prototype.do_create = function create(subcmd, opts, args, cb) {
                     jobWait({
                         client: client,
                         id: id,
+                        accumulator: accum,
                         opts: opts
                     }, cb);
                 });
@@ -832,6 +832,7 @@ MJob.prototype.do_create = function create(subcmd, opts, args, cb) {
                 jobWait({
                     client: client,
                     id: id,
+                    accumulator: accum,
                     opts: opts
                 }, cb);
             }
@@ -846,6 +847,7 @@ MJob.prototype.do_create = function create(subcmd, opts, args, cb) {
                 jobWait({
                     client: client,
                     id: id,
+                    accumulator: accum,
                     opts: opts
                 }, function (err3) {
                     client.close();
