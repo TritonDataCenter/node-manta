@@ -1734,13 +1734,13 @@ function JobStateAccumulator(args)
     assert.object(args.client, 'args.client');
     assert.object(args.log, 'args.log');
 
-    this.jsa_last = null;
-    this.jsa_errors = {};
-    this.jsa_fetching = false;
-    this.jsa_pending = false;
-    this.jsa_lasttime = false;
-    this.jsa_client = args.client;
-    this.jsa_log = args.log;
+    this.jsa_client = args.client;  /* node-manta client */
+    this.jsa_log = args.log;        /* bunyan log */
+    this.jsa_last = null;           /* the last job status we've seen */
+    this.jsa_errors = {};           /* set of errors we've seen */
+    this.jsa_fetching = false;      /* currently fetching errors */
+    this.jsa_pending = false;       /* need to fetch errors again */
+    this.jsa_lasttime = false;      /* the current fetch is the last one */
 
     EventEmitter.call(this);
 }
@@ -1771,18 +1771,30 @@ JobStateAccumulator.prototype.updateJobState = function (job)
 
     this.jsa_log.trace({ 'job': job }, 'new job state');
 
+    /*
+     * If we were done already the last time around, there's no need to continue
+     * fetching any state.
+     */
     this.jsa_last = job;
     if (prev !== null && prev.state === 'done') {
         this.jsa_log.trace({ 'job': job }, 'was already done');
         return;
     }
 
+    /*
+     * On the other hand, if the job's state is newly done, or there are more
+     * errors than there were before, then we need to fetch the list of errors
+     * again.
+     */
     if (job.state == 'done' ||
         (prev !== null && job.stats.errors > prev.stats.errors)) {
         this.jsa_log.trace('will check errors');
         checkerrors = true;
     }
 
+    /*
+     * If the job is newly done, this is the last time we need to check.
+     */
     if (job.state == 'done') {
         this.jsa_log.trace('last time');
         this.jsa_lasttime = true;
@@ -1792,6 +1804,12 @@ JobStateAccumulator.prototype.updateJobState = function (job)
         return;
     }
 
+    /*
+     * We only want to issue one fetch at a time, and there's no point in
+     * queueing up more than one fetch operation.  If there's one outstanding,
+     * just set a flag indicating that we should kick off another one as soon as
+     * that one completes.
+     */
     if (this.jsa_fetching) {
         this.jsa_log.trace('already pending');
         this.jsa_pending = true;
@@ -1869,9 +1887,9 @@ JobStateAccumulator.prototype.fetchGotJobError = function (job_error)
     var key;
 
     /*
-     * Right now, we group most errors by their code.  For UserTaskErrors, we
-     * additionally group them by the message so that different exit statuses
-     * are all reported.
+     * We group most errors by their code.  For UserTaskErrors, we additionally
+     * group them by the message so that different exit statuses are all
+     * reported.
      */
     assert.string(job_error.code, 'job_error.code');
     key = job_error.code == 'UserTaskError' ?
