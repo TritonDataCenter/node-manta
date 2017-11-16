@@ -22,6 +22,7 @@ var vasync = require('vasync');
 
 var manta = require('../lib');
 
+var VError = require('verror');
 
 
 ///--- Globals
@@ -176,11 +177,13 @@ function jobDataCommon(opts, callback) {
     assert.string(opts.type, 'options.type');
     assert.string(opts.user, 'options.user');
     assert.string(opts.watch, 'options.watch');
+    assert.optionalString(opts.stat, 'options.stat');
     assert.optionalFunc(callback, 'callback');
 
     var queue = new manta.Queue({
         limit: opts.parallel,
         worker: function getJobData(id, cb) {
+            var warnings = [];
             cb = once(cb);
 
             function handleError(func_err) {
@@ -208,32 +211,63 @@ function jobDataCommon(opts, callback) {
                 });
             }
 
-            opts.client[opts.func](id, function (err, out) {
+            getJobInfo({
+                'client': opts.client,
+                'id': id,
+                'user': opts.user
+            }, function (err, job) {
                 if (err) {
-                    handleError(err);
+                    cb(err);
                     return;
                 }
 
-                var body = '';
+                if (job.state != 'done') {
+                    warnings.push(new VError('job "%s": not yet done', job.id));
+                }
 
-                out.once('error', handleError);
-                out.on(opts.watch, function (obj) {
-                    if (opts.func === 'jobErrors') {
-                        body += JSON.stringify(obj) + '\n';
-                    } else if (opts.emit) {
-                        opts.emit.emit(opts.watch, obj);
-                    } else {
-                        body += obj + '\n';
+                opts.client[opts.func](id, function (err2, out) {
+                    if (err2) {
+                        handleError(err2);
+                        return;
                     }
-                });
 
-                out.once('end', function () {
-                    if (!opts.emit) {
-                        process.stdout.write(body);
-                        cb();
-                    } else {
-                        opts.emit.emit('end');
-                    }
+                    var body = '';
+                    var count = 0;
+
+                    out.once('error', handleError);
+                    out.on(opts.watch, function (obj) {
+                        count++;
+
+                        if (opts.func === 'jobErrors') {
+                            body += JSON.stringify(obj) + '\n';
+                        } else if (opts.emit) {
+                            opts.emit.emit(opts.watch, obj);
+                        } else {
+                            body += obj + '\n';
+                        }
+                    });
+
+                    out.once('end', function () {
+                        if (typeof (opts.stat) == 'string' &&
+                            job.stats[opts.stat] > count) {
+                            warnings.push(new VError(
+                                'job "%s": has %d %s (fetched only %d)',
+                                id, job.stats[opts.stat], opts.stat, count));
+                        }
+
+                        if (!opts.emit) {
+                            process.stdout.write(body);
+                            warnings.forEach(function (e) {
+                                console.error('warn: %s', e.message);
+                            });
+                            cb();
+                        } else {
+                            warnings.forEach(function (e) {
+                                opts.emit.emit('warning', e);
+                            });
+                            opts.emit.emit('end');
+                        }
+                    });
                 });
             });
         }
@@ -280,6 +314,7 @@ function jobWait(opts, cb) {
 
         var s = job.stats;
         var job_error;
+        var warnings = [];
         if (s.errors > 0) {
             var msg = sprintf('job %s had %d error%s', opts.id, s.errors,
                               s.errors > 1 ? 's' : '');
@@ -311,6 +346,9 @@ function jobWait(opts, cb) {
 
             function get_done(get_err) {
                 opts.client.close();
+                warnings.forEach(function (w) {
+                    console.error(w.message);
+                });
                 cb(get_err || job_error);
             }
 
@@ -319,6 +357,9 @@ function jobWait(opts, cb) {
 
             ee.on('key', outQueue.push.bind(outQueue));
             ee.once('end', outQueue.close.bind(outQueue));
+            ee.on('warning', function (w) {
+                warnings.push(w);
+            });
 
             jobDataCommon({
                 args: [opts.id],
@@ -326,6 +367,7 @@ function jobWait(opts, cb) {
                 emit: ee,
                 func: 'jobOutput',
                 parallel: opts.opts.parallel,
+                stat: 'outputs',
                 type: 'out',
                 user: opts.opts.account,
                 watch: 'key'
@@ -1095,6 +1137,7 @@ MJob.prototype.do_outputs = function do_outputs(subcmd, opts, args, cb) {
         client: client,
         func: 'jobOutput',
         parallel: opts.parallel,
+        stat: 'outputs',
         type: 'out',
         user: opts.user,
         watch: 'key'
@@ -1144,6 +1187,7 @@ MJob.prototype.do_errors = function do_errors(subcmd, opts, args, cb) {
         client: client,
         func: 'jobErrors',
         parallel: opts.parallel,
+        stat: 'errors',
         type: 'err',
         user: opts.user,
         watch: 'err'
@@ -1194,6 +1238,7 @@ MJob.prototype.do_failures = function do_failures(subcmd, opts, args, cb) {
         client: client,
         func: 'jobFailures',
         parallel: opts.parallel,
+        stat: 'errors',
         type: 'fail',
         user: opts.user,
         watch: 'key'
