@@ -431,6 +431,10 @@ function jobWatch(opts, cb) {
         accum.on('jobError', function onNewJobError(err) {
             console.error('found new class of error: %s: %s',
                 err.code, err.message);
+            console.error('    from %s', err.what);
+            if (err.stderr) {
+                console.error('    stderr: %s', err.stderr);
+            }
         });
     }
 }
@@ -1834,12 +1838,14 @@ JobStateAccumulator.prototype.updateJobState = function (job)
     assert.object(job, 'job');
     assert.string(job.id, 'job.id');
     assert.string(job.state, 'job.state');
-    assert.object(job.stats, 'job.stats');
-    assert.number(job.stats.errors, 'job.stats.errors');
-    assert.number(job.stats.outputs, 'job.stats.outputs');
-    assert.number(job.stats.retries, 'job.stats.retries');
-    assert.number(job.stats.tasks, 'job.stats.tasks');
-    assert.number(job.stats.tasksDone, 'job.stats.tasksDone');
+    assert.optionalObject(job.stats, 'job.stats');
+    if (job.stats) {
+        assert.number(job.stats.errors, 'job.stats.errors');
+        assert.number(job.stats.outputs, 'job.stats.outputs');
+        assert.number(job.stats.retries, 'job.stats.retries');
+        assert.number(job.stats.tasks, 'job.stats.tasks');
+        assert.number(job.stats.tasksDone, 'job.stats.tasksDone');
+    }
 
     this.jsa_log.trace({ 'job': job }, 'new job state');
 
@@ -1859,7 +1865,8 @@ JobStateAccumulator.prototype.updateJobState = function (job)
      * again.
      */
     if (job.state == 'done' ||
-        (prev !== null && job.stats.errors > prev.stats.errors)) {
+        (prev !== null && prev.stats && job.stats &&
+        job.stats.errors > prev.stats.errors)) {
         this.jsa_log.trace('will check errors');
         checkerrors = true;
     }
