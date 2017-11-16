@@ -808,6 +808,8 @@ MJob.prototype.do_create = function create(subcmd, opts, args, cb) {
 
         if (!opts.cat_outputs)
             console.log(id);
+	else
+	    console.error(id);
 
         if (process.stdin.isTTY) {
             if (!opts.close && !opts.open)
