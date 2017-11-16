@@ -259,8 +259,8 @@ function jobWait(opts, cb) {
     assert.object(opts.client, 'options.client');
     assert.string(opts.id, 'options.id');
     assert.object(opts.opts, 'options.opts');
-    assert.optionalObject(opts.baropts, 'options.baropts');
     assert.optionalBool(opts.catOutputOnError, 'options.catOutputOnError');
+    assert.optionalObject(opts.accumulator, 'options.accumulator');
     assert.optionalFunc(cb, 'callback');
 
     if (!opts.opts.watch && !opts.opts.cat_outputs) {
@@ -271,7 +271,7 @@ function jobWait(opts, cb) {
     jobWatch({
         client: opts.client,
         job: opts.id,
-        baropts: opts.baropts
+        accumulator: opts.accumulator
     }, function (err, job) {
         if (err) {
             cb(err);
@@ -339,29 +339,18 @@ function jobWatch(opts, cb) {
     assert.object(opts);
     assert.string(opts.job, 'job');
     assert.object(opts.client, 'client');
-    assert.optionalObject(opts.baropts, 'options.baropts');
+    assert.optionalObject(opts.accumulator, 'options.accumulator');
     assert.func(cb, 'callback');
 
     cb = once(cb);
 
     var client = opts.client;
     var job = opts.job;
-    var accum = new JobStateAccumulator({
-        'client': client,
-        'log': client.log.child({ 'component': 'accum' }) /* XXX */
-    });
-
     var monitor = backoff.exponential({
         initialDelay: 100,
-        maxDelay: opts.baropts ? 101 : 2000
+        maxDelay: opts.accumulator ? 101 : 2000
     });
-
-    var bar;
-    var tasksDone;
-    if (opts.baropts) {
-        bar = new manta.ProgressBar(opts.baropts);
-        tasksDone = 0;
-    }
+    var accum = opts.accumulator;
 
     monitor.on('ready', function onReady(attempts, delayms) {
         client.job(job, function onJob(err, status) {
@@ -372,19 +361,16 @@ function jobWatch(opts, cb) {
                 cb(err);
             } else if (status.state !== 'done' &&
                 status.state !== 'archiving') {
-                accum.updateJobState(status);
-                if (bar) {
-                    bar.advance(status.stats.tasksDone - tasksDone);
-                    tasksDone = status.stats.tasksDone;
+                if (accum) {
+                    accum.updateJobState(status);
                 }
                 monitor.backoff();
             } else {
-                accum.on('end', function () {
-                    cb(null, status);
-                });
-                accum.updateJobState(status);
-                if (bar) {
-                    bar.advance(status.stats.tasksDone - tasksDone);
+                if (accum) {
+                    accum.on('end', function () {
+                        cb(null, status);
+                    });
+                    accum.updateJobState(status);
                 }
                 monitor.reset(); // stop monitoring
                 monitor.removeAllListeners('fail');
@@ -399,10 +385,12 @@ function jobWatch(opts, cb) {
 
     monitor.backoff();
 
-    accum.on('jobError', function onNewJobError(err) {
-        console.error('found new class of error: %s: %s',
-            err.code, err.message);
-    });
+    if (accum) {
+        accum.on('jobError', function onNewJobError(err) {
+            console.error('found new class of error: %s: %s',
+                err.code, err.message);
+        });
+    }
 }
 
 
@@ -761,6 +749,11 @@ MJob.prototype.do_create = function create(subcmd, opts, args, cb) {
     }
 
     var client = createClient(opts);
+    var accum = new JobStateAccumulator({
+                'client': client,
+                'log': client.log.child({ 'component': 'accum' })
+    });
+    opts.accumulator = accum;
     client.createJob(job, function (err, id) {
         if (err) {
             cb(err);
@@ -1318,20 +1311,34 @@ MJob.prototype.do_watch = function do_watch(subcmd, opts, args, cb) {
     if (!assertOpts(this, subcmd, opts, cb))
         return;
 
-    if (args.length < 1) {
-        cb(new Error('At least one JobId must be specified'));
-        return;
-    }
-
     var client = createClient(opts);
+    var map = {};
+    var accumulator;
+
+    function printJobState() {
+        // Print header every so often.
+        Object.keys(map).forEach(function (ind) {
+            // console.error(map[ind].jsa_last);
+            // column column column
+        });
+        setTimeout(printJobState, 1000);
+    }
+    setTimeout(printJobState, 1000);
 
     var queue = new manta.Queue({
         limit: opts.parallel,
         worker: function submit(j, _cb) {
             _cb = once(_cb);
+            accumulator = new JobStateAccumulator({
+                'client': client,
+                'log': client.log.child({ 'component': 'accum' })
+            });
+            map[j] = accumulator;
+
             var _opts = {
                 client: client,
-                job: j
+                job: j,
+                accumulator: accumulator
             };
             jobWatch(_opts, function (err, job) {
                 if (err) {
@@ -1351,8 +1358,28 @@ MJob.prototype.do_watch = function do_watch(subcmd, opts, args, cb) {
         cb();
     });
 
-    args.forEach(queue.push.bind(queue));
-    queue.close();
+    if (args.length === 0) {
+        var num_watched = 0;
+        opts.state = 'running';
+        client.listJobs(opts, function (err, res) {
+            res.on('job', function (j) {
+                // Can we short-circuit the listJobs() call if we get too many?
+                if (num_watched < 20) {
+                    queue.push(j.name);
+                    num_watched++;
+                }
+            });
+            res.once('end', function () {
+                queue.close();
+            });
+            res.once('error', function (err1) {
+                console.error(err1);
+                queue.close();
+            });
+        });
+    } else {
+        args.forEach(queue.push.bind(queue));
+    }
 };
 
 MJob.prototype.do_watch.options = manta.DEFAULT_CLI_OPTIONS.concat([
