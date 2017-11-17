@@ -19,6 +19,7 @@ var jsprim = require('jsprim');
 var moment = require('moment');
 var once = require('once');
 var vasync = require('vasync');
+var mod_tab = require('tab');
 
 var manta = require('../lib');
 
@@ -38,6 +39,19 @@ var LOG = bunyan.createLogger({
     stream: process.stderr
 });
 
+var TAB_COLUMNS = [ {
+    'label': 'INPUTSDONE',
+    'align': 'left',
+    'width': 10
+}, {
+    'label': 'TASKSDONE',
+    'align': 'left',
+    'width': 10
+}, {
+    'label': 'ERRORS',
+    'align': 'left',
+    'width': 10
+} ];
 
 
 ///-- Helpers
@@ -91,13 +105,6 @@ function addInputsFromStdin(client, opts, cb) {
                             return;
                         }
 
-                        if (!opts.quiet) {
-                            console.error('added %d input%s to %s',
-                                          keys.length,
-                                          keys.length > 1 ? 's' : '',
-                                          id);
-                        }
-
                         __cb();
                     });
                 }
@@ -118,6 +125,8 @@ function addInputsFromStdin(client, opts, cb) {
             return;
 
         tmp.push(manta.path(l, true));
+        if (opts.accumulator)
+            opts.accumulator.updateInputsDone(tmp.length);
         if (tmp.length === opts.batch) {
             if (!queue.push(tmp.slice(0)) && !paused) {
                 queue.once('drain', function () {
@@ -799,7 +808,31 @@ MJob.prototype.do_create = function create(subcmd, opts, args, cb) {
                 'client': client,
                 'log': client.log.child({ 'component': 'accum' })
     });
+    opts.accumulator = accum;
     client.createJob(job, function (err, id) {
+        if (opts.watch) {
+            var row;
+            var ticks = 0;
+            var tab = new mod_tab.TableOutputStream({
+                'columns': TAB_COLUMNS,
+                'omitHeader': true
+            });
+
+            var interval = setInterval(function () {
+                if (!(ticks % 10)) {
+                    tab.writeHeader();
+                }
+                // XXX accum.getJobStatus in node-tab format?
+                row = {
+                    'INPUTSDONE': 0,
+                    'TASKSDONE': 0,
+                    'ERRORS': 0
+                };
+                tab.writeRow(accum.getJobStatus());
+                ticks++;
+            }, 1000);
+        }
+
         if (err) {
             cb(err);
             return;
@@ -1821,11 +1854,38 @@ function JobStateAccumulator(args)
     this.jsa_fetching = false;      /* currently fetching errors */
     this.jsa_pending = false;       /* need to fetch errors again */
     this.jsa_lasttime = false;      /* the current fetch is the last one */
+    this.jsa_watchinginputs = false;
+    this.jsa_inputsdone = 0;
 
     EventEmitter.call(this);
 }
 
 util.inherits(JobStateAccumulator, EventEmitter);
+
+JobStateAccumulator.prototype.updateInputsDone = function (count)
+{
+    if (!this.jsa_watchinginputs)
+        this.jsa_watchinginputs = true;
+
+    this.jsa_inputsdone = count;
+};
+
+JobStateAccumulator.prototype.getJobStatus = function ()
+{
+    var rv = {};
+
+    // XXX inputs property?
+    rv['INPUTSDONE'] = this.jsa_watchinginputs ? this.jsa_inputsdone : '-';
+
+    rv['ERRORS'] = 0;
+    rv['TASKSDONE'] = 0;
+    if (this.jsa_last) {
+        rv['ERRORS'] = this.jsa_last.stats.errors;
+        rv['TASKSDONE'] = this.jsa_last.stats.tasksDone;
+    }
+
+    return (rv);
+};
 
 /*
  * Update the job's state.  "job" should be the job's status, as returned by the
