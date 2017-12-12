@@ -2,6 +2,10 @@
 
 ## not yet released
 
+## 5.1.1
+
+- joyent/node-manta#315 document mlogin session termination conditions
+
 ## 5.1.0
 
 Minor version bump due to a backwards-compatible addition to the multipart

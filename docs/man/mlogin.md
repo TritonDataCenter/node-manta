@@ -24,6 +24,13 @@ become part of a workflow using interactive terminal utilities on large Manta
 objects without the need to download or transfer the data -- e.g. the the use
 of `mdb` (the Modular Debugger) on crash dumps and core files.
 
+The mlogin session terminates when the top level process has exited (usually the
+interactive shell, unless the `-c` option was used) and all references to that
+process's controlling terminal have also been closed.  Beware that if you fork a
+background process and then exit the shell, the background process (and the job)
+may continue running if they hold the terminal open.  You may need to cancel the
+job in order to stop it.
+
 Note that `mlogin` makes use of publicly-readable assets stored under the
 "poseidon" account, which is provided by the system.
 

@@ -17,6 +17,13 @@ become part of a workflow using interactive terminal utilities on large Manta
 objects without the need to download or transfer the data \-\- e.g. the the use
 of \fB\fCmdb\fR (the Modular Debugger) on crash dumps and core files.
 .PP
+The mlogin session terminates when the top level process has exited (usually the
+interactive shell, unless the \fB\fC\-c\fR option was used) and all references to that
+process's controlling terminal have also been closed.  Beware that if you fork a
+background process and then exit the shell, the background process (and the job)
+may continue running if they hold the terminal open.  You may need to cancel the
+job in order to stop it.
+.PP
 Note that \fB\fCmlogin\fR makes use of publicly\-readable assets stored under the
 "poseidon" account, which is provided by the system.
 .SH EXAMPLES
@@ -153,4 +160,5 @@ where \fB\fC:login\fR is the account login name.
 .PP
 DSA keys do not work when loaded via the SSH agent.
 .PP
-Report bugs at Github \[la]https://github.com/joyent/node-manta/issues\[ra]
+Report bugs at Github
+\[la]https://github.com/joyent/node-manta/issues\[ra]
