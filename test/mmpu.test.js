@@ -45,6 +45,7 @@ var LIST = 'list';
 var PARTS = 'parts';
 var ABORT = 'abort';
 var COMMIT = 'commit';
+var MULTIPUT = 'put';
 
 // object paths
 var C_OBJ_PATH = format('/%s/stor/node-manta-test-mmpu-%s-commit',
@@ -578,8 +579,6 @@ test('mmpu list: post part upload', function (t) {
     });
 });
 
-
-
 // Commit the object, do an mget of it to verify it's the object we expect,
 // and remove it to clean up.
 test('mmpu commit C_ID C_ETAG0', function (t) {
@@ -664,6 +663,110 @@ test('mmpu commit C_ID C_ETAG0', function (t) {
     });
 });
 
+// Upload and commit in one step and then remove to clean up
+test('mmpu put C_OBJ_PATH', function (t) {
+    if (!MPU_ENABLED) {
+        console.log('WARNING: skipping test: multipart ' +
+            'upload is not enabled on this Manta deployment');
+        t.done();
+        return;
+    }
+
+    var tmpFile = '/var/tmp/node-manta-mmpu-test-tmp-file-' + process.pid;
+
+    var s = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    var largeTmpFileContents =  Array(6553600).join().split(',').map(
+        function () {
+            return (s.charAt(Math.floor(Math.random() * s.length)));
+        }).join('');
+
+    function mkLargeTmpFile(_, cb) {
+        fs.writeFile(tmpFile, largeTmpFileContents, cb);
+    }
+
+    var LARGE_C_OBJ_PATH = format(
+        '/%s/stor/node-manta-test-mmpu-%s-commit-large',
+        MANTA_USER, MANTA_USER);
+
+    function multiput(_, cb) {
+        var argv = [ MMPU, MULTIPUT, '-f', tmpFile, LARGE_C_OBJ_PATH ];
+
+        forkExecWait({
+            argv: argv
+        }, function (err, info) {
+            if (err) {
+                cb(err);
+            } else {
+                cb();
+            }
+        });
+    }
+
+    function getHash(filenameToHash, cb) {
+        var hash = crypto.createHash('md5');
+        hash.setEncoding('hex');
+        var inFile = fs.createReadStream(filenameToHash);
+        inFile.on('end', function () {
+            hash.end();
+            cb(hash.read());
+        });
+        inFile.pipe(hash);
+    }
+
+    function getCommitObj(_, cb) {
+        var argv = [ MGET, '-o', tmpFile + '_dl', LARGE_C_OBJ_PATH ];
+
+        forkExecWait({
+            argv: argv
+        }, function (err, info) {
+            if (err) {
+                cb(err);
+            } else {
+                var origName = tmpFile;
+                var retrievedName = tmpFile + '_dl';
+                getHash(origName, function (origHash) {
+                    getHash(retrievedName, function (retrievedHash) {
+                        t.equal(origHash, retrievedHash);
+                        cb();
+                    });
+                });
+            }
+        });
+    }
+
+    function rmTmpFile(_, cb) {
+        fs.unlink(tmpFile, function () {
+            fs.unlink(tmpFile + '_dl', cb);
+        });
+    }
+
+    function rmCommitObj(_, cb) {
+        var argv = [ MRM, LARGE_C_OBJ_PATH ];
+
+        forkExecWait({
+            argv: argv
+        }, function (err, info) {
+            if (err) {
+                cb(err);
+            } else {
+                cb();
+            }
+        });
+    }
+
+    vasync.pipeline({
+        funcs: [
+            mkLargeTmpFile,
+            multiput,
+            getCommitObj,
+            rmCommitObj,
+            rmTmpFile
+        ]
+    }, function (err, results) {
+        t.ifError(err, err);
+        t.done();
+    });
+});
 
 // Abort the object being uploaded to A_OBJ_PATH.
 test('mmpu abort A_ID', function (t) {
