@@ -1,4 +1,4 @@
-msign 1 "May 2013" Manta "Manta Commands"
+msign 1 "July 2013" Manta "Manta Commands"
 =======================================
 
 NAME
@@ -23,7 +23,7 @@ The default expiration for URLs is 1 hour from `now`, but this can be changed
 with the `expires` option.  The expires option is designed to be used in
 conjunction with the UNIX date command.  In general, you should use the date
 command with a modifier (the syntax is different between BSD and GNU forms), and
-format the output to epoch time.
+format the output to epoch time or use an ISO 8601 format.
 
 EXAMPLES
 --------
