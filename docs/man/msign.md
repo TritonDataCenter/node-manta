@@ -20,22 +20,38 @@ time-expiring URLs that can be shared with others.  This is useful to generate
 HTML links, for example.
 
 The default expiration for URLs is 1 hour from `now`, but this can be changed
-with the `expires` option.  The expires option is designed to be used in
-conjunction with the UNIX date command.  In general, you should use the date
-command with a modifier (the syntax is different between BSD and GNU forms), and
-format the output to epoch time.
+with the `expires` option - see `EXPIRATION` below.
 
 EXAMPLES
 --------
 
-Assuming the GNU date command, generate a signed URL that expires in one month:
+Generate a signed URL that expires in 5 seconds:
 
-    $ msign -e $(date -d "1 month" "+%s") ~~/stor/tmp
+    $ msign -e 5s ~~/stor/tmp
 
-On OS X, you would sign this way:
+Generate a signed URL that expires in 5 minutes:
 
-    $ msign -e $(date -v+1m "+%s") ~~/stor/tmp
+    $ msign -e 5m ~~/stor/tmp
 
+Generate a signed URL that expires in 5 hours:
+
+    $ msign -e 5h ~~/stor/tmp
+
+Generate a signed URL that expires in 5 days:
+
+    $ msign -e 5d ~~/stor/tmp
+
+Generate a signed URL that expires in 5 weeks:
+
+    $ msign -e 5w ~~/stor/tmp
+
+Generate a signed URL that expires in 5 years:
+
+    $ msign -e 5y ~~/stor/tmp
+
+Generate a signed URL that expires at Wed Jan 20 20:42:01 UTC 2016:
+
+    $ msign -e 1453322521 ~~/stor/tmp
 
 OPTIONS
 -------
@@ -44,8 +60,8 @@ OPTIONS
   Authenticate as account (login name).
 
 `-e, --expires expiration`
-  Signed URL should last until EXPIRATION (seconds since epoch).  Default is 1
-  hour from `now`.
+  Expiration time in a relative form or seconds since epoch - see `EXPIRATION`
+  below for a more detailed explanation. Default is 1 hour from `now`.
 
 `-h, --help`
   Print a help message and exit.
@@ -100,6 +116,32 @@ ENVIRONMENT
 
 The shortcut `~~` is equivalent to `/:login`
 where `:login` is the account login name.
+
+EXPIRATION
+----------
+
+The `-e` argument can be given in multiple forms.  If just a number is given,
+it will be used as the seconds since epoch.  If a number followed by a valid
+modifier character is given it will be used as a relative date.  Valid
+modifiers are:
+
+`s`
+  Seconds from now
+
+`m`
+  Minutes from now
+
+`h`
+  Hours from now
+
+`d`
+  Days from now
+
+`w`
+  Weeks from now
+
+`y`
+  Years from now
 
 DIAGNOSTICS
 -----------
