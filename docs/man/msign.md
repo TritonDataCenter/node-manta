@@ -88,7 +88,7 @@ OPTIONS
   Set the role tags on objects created with the signed URL.
 
 `-s, --short`
-  Create a short url by using the http://i.no.de url shortener service.
+  Create a short url by using the https://i.no.de url shortener service.
 
 `--user user`
   Authenticate as user under account.
