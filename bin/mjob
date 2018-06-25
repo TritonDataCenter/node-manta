@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // -*- mode: js -*-
 /*
- * Copyright 2016 Joyent, Inc.
+ * Copyright 2018 Joyent, Inc.
  */
 
 var EventEmitter = require('events').EventEmitter;
@@ -1364,6 +1364,7 @@ MJob.prototype.do_watch.help = (
         '{{options}}'
 );
 
+MJob.prototype.do_watch.aliases = ['wait'];
 
 
 //-- Close

@@ -2,6 +2,8 @@
 
 ## not yet released
 
+- joyent/node-manta#343 Add `mjob wait` as an alias to `mjob watch`.
+
 ## 5.1.1
 
 - joyent/node-manta#315 document mlogin session termination conditions
