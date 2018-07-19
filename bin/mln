@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // -*- mode: js -*-
 /*
- * Copyright 2016 Joyent, Inc.
+ * Copyright 2018 Joyent, Inc.
  */
 
 var fs = require('fs');
@@ -14,33 +14,26 @@ var dashdash = require('dashdash');
 var manta = require('../lib');
 
 
-
-///--- Globals
-
-var NAME = path.basename(process.argv[1]);
-var LOG = bunyan.createLogger({
-    name: NAME,
-    level: (process.env.LOG_LEVEL || 'info'),
-    stream: process.stderr
-});
-
-var OPTIONS_PARSER = dashdash.createParser({
-    options: manta.DEFAULT_CLI_OPTIONS.concat([
-        {
-            group: NAME + ' options'
-        },
-        {
-            names: ['role-tag'],
-            type: 'arrayOfString',
-            help: 'role tags to apply to the destination object',
-            helpArg: 'TAG,TAG...'
-        }
-    ])
-});
-
-
-
 ///--- Functions
+
+function optionsParser(name) {
+    var parser = dashdash.createParser({
+        options: manta.DEFAULT_CLI_OPTIONS.concat([
+            {
+                group: name + ' options'
+            },
+            {
+                names: ['role-tag'],
+                type: 'arrayOfString',
+                help: 'role tags to apply to the destination object',
+                helpArg: 'TAG,TAG...'
+            }
+        ])
+    });
+
+    return (parser);
+}
+
 
 function ifError(err) {
     if (err) {
@@ -50,52 +43,55 @@ function ifError(err) {
 }
 
 
-function parseOptions() {
-    var opts;
-
-    try {
-        opts = OPTIONS_PARSER.parse(process.argv);
-    } catch (e) {
-        manta.cli_usage(OPTIONS_PARSER, e.message, 'source dest');
+/**
+ * Handle command-specific options parsing and checking.
+ *
+ * @param {Object} opts: Required. A parsed options object.
+ * @param {Object} parser: Required. A dashdash option parser.
+ * @returns {Object} A possibly mutated version of the `opts` input parameter.
+ */
+function parseCmdOptions(opts, parser) {
+    if (opts._args.length < 1) {
+        manta.cli_usage(parser, 'source required', 'source dest');
+    } else if (opts._args.length < 2) {
+        manta.cli_usage(parser, 'dest required', 'source dest');
     }
-
-    manta.cli_logger(opts, LOG);
-
-    if (opts.help)
-        manta.cli_usage(OPTIONS_PARSER, false, 'source dest');
-
-    manta.cliVersionCheckPrintAndExit(opts);
-    manta.cliCompletionCheckPrintAndExit(opts, OPTIONS_PARSER, NAME,
-        ['mpath', 'mpath', 'none']);
-
-    if (opts._args.length < 1)
-        manta.cli_usage(OPTIONS_PARSER, 'source required', 'source dest');
-    if (opts._args.length < 2)
-        manta.cli_usage(OPTIONS_PARSER, 'dest required', 'source dest');
 
     opts.source = path.posix.normalize(opts._args[0]);
     opts.path = path.posix.normalize(opts._args[1]);
+
+    ifError(manta.assertPath(opts.path, true));
 
     if (opts['role-tag'] && opts['role-tag'].length === 1) {
         /* JSSTYLED */
         opts['role-tag'] = opts['role-tag'][0].split(/\s*,\s*/);
     }
 
-    try {
-        manta.checkBinEnv(opts);
-    } catch (e) {
-        manta.cli_usage(OPTIONS_PARSER, e.message, 'source dest');
-    }
-
     return (opts);
 }
-
 
 
 ///--- Mainline
 
 (function main() {
-    var options = parseOptions();
+    var argTypes = ['mpath', 'mpath', 'none'];
+    var name = path.basename(process.argv[1]);
+    var log = bunyan.createLogger({
+        name: name,
+        level: (process.env.LOG_LEVEL || 'info'),
+        stream: process.stderr
+    });
+    var parser = optionsParser(name);
+    var parseArgs = {
+        name: name,
+        parser: parser,
+        argTypes: argTypes,
+        parseCmdOptions: parseCmdOptions,
+        log: log,
+        extra: 'source dest'
+    };
+    var options = manta.parseOptions(parseArgs);
+
     var client = manta.createBinClient(options);
     var headers = {
         headers: options.headers || {}
@@ -103,8 +99,6 @@ function parseOptions() {
 
     if (options['role-tag'])
         headers.headers['role-tag'] = options['role-tag'].join(',');
-
-    ifError(manta.assertPath(options.path, true));
 
     client.ln(options.source, options.path, headers, function (err) {
         ifError(err);

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // -*- mode: js -*-
 /*
- * Copyright 2016 Joyent, Inc.
+ * Copyright 2018 Joyent, Inc.
  */
 
 var path = require('path');
@@ -12,40 +12,32 @@ var dashdash = require('dashdash');
 
 var manta = require('../lib');
 
-
-
-///--- Globals
-
-var NAME = path.basename(process.argv[1]);
-var LOG = bunyan.createLogger({
-    name: NAME,
-    level: (process.env.LOG_LEVEL || 'info'),
-    stream: process.stderr
-});
-
-var OPTIONS_PARSER = dashdash.createParser({
-    options: manta.DEFAULT_CLI_OPTIONS.concat([
-        {
-            group: NAME + ' options'
-        },
-        {
-            names: ['parallel', 'p'],
-            type: 'positiveInteger',
-            help: 'limit concurrent operations (default 50)',
-            'default': 50,
-            helpArg: 'NUM'
-        },
-        {
-            names: ['recursive', 'r'],
-            type: 'bool',
-            help: 'remove directories and their contents recursively'
-        }
-    ])
-});
-
-
-
 ///--- Functions
+
+function optionsParser(name) {
+    var parser = dashdash.createParser({
+        options: manta.DEFAULT_CLI_OPTIONS.concat([
+            {
+                group: name + ' options'
+            },
+            {
+                names: ['parallel', 'p'],
+                type: 'positiveInteger',
+                help: 'limit concurrent operations (default 50)',
+                'default': 50,
+                helpArg: 'NUM'
+            },
+            {
+                names: ['recursive', 'r'],
+                type: 'bool',
+                help: 'remove directories and their contents recursively'
+            }
+        ])
+    });
+
+    return (parser);
+}
+
 
 function ifError(err) {
     if (err) {
@@ -55,51 +47,31 @@ function ifError(err) {
 }
 
 
-function parseOptions() {
-    var opts;
-
-    try {
-        opts = OPTIONS_PARSER.parse(process.argv);
-    } catch (e) {
-        manta.cli_usage(OPTIONS_PARSER, e.message, 'path...');
-    }
-
-    manta.cli_logger(opts, LOG);
-
-    if (opts.help)
-        manta.cli_usage(OPTIONS_PARSER, false, 'path...');
-
-    manta.cliVersionCheckPrintAndExit(opts);
-    manta.cliCompletionCheckPrintAndExit(opts, OPTIONS_PARSER, NAME, ['mpath']);
-
-    if (opts._args.length < 1)
-        manta.cli_usage(OPTIONS_PARSER, 'path required', 'path...');
-
-    opts.paths = opts._args.map(function (p) {
-        ifError(manta.assertPath(p, true));
-        return (manta.path(p,  true));
-    });
-
-    try {
-        manta.checkBinEnv(opts);
-    } catch (e) {
-        manta.cli_usage(OPTIONS_PARSER, e.message, 'path...');
-    }
-
-    return (opts);
-}
-
-
 function printEntry(obj) {
     console.log('%j', obj);
 }
 
 
-
 ///--- Mainline
 
 (function main() {
-    var options = parseOptions();
+    var argTypes = ['mpath'];
+    var name = path.basename(process.argv[1]);
+    var log = bunyan.createLogger({
+        name: name,
+        level: (process.env.LOG_LEVEL || 'info'),
+        stream: process.stderr
+    });
+    var parser = optionsParser(name);
+    var parseArgs = {
+        name: name,
+        parser: parser,
+        argTypes: argTypes,
+        log: log
+    };
+    var options = manta.parseOptions(parseArgs);
+
+
     var client = manta.createBinClient(options);
     var i = -1;
 

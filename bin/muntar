@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // -*- mode: js -*-
 /*
- * Copyright 2016 Joyent, Inc.
+ * Copyright 2018 Joyent, Inc.
  */
 
 var fs = require('fs');
