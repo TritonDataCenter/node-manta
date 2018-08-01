@@ -3,7 +3,7 @@
  */
 
 /*
- * Test the "mput" command.
+ * Test the "mln" command.
  */
 
 var assert = require('assert-plus');
@@ -25,6 +25,7 @@ var MMKDIR = path.resolve(BINDIR, 'mmkdir');
 var MPUT = path.resolve(BINDIR, 'mput');
 var MRM = path.resolve(BINDIR, 'mrm');
 var MINFO = path.resolve(BINDIR, 'minfo');
+var MLN = path.resolve(BINDIR, 'mln');
 
 var TMPDIR = process.env.TMPDIR || '/tmp';
 
@@ -109,6 +110,14 @@ test('setup: create test tree at ' + TESTDIR, function (t) {
                 vasync.pipeline({ funcs: [
                     function mkTmpFile(_, next2) {
                         fs.writeFile(tmpFile, item.content, next2);
+                    },
+                    function mputIt(_, next2) {
+                        forkExecWait({
+                            argv: [ MPUT, '-f', tmpFile, item.path ]
+                        }, next2);
+                    },
+                    function rmTmpFile(_, next2) {
+                        fs.unlink(tmpFile, next2);
                     }
                 ]}, next);
                 return;
@@ -125,28 +134,21 @@ test('setup: create test tree at ' + TESTDIR, function (t) {
 });
 
 
-/*
- * Put a file with a custom header whose value include colons. This verifies the
- * fix for https://github.com/joyent/node-manta/issues/312.
- */
-test('mput with custom header value with colons', function (t) {
-    // Expect the header to include the full timestamp including the colons
-    var expectedHeader = 'm-start-time: 2017-06-30T18:18:18Z';
-
-    var tmpFile = path.join(TMPDIR, 'node-manta-test-tmp-file-' + process.pid);
-
+test('mln ', function (t) {
     var argv1 = [
-        MPUT,
-        '-H',
-        sprintf('%s', expectedHeader),
-        '-f',
-        sprintf('%s', tmpFile),
-        sprintf('%s/%02d.data', TESTDIR, 1)
+        MLN,
+        sprintf('%s/%02d.data', TESTDIR, 1),
+        sprintf('%s/%02d.data.lnk', TESTDIR, 1)
     ];
 
     var argv2 = [
-        MINFO,
+        MGET,
         sprintf('%s/%02d.data', TESTDIR, 1)
+    ];
+
+    var argv3 = [
+        MGET,
+        sprintf('%s/%02d.data.lnk', TESTDIR, 1)
     ];
 
     forkExecWait({
@@ -159,47 +161,47 @@ test('mput with custom header value with colons', function (t) {
         forkExecWait({
           argv: argv2
         }, function (err2, info2) {
-            t.ifError(err2, err2);
-            t.equal(info2.stderr, '', 'no stderr');
+               t.ifError(err2, err2);
+               t.equal(info2.stderr, '', 'no stderr');
 
-            var headerIndex = info2.stdout.indexOf(expectedHeader);
-            t.notEqual(headerIndex, -1, 'minfo response contains header');
+               forkExecWait({
+                   argv: argv3
+               }, function (err3, info3) {
+                      t.ifError(err3, err3);
+                      t.equal(info3.stderr, '', 'no stderr');
 
-            t.done();
-        });
+                      t.equal(info2.stdout, info3.stdout, 'stdout from mget');
+                      t.done();
+                  });
+           });
     });
 });
 
 
 /*
- * Put a file using the role-tag option and verify the role-tag header
+ * Link a file using the role-tag option and verify the role-tag header
  * is set on the object. This verifies the fix for
  * https://github.com/joyent/node-manta/issues/333. This test requires
  * a role to be configured in triton to work properly so it is condtional
  * upon the user setting MANTA_TEST_ROLE in the environment.
  */
 if (process.env.MANTA_TEST_ROLE) {
-    test('mput with --role-tag option', function (t) {
-
+    test('mln with --role-tag option', function (t) {
         // Expect the role-tag header
         var role = process.env.MANTA_TEST_ROLE;
         var expectedHeader = 'role-tag: ' + role;
 
-        var tmpFile = path.join(TMPDIR,
-            'node-manta-test-tmp-file-' + process.pid);
-
         var argv1 = [
-            MPUT,
+            MLN,
             '--role-tag',
             role,
-            '-f',
-            sprintf('%s', tmpFile),
-            sprintf('%s/%02d.data', TESTDIR, 1)
+            sprintf('%s/%02d.data', TESTDIR, 1),
+            sprintf('%s/%02d.data.lnk', TESTDIR, 1)
         ];
 
         var argv2 = [
             MINFO,
-            sprintf('%s/%02d.data', TESTDIR, 1)
+            sprintf('%s/%02d.data.lnk', TESTDIR, 1)
         ];
 
         forkExecWait({

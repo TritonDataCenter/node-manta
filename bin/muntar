@@ -110,9 +110,9 @@ function parseCmdOptions(opts, parser) {
     ifError(manta.assertPath(opts._args[0], true));
     opts.path = manta.path(opts._args[0], true);
 
-    if (opts['role-tag'] && opts['role-tag'].length === 1) {
+    if (opts.role_tag && opts.role_tag.length === 1) {
         /* JSSTYLED */
-        opts['role-tag'] = opts['role-tag'][0].split(/\s*,\s*/);
+        opts.role_tag = opts.role_tag[0].split(/\s*,\s*/);
     }
 
     return (opts);
@@ -234,8 +234,9 @@ function worker(client, tarball, callback, log) {
         e.pause();
 
         var headers = options.headers || {};
-        if (options['role-tag'])
-            headers['role-tag'] = options['role-tag'].join(',');
+        if (options.role_tag) {
+            headers.headers['role-tag'] = options.role_tag.join(',');
+        }
 
         var p = options.path + '/' + e.props.path;
         var o = {
