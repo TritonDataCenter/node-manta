@@ -1,6 +1,6 @@
 # node-manta Changelog
 
-## note
+### note
 
 If you have a GitHub issue created for a change you would like to include here,
 you can use the included script `./tools/changelog-issue-line` (requires
@@ -423,7 +423,6 @@ errors are no longer fatal unless none of the arguments are found)
 
 ## v1.1.0
 
-- documentation fixes
 - [#119](https://github.com/joyent/node-manta/issues/119) want "mjob share"
   subcommand
 - [#109](https://github.com/joyent/node-manta/issues/109) mlogin(1) should
@@ -458,6 +457,7 @@ errors are no longer fatal unless none of the arguments are found)
   an object
 - [#92](https://github.com/joyent/node-manta/issues/92) `getPath` should assert
   that the thing being passed in is actually a path
+- documentation fixes
 
 ## v1.0.1
 
