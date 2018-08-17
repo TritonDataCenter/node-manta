@@ -1,0 +1,117 @@
+#!/usr/bin/env bash
+#
+# Copyright 2018 Joyent, Inc.
+#
+# Generate a line for the changelog given a GitHub issue number
+
+num_re='^[1-9][0-9]*$'
+valid_str_re='^[0-9a-zA-Z_-]+$'
+exit_code=0
+verbosity=0
+
+verbose() {
+	if ((verbosity >= 1)); then
+		echo '>' "$@" >&2
+	fi
+}
+
+usage() {
+	local prog=${0##*/}
+	cat <<-EOF
+	Usage: $prog [-hv] [-o <org>] [-r <repo>] issue# [issue2# issue3# ...]
+
+	Options
+	    -h           print this message and exit
+	    -o <org>     GitHub organization, will try to figure this out if
+	                 not given
+	    -r <repo>    GitHub repository, will try to figure this out if not
+	                 given
+	    -v           verbose output
+	EOF
+}
+
+while getopts 'ho:r:v' option; do
+	case "$option" in
+		h) usage; exit 0;;
+		o) org=$OPTARG;;
+		r) repo=$OPTARG;;
+		v) ((verbosity++));;
+		*) usage >&2; exit 1;;
+	esac
+done
+shift "$((OPTIND - 1))"
+
+# ensure json is present
+if ! json --version &>/dev/null; then
+	echo 'json must be installed' >&2
+	exit 1
+fi
+
+# find repo or org if not passed in via CLI opts
+if [[ -z $repo || -z $org ]]; then
+	top=$(git rev-parse --show-toplevel)
+	if [[ -z $top ]]; then
+		echo 'git top level could not be determined' >&2
+		exit 1
+	fi
+
+	pkg=$top/package.json
+	url=$(json -f "$pkg" repository.url)
+	if [[ -z $url ]]; then
+		echo "couldn't read repository.url from $pkg" >&2
+		exit 1
+	fi
+	verbose "found url '$url' in '$pkg'"
+
+	IFS='/:' read -a parts <<< "$url"
+	repo=${parts[-1]}
+	repo=${repo%.git}
+
+	org=${parts[-2]}
+fi
+
+# validate repo
+if ! [[ -n $repo && $repo =~ $valid_str_re ]]; then
+	echo "invalid repo: '$repo'" >&2
+	exit 1
+fi
+
+# validate org
+if ! [[ -n $org && $org =~ $valid_str_re ]]; then
+	echo "invalid org: '$org'" >&2
+	exit 1
+fi
+
+verbose "org $org, repo $repo"
+
+# ensure at least one issue passed
+if [[ -z $1 ]]; then
+	usage >&2
+	exit 1
+fi
+
+# loop issues passed as arguments
+for issue in "$@"; do
+	if ! [[ $issue =~ $num_re ]]; then
+		echo "argument not a number: '$issue'" >&2
+		exit_code=1
+		continue
+	fi
+
+	name="$org/$repo#$issue"
+	issueurl="https://github.com/$org/$repo/issues/$issue"
+	apiurl="https://api.github.com/repos/$org/$repo/issues/$issue"
+
+	verbose "GET $apiurl"
+
+	title=$(curl -sSL "$apiurl" | json title)
+	if (($? != 0)) || [[ -z $title ]]; then
+		echo "failed to find title for $name" >&2
+		exit_code=1
+		continue
+	fi
+
+	echo "- [#$issue]($issueurl) $title"
+done
+
+exit "$exit_code"

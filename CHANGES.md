@@ -1,15 +1,33 @@
 # node-manta Changelog
 
+## note
+
+If you have a GitHub issue created for a change you would like to include here,
+you can use the included script `./tools/changelog-issue-line` (requires
+[json](https://github.com/trentm/json) installed).  Example:
+
+    $ ./tools/changelog-issue-line 349
+    - [#349](https://github.com/joyent/node-manta/issues/349) issue numbers in CHANGES.md should link to GitHub issues
+
+Or in `vim`
+
+    :r!./tools/changelog-issue-line 349
+
 ## not yet released
 
-- joyent/node-manta#333 The --role-tag option does not work for mput, muntar,
-  mln, or mmkdir
-- joyent/node-manta#329 Refactor all commands to use common option parsing code
-- joyent/node-manta#343 Add `mjob wait` as an alias to `mjob watch`.
+- [#349](https://github.com/joyent/node-manta/issues/349) issue numbers in
+  CHANGES.md should link to GitHub issues
+- [#333](https://github.com/joyent/node-manta/issues/333) The --role-tag option
+  does not work  for mput, muntar, mln, or mmkdir
+- [#329](https://github.com/joyent/node-manta/issues/329) Refactor all commands
+  to use common option parsing code
+- [#343](https://github.com/joyent/node-manta/issues/343) Want `mjob wait` as
+  alias for `mjob watch`
 
 ## 5.1.1
 
-- joyent/node-manta#315 document mlogin session termination conditions
+- [#315](https://github.com/joyent/node-manta/issues/315) document mlogin
+  session termination conditions
 
 ## 5.1.0
 
@@ -19,9 +37,10 @@ upload client operations. The client operations now allow for a
 which is used as the URL of the request. Otherwise, the parts directory is
 resolved using the server's redirect endpoint.
 
-- joyent/node-manta#325 ask server for fully qualified upload path
-- joyent/node-manta#326 client could support accepting fully qualified upload
-  directory as input to MPU operations
+- [#325](https://github.com/joyent/node-manta/issues/325) ask server for fully
+  qualified upload path
+- [#326](https://github.com/joyent/node-manta/issues/326) client could support
+  accepting fully qualified upload directory as input to MPU operations
 
 ## 5.0.0
 
@@ -42,8 +61,10 @@ Code that specifically checks for the error name `ResourceNotFoundError` to
 detect whether multipart upload is supported should be updated appropriately
 to use VError.hasCauseWithName.
 
-- joyent/node-manta#320 client should detect if MPU is enabled
-- joyent/node-manta#319 MPU-related tests should detect if MPU is supported
+- [#320](https://github.com/joyent/node-manta/issues/320) client should detect
+  if MPU is enabled
+- [#319](https://github.com/joyent/node-manta/issues/319) MPU-related tests
+  should detect if MPU is supported
 
 ## 4.5.0
 
@@ -51,28 +72,38 @@ Minor bump due to a backwards-compatible addition to the `commitUpload` method
 on the client. The `commitUpload` method now passes the response from the server
 to the callback.
 
-- joyent/node-manta#323 return response argument from client.commitUpload
-- joyent/node-manta#318 node-manta nodejs version support
-- joyent/node-manta#322 test7 make target should be test8 given node v8
-- joyent/node-manta#321 document mlogin's use of poseidon assets
+- [#323](https://github.com/joyent/node-manta/issues/323) return response
+  argument from client.commitUpload
+- [#318](https://github.com/joyent/node-manta/issues/318) node-manta nodejs
+  version support
+- [#322](https://github.com/joyent/node-manta/issues/322) test7 make target
+  should be test8 given node v8
+- [#321](https://github.com/joyent/node-manta/issues/321) document mlogin's use
+  of poseidon assets
 
 ## 4.4.3
 
-- joyent/node-manta#244 mlogin could disable Manta's abort-on-core behavior
+- [#244](https://github.com/joyent/node-manta/issues/244) mlogin could disable
+  Manta's abort-on-core behavior
 
 ## 4.4.2
 
-- joyent/node-manta#312 Custom header input should tolerate ':' characters
+- [#312](https://github.com/joyent/node-manta/issues/312) Custom header input
+  should tolerate ':' characters
 
 ## 4.4.1
 
-- joyent/node-manta#302 Create a manual page for `mmpu`
-- joyent/node-manta#311 `createUpload` incorrectly handles some target object headers
+- [#302](https://github.com/joyent/node-manta/issues/302) Create a manual page
+  for `mmpu`
+- [#311](https://github.com/joyent/node-manta/issues/311) `createUpload`
+  incorrectly handles some target object headers
 
 ## 4.4.0
 
-- joyent/node-manta#308 `mmpu commit` does not parse options
-- joyent/node-manta#309 MPU tests are out of sync with Muskie master branch implementation
+- [#308](https://github.com/joyent/node-manta/issues/308) `mmpu commit` does
+  not parse options
+- [#309](https://github.com/joyent/node-manta/issues/309) MPU tests are out of
+  sync with Muskie master branch implementation
 
 ## 4.3.0
 
@@ -83,27 +114,39 @@ to the callback.
 Minor bump due to relaxation of API requirements in `mfind` (NotFound
 errors are no longer fatal unless none of the arguments are found)
 
-- joyent/node-manta#230 Allow redirection of `mlogin` debug log output on
-  `stderr`; e.g., `LOG_LEVEL=trace mlogin -v 2> >(bunyan -o short)`.
-- joyent/node-manta#298 mjob-simple fails because of GNU date regression
-- joyent/node-manta#281 mfind NotFound errors should not be fatal
+- [#230](https://github.com/joyent/node-manta/issues/230) mlogin resists
+  request-level debugging
+- [#298](https://github.com/joyent/node-manta/issues/298) mjob-simple fails
+  because of GNU date regression
+- [#281](https://github.com/joyent/node-manta/issues/281) mfind NotFound errors
+  should not be fatal.
 
 ## 4.1.1
 
-- joyent/node-manta#293 '~~/' works, '~~' does now too.
-- joyent/node-manta#294 content-length and transfer-encoding chunked must not
-  be used together
+- [#293](https://github.com/joyent/node-manta/issues/293) ~~ evaluation needs
+  to be less pedantic
+- [#294](https://github.com/joyent/node-manta/issues/294) content-length and
+  transfer-encoding chunked must not be used together
 
 ## 4.1.0
 
-- joyent/node-manta#214 Add basic Bash completion for the `m*` tools.
-  "Basic" here means options and mjob subcommands are completed, not
-  yet support for completing manta paths.
-- joyent/node-manta#288 mfind of file blows assertion: "ent (object) is required"
+- [#214](https://github.com/joyent/node-manta/issues/214) basic bash tab
+  completion
+- [#288](https://github.com/joyent/node-manta/issues/288) mfind of file blows
+  assertion: "ent (object) is required"
 
 ## 4.0.0
 
-- joyent/node-manta#272 Add `--version` to all tools
+- [#272](https://github.com/joyent/node-manta/issues/272) `m*` tools should
+  have a `--version` option
+- [#282](https://github.com/joyent/node-manta/issues/282) mchmod ignores all(?)
+  options
+- [#280](https://github.com/joyent/node-manta/issues/280) job expressions do
+  not honor --memory
+- [#279](https://github.com/joyent/node-manta/issues/279) mjob should expressly
+  list out allowed sizes for memory
+
+
 - *BREAKING CHANGE* joyent/node-manta#282 `mchmod` now parses all standard
   options. The use of the `--` form is encouraged to avoid ambiguities in role
   versus option names (ex: `mchmod -- -read,write ~~/stor/foo.txt`).
@@ -121,21 +164,23 @@ errors are no longer fatal unless none of the arguments are found)
 
 ## 3.1.3
 
-- joyent/node-manta#277 mjob fails with "mjob: AssertionError: body (object) is required"
+- [#277](https://github.com/joyent/node-manta/issues/277) mjob fails with mjob:
+  AssertionError: body (object) is required
 
 ## 3.1.2
 
-- joyent/node-manta#275 msign with subusers broken
-- joyent/node-manta#270 Add -p to `man mput`
+- [#275](https://github.com/joyent/node-manta/issues/275) msign with subusers
+  broken
+- [#270](https://github.com/joyent/node-manta/issues/270) Add -p to man mput
 
 ## 3.1.1
 
-- joyent/node-manta#261 "AssertionError: undefined (object) is required" after
-  "socket hang up"
+- [#261](https://github.com/joyent/node-manta/issues/261) "AssertionError:
+  undefined (object) is required" after "socket hang up"
 
 ## 3.1.0
 
-- joyent/node-manta#265 Add `--json, -j` option to `mfind`. E.g.:
+- [#265](https://github.com/joyent/node-manta/issues/265) `mfind --json,-j`
 
         $ mfind -j ~~/stor/tmp
         {"name":"foo-file.gz","etag":"142ad91b-73d8-6cb4-9cd9-efacf7df7a9a","size":229535627,"type":"object","mtime":"2014-10-08T22:53:25.146Z","durability":2,"parent":"/trent.mick/stor/tmp","depth":0}
@@ -143,8 +188,8 @@ errors are no longer fatal unless none of the arguments are found)
 
 ## 3.0.0
 
-- joyent/node-manta#246 Update many dependencies to support node v4 and v6
-  without build errors or warnings.
+- [#246](https://github.com/joyent/node-manta/issues/246) Update dependencies
+  for a Node v6 age.
   This involved dropping support for node 0.8. It is for this reason, and
   prudence at the large number of dependency updates (many of them across
   major version bumps) that we are doing a major version bump of this package.
@@ -153,12 +198,13 @@ errors are no longer fatal unless none of the arguments are found)
 
 ## 2.0.7
 
-- joyent/node-manta#252 2.0.6 breaks msign with ssh-agent and RSA keys
+- [#252](https://github.com/joyent/node-manta/issues/252) 2.0.6 breaks msign
+  with ssh-agent and RSA keys
 
 ## 2.0.6
 
-- joyent/node-manta#250 msign should let smartdc-auth decide what algorithm
-  to use. Fixes msign with ECDSA keys (so the -g option is no longer needed)
+- [#250](https://github.com/joyent/node-manta/issues/250) msign should let
+  smartdc-auth decide what algorithm to use
 
 ## 2.0.5
 
@@ -193,41 +239,50 @@ errors are no longer fatal unless none of the arguments are found)
 
 ## 1.6.0
 
-- #237 new `createListStream()` API, a second-generation streaming version
-  of `ls()`
-- #238 mls `--type` flag now works correctly, allowing the user to list only
-  objects, or only directories
+- [#237](https://github.com/joyent/node-manta/issues/237) add
+  createListStream() API for streaming ls()
+- [#238](https://github.com/joyent/node-manta/issues/238) mls --type/-t option
+  does not work
 
 ## 1.5.2
 
-- #228 pipeline callback invoked after the pipeline has already completed
-  This issue can also manifest as "TypeError: Not a buffer".
+- [#228](https://github.com/joyent/node-manta/issues/228) pipeline callback
+  invoked after the pipeline has already completed
 
 ## 1.5.1
 
-- #218 allow custom ssh-agent options to be passed to constructor
+- [#218](https://github.com/joyent/node-manta/issues/218) allow custom
+  ssh-agent options to be passed to constructor
 
 ## 1.5.0
 
-- #219 msign doesn't work on paths with # in them
-- #220 signURL must URI-encode the Manta path
+- [#219](https://github.com/joyent/node-manta/issues/219) msign doesn't work on
+  paths with # in them
+- [#220](https://github.com/joyent/node-manta/issues/220) signURL must
+  URI-encode the Manta path
 
 ## 1.4.7
 
-- #216 commands fail on 1.4.6 when using ssh-agent
-- #215 client.createReadStream should emit an 'open' event like
-  fs.createReadStream
-- #208 mget fails for large files over slow internet (MANTA-2546)
+- [#216](https://github.com/joyent/node-manta/issues/216) commands fail on
+  1.4.6 when using ssh-agent
+- [#215](https://github.com/joyent/node-manta/issues/215)
+  client.createReadStream should emit an 'open' event like fs.createReadStream
+- [#208](https://github.com/joyent/node-manta/issues/208) mget fails for large
+  files over slow internet
 
 ## 1.4.6
 
-- #210 client.put fix for Windows
-- #206 mget/mput: draw progress bar to /dev/tty with `--progress`
-- #200 combining implicit phases with -m/-r flags drops phases
+- [#210](https://github.com/joyent/node-manta/issues/210) use path.posix when
+  dealing with manta paths
+- [#206](https://github.com/joyent/node-manta/issues/206) mget/mput: draw
+  progress bar to /dev/tty with `--progress`
+- [#200](https://github.com/joyent/node-manta/issues/200) combining implicit
+  phases with -m/-r flags drops phases
 
 ## 1.4.5
 
-- #203 --account/-a doesn't work
+- [#203](https://github.com/joyent/node-manta/issues/203) --account/-a doesn't
+  work
 
 ## 1.4.4
 
@@ -240,7 +295,8 @@ errors are no longer fatal unless none of the arguments are found)
 
 ## 1.4.2
 
-- #201 mget should respect streams backpressure
+- [#201](https://github.com/joyent/node-manta/issues/201) mget does not respect
+  destination backpressure
 
 ## 1.4.1
 
@@ -254,7 +310,8 @@ errors are no longer fatal unless none of the arguments are found)
 
 ## 1.3.1
 
-- #197 mjob create -s ~~/stor/foo broken
+- [#197](https://github.com/joyent/node-manta/issues/197) mjob create -s
+  ~~/stor//foo broken in 1.3.0
 
 ## 1.3.0
 
@@ -264,32 +321,46 @@ errors are no longer fatal unless none of the arguments are found)
 
 ## v1.2.8
 
-- #187: mlogin should support session control escape character
-- #188: mjob help and documentation nits
-- #191: signURL is not well documented
-- #194: mjob create -o emits "socket hang up"
+- [#187](https://github.com/joyent/node-manta/issues/187) mlogin should support
+  session control escape character
+- [#188](https://github.com/joyent/node-manta/issues/188) mjob help and
+  documentation nits
+- [#191](https://github.com/joyent/node-manta/issues/191) signURL is not well
+  documented
+- [#194](https://github.com/joyent/node-manta/issues/194) mjob create -o emits
+  "socket hang up"
 
 ## v1.2.7
 
 - include restify v2.8.0
-- #184: update progbar to 0.1.0
-    * includes: jclulow/node-progbar#10 (handle tty resizing)
-- #181: `client.get` should auto-resume interrupted downloads
-- #180: client should throw on empty/badly formatted private key
-- #179: mlogin now supports --image
-- #177: Clearer error if $HOME is not set.
-- #156: `client.listJobs` not URL-encoding names
-- #167: `client.put` hangs if the stream passed to it is not readable
-- #168: mls -l on objects shows wrong timestamp
+- [#184](https://github.com/joyent/node-manta/issues/184) update progbar to
+  0.1.0
+- [#181](https://github.com/joyent/node-manta/issues/181) `client.get()` should
+  retry/resume downloads when disconnected
+- [#180](https://github.com/joyent/node-manta/issues/180) Make invalid key more
+  clear
+- [#179](https://github.com/joyent/node-manta/issues/179) mlogin(1) should
+  allow image selection
+- [#177](https://github.com/joyent/node-manta/issues/177) `mls: TypeError:
+  Arguments to path.join must be strings` if "HOME" isn't set
+- [#156](https://github.com/joyent/node-manta/issues/156) mjob list with spaces
+  in name causes "mjob: error: undefined"
+- [#167](https://github.com/joyent/node-manta/issues/167) can't upload a zero
+  byte file stream without setting content-length
+- [#168](https://github.com/joyent/node-manta/issues/168) mls -l gives wrong
+  timestamp
 
 ## v1.2.6
 
-- #161 add `-H` to mget and an `minfo` command
-- #164 assets whose names require URL-encoding don't work correctly
+- [#161](https://github.com/joyent/node-manta/issues/161) Add headers to mget,
+  as well as an minfo (HEAD) tool
+- [#164](https://github.com/joyent/node-manta/issues/164) mjob/mlogin "-s"
+  should not url-encode asset paths
 
 ## v1.2.5
 
-- #149 mput of a zero byte file fails
+- [#149](https://github.com/joyent/node-manta/issues/149) mput -f fails on
+  empty file
 - mls spewing a random mls: [object Object] at end of listings
 
 ## v1.2.4
@@ -300,7 +371,8 @@ errors are no longer fatal unless none of the arguments are found)
 
 - `client.mkdir` should return the same object as `client.info`
 - add `path` API to manta client
-- #157: mkdirp broken on paths requiring url encoding
+- [#157](https://github.com/joyent/node-manta/issues/157) mput -p handles
+  spaces incorrectly
 - depend on restify from npm, not git
 
 ## v1.2.2
@@ -313,19 +385,29 @@ errors are no longer fatal unless none of the arguments are found)
 
 ## v1.2.0
 
-- #147: msign broken on urls with spaces in them
-- #140: SSH Agent Signer not caching in some race scenarios
-- #138: `mjob/mlogin` support assets with  `~~/...` syntax
-- #132: mput needs to handle files that are still being appended to
-- #131: `mjob cost` subcommand
-- #130: `mput --md5` option to send `content-md5`
-- #128: support `MANTA_DEFAULT_CONTENT_TYPE` for mput
-- #117: mfind: support `--maxdepth` and `--mindepth`
-- #106: `client.ls()` now handles all pagination, sorting, etc.
-- #106: `client.ftw()` now available.
-- #103: mls: support `mls --fulljson` (shows HTTP headers)
-- #86: option to create parent directories on PUT
-- #59: add durability/mtime to `mls --json` output
+- [#147](https://github.com/joyent/node-manta/issues/147) msign: broken on urls
+  with spaces
+- [#140](https://github.com/joyent/node-manta/issues/140) sshAgentSigner not
+  caching well enough
+- [#138](https://github.com/joyent/node-manta/issues/138) mjob/mlogin should
+  support `~~` for assets.
+- [#132](https://github.com/joyent/node-manta/issues/132) mput should handle
+  files that are concurrently being appended to
+- [#131](https://github.com/joyent/node-manta/issues/131) add mjob cost
+- [#130](https://github.com/joyent/node-manta/issues/130) mput should
+  optionally calculate and send content-md5
+- [#128](https://github.com/joyent/node-manta/issues/128) want default
+  content-type header env var
+- [#117](https://github.com/joyent/node-manta/issues/117) mfind add mindepth
+  and maxdepth options
+- [#106](https://github.com/joyent/node-manta/issues/106) Add possibility for
+  recursive listing in MantaClient#ls()
+- [#103](https://github.com/joyent/node-manta/issues/103) mls should have an
+  option to print out all headers
+- [#86](https://github.com/joyent/node-manta/issues/86) feature req: allow put
+  API to create missing folders automatically
+- [#59](https://github.com/joyent/node-manta/issues/59) would like mls -j to
+  include durability and mtime
 
 ## v1.1.2
 
@@ -334,42 +416,66 @@ errors are no longer fatal unless none of the arguments are found)
 
 ## v1.1.1
 
-- #122: `mjob share` broken without README
-- #114: sshAgentSigner had a null deref (@wpreul)
+- [#122](https://github.com/joyent/node-manta/issues/122) "mjob share" fails
+  when optional readme not specified
+- [#114](https://github.com/joyent/node-manta/issues/114) auth: sshAgentSigner
+  now works
 
 ## v1.1.0
 
-- #119: "mjob share" subcommand
-- #109: mlogin(1) should print diagnostics on a failed job
-- #108: mlogin(1) should validate input object before creating job
-- #110: muntar should retry files on a 500
-- #101: client.create(Read|Write)Stream APIs
-- #96: mls should infer paths when no leading / is present
-- #98: m* CLI tools fail silently if ~/.ssh has no public keys
-- #97: mlogin(1) and msign(1) broken with trailing slash
-- #95: mlogin(1) should support --init
-- #67: "mjob create" should notify when input stream left open
-- #32: auto insert https:// if MANTA_URL is just an IP
-- #70: msign with query string busted
-- #81: msign should work with url encoded paths
-- #74: mfind --limit doesn't work
-- #93: commands should support ~~ as an alternate to /$MANTA_USER
-- #91: mrm -r should work on objects
-- #92: catch bogus paths in getPath
 - documentation fixes
+- [#119](https://github.com/joyent/node-manta/issues/119) want "mjob share"
+  subcommand
+- [#109](https://github.com/joyent/node-manta/issues/109) mlogin(1) should
+  print diagnostics on a failed or retried job
+- [#108](https://github.com/joyent/node-manta/issues/108) mlogin(1) should
+  validate input object before creating job
+- [#110](https://github.com/joyent/node-manta/issues/110) muntar should retry
+  files on a 500
+- [#101](https://github.com/joyent/node-manta/issues/101) MantaClient#put api
+  suggestion
+- [#96](https://github.com/joyent/node-manta/issues/96) mls behavior isn't
+  consistent as we descent a 'directory' tree from the manta 'root'
+- [#98](https://github.com/joyent/node-manta/issues/98) mls silently fails if
+  you don't have an rsa public key
+- [#97](https://github.com/joyent/node-manta/issues/97) mlogin(1) and msign(1)
+  broken with trailing slash in MANTA_URL
+- [#95](https://github.com/joyent/node-manta/issues/95) mlogin(1) should
+  support --init
+- [#67](https://github.com/joyent/node-manta/issues/67) "mjob create" should
+  notify when input stream left open
+- [#32](https://github.com/joyent/node-manta/issues/32) obscure errors for
+  invalid Manta URL from `mls` and `mput`
+- [#70](https://github.com/joyent/node-manta/issues/70) msign(1) with query
+  string is more like msigh
+- [#81](https://github.com/joyent/node-manta/issues/81) msign(1) should
+  URI-encode before signing
+- [#74](https://github.com/joyent/node-manta/issues/74) the --limit (or -l )
+  switch for "mfind" does nothing
+- [#93](https://github.com/joyent/node-manta/issues/93) CLI commands should
+  support `~~/(stor|public|...)`
+- [#91](https://github.com/joyent/node-manta/issues/91) "mrm -r" should work on
+  an object
+- [#92](https://github.com/joyent/node-manta/issues/92) `getPath` should assert
+  that the thing being passed in is actually a path
 
 ## v1.0.1
 
 - MANTA-1617: mlogin: broken with xargs
-- #78 mput should not retry on PreconditionFailedError
+- [#78](https://github.com/joyent/node-manta/issues/78) mput should not retry
+  on PreconditionFailedError (HTTP 412)
 - MANTA-1611: support PUT requests from browsers
 -- add helper signURL function to client
 -- tack properties on sshAgentSigner
 -- OpenSSL wants all algorithms in uppercase
 - MANTA-1593: client needs to URL encode all URLs sanely
--- #79 mkdirp double encoding paths
--- #80 mrm -r double encodes URLs
-- #72 strip out any headers that would be passed on as `undefined`
+-- [#79](https://github.com/joyent/node-manta/issues/79) mmkdir -p erroneously
+  encodes directory names twice
+-- [#80](https://github.com/joyent/node-manta/issues/80) "mrm -r" double-encodes
+  object names
+- [#72](https://github.com/joyent/node-manta/issues/72)
+  {options:{headers:{'content-length':undefined}} to client.put causes socket
+  errors
 - documentation fixes
 
 ## v1.0.0
