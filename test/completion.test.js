@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Joyent, Inc.
+ * Copyright 2018 Joyent, Inc.
  */
 
 /*
@@ -7,16 +7,16 @@
  * that looks somewhat like Bash completion code.
  */
 
-var exec = require('child_process').exec;
 var fs = require('fs');
 var path = require('path');
+
+var forkExecWait = require('forkexec').forkExecWait;
 
 /*
  * Globals
  */
 
 var binDir = path.resolve(__dirname, '..', 'bin');
-
 
 /*
  * Helper functions
@@ -26,20 +26,25 @@ function test(name, testfunc) {
     module.exports[name] = testfunc;
 }
 
-
 /*
  * Tests
  */
 
 fs.readdirSync(binDir).forEach(function (name) {
-    var cmd = path.join(binDir, name);
+    // node-manta#327 completion tests could ignore hidden files
+    if (name[0] === '.') {
+        return;
+    }
 
+    var cmd = path.join(binDir, name);
     test(name + ' --completion', function (t) {
-        exec(cmd + ' --completion', function (err, stdout, stderr) {
+        forkExecWait({
+            argv: [cmd, '--completion']
+        }, function (err, info) {
             t.ifError(err);
-            t.equal(stderr, '',
+            t.equal(info.stderr, '',
                 'no stderr output from "' + name + ' --completion"');
-            t.ok(/COMPREPLY/.test(stdout), 'stdout from "' + name +
+            t.ok(/COMPREPLY/.test(info.stdout), 'stdout from "' + name +
                 ' --completion" looks like Bash completion code');
             t.done();
         });
