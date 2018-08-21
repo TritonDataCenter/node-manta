@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Joyent, Inc.
+ * Copyright 2018 Joyent, Inc.
  */
 
 /*
@@ -271,6 +271,45 @@ test('mget -o TMPFILE TESTDIR/01.txt TESTDIR/02.txt TESTDIR/03.txt',
         t.equal(fileData, expected, 'file data from mget');
 
         unlinkIfExists(tmpFile);
+
+        t.done();
+    });
+});
+
+/*
+ * Download a file which does exist, and store the output in a file named after
+ * the remote object using the "-O" flag.
+ */
+test('mget -O TESTDIR/01.txt',
+    function (t) {
+
+    var file = path.join(TMPDIR, '01.txt');
+    var argv = [MGET, '-O', sprintf('%s/%02d.txt', TESTDIR, 1)];
+
+    /*
+     * We expect "mget" to download the one file and store the contents in
+     * the temporary file we nominated.
+     */
+    var expected = [
+        'first',
+        'file (01)'
+    ].join('\n') + '\n';
+
+    unlinkIfExists(file);
+
+    process.chdir(TMPDIR);
+
+    forkExecWait({
+        argv: argv
+    }, function (err, info) {
+        t.ifError(err, err);
+        t.equal(info.stdout, '', 'no stdout');
+        t.equal(info.stderr, '', 'no stderr');
+
+        var fileData = fs.readFileSync(file, 'utf8');
+        t.equal(fileData, expected, 'file data from mget');
+
+        unlinkIfExists(file);
 
         t.done();
     });
