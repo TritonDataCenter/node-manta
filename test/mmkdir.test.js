@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Joyent, Inc.
+ * Copyright 2018 Joyent, Inc.
  */
 
 /*
@@ -85,16 +85,15 @@ if (process.env.MANTA_TEST_ROLE) {
                   });
            });
     });
-}
 
+    test('cleanup: rm test directory ' + TESTDIR, function (t) {
+        // Sanity checks that we don't `mrm -r` a non-test dir.
+        assert.ok(TESTDIR);
+        assert.ok(TESTDIR.indexOf('node-manta-test') !== -1);
 
-test('cleanup: rm test directory ' + TESTDIR, function (t) {
-    // Sanity checks that we don't `mrm -r` a non-test dir.
-    assert.ok(TESTDIR);
-    assert.ok(TESTDIR.indexOf('node-manta-test') !== -1);
-
-    forkExecWait({ argv: [ MRM, '-r', TESTDIR ]}, function (err) {
-        t.ifError(err, err);
-        t.done();
+        forkExecWait({ argv: [ MRM, '-r', TESTDIR ]}, function (err) {
+            t.ifError(err, err);
+            t.done();
+        });
     });
-});
+}
