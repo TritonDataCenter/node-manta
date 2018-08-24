@@ -8,6 +8,7 @@ var http = require('http');
 var https = require('https');
 var path = require('path');
 var url = require('url');
+var util = require('util');
 
 var assert = require('assert-plus');
 var bunyan = require('bunyan');
@@ -153,8 +154,9 @@ function printEntry(opts, obj) {
     });
 
     assert(options.paths.length >= 1, 'no paths specified');
-    options.paths.forEach(function (p) {
-        barrier.start(p);
+    options.paths.forEach(function (p, i) {
+        var id = util.format('%d %s', i, p);
+        barrier.start(id);
         client.ftw(p, options, function (err, res) {
             if (err) {
                 if (err.name === 'InvalidDirectoryError') {
@@ -165,14 +167,14 @@ function printEntry(opts, obj) {
                     if (options.limit && totalEntries >= options.limit) {
                         process.exit(0);
                     }
-                    barrier.done(p);
+                    barrier.done(id);
                     return;
                 } else if (err.name === 'NotFoundError') {
                     if (err.path === undefined)
                         err.path = p;
                     printError(err.path, err);
                     lastError = err;
-                    barrier.done(p);
+                    barrier.done(id);
                     return;
                 } else {
                     var epath = p;
@@ -184,7 +186,7 @@ function printEntry(opts, obj) {
             }
 
             res.on('entry', print);
-            res.on('end', barrier.done.bind(barrier, p));
+            res.on('end', barrier.done.bind(barrier, id));
         });
     });
 })();

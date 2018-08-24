@@ -136,6 +136,19 @@ test('mfind TESTDIR', function (t) {
     });
 });
 
+/*
+ * joyent/node-manta#251 specifying a path multiple times to mfind results in
+ * crash.
+ */
+test('mfind TESTDIR TESTDIR (same argument multiple times)', function (t) {
+    forkExecWait({
+        argv: [MFIND, TESTDIR, TESTDIR]
+    }, function (err, info) {
+        t.ifError(err, err);
+        t.done();
+    });
+});
+
 test('mfind -j TESTDIR', function (t) {
     forkExecWait({
         argv: [MFIND, '-j', TESTDIR]
