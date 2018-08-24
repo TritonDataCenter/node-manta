@@ -2,6 +2,16 @@
 
 ## not yet released
 
+## 5.2.0
+
+- [#61](https://github.com/joyent/node-manta/issues/61) msign should allow for
+  friendlier expiry date formats
+
+  `msign -E <expires>` now supported, e.g.
+
+      msign -E 30m ~~/stor/bar # 30 minutes from now
+      msign -E 1h ~~/stor/foo  # 1 hour from now
+
 - joyent/node-manta#333 The --role-tag option does not work for mput, muntar,
   mln, or mmkdir
 - joyent/node-manta#329 Refactor all commands to use common option parsing code

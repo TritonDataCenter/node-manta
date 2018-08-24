@@ -1,4 +1,4 @@
-msign 1 "May 2013" Manta "Manta Commands"
+msign 1 "August 2018" Manta "Manta Commands"
 =======================================
 
 NAME
@@ -36,6 +36,14 @@ On OS X, you would sign this way:
 
     $ msign -e $(date -v+1m "+%s") ~~/stor/tmp
 
+You can also use `-E` for a friendly relative date format:
+
+    $ msign -E 5s ~~/foo # expires in 5 seconds
+    $ msign -E 5m ~~/foo # expires in 5 minutes
+    $ msign -E 5h ~~/foo # expires in 5 hours
+    $ msign -E 5d ~~/foo # expires in 5 days
+    $ msign -E 5w ~~/foo # expires in 5 weeks
+    $ msign -E 5y ~~/foo # expires in 5 years
 
 OPTIONS
 -------
@@ -46,6 +54,17 @@ OPTIONS
 `-e, --expires expiration`
   Signed URL should last until EXPIRATION (seconds since epoch).  Default is 1
   hour from `now`.
+
+`-e, --expires-relative expiration`
+  Signed URL should last until EXPIRATION (relative time spec).  Default is 1
+  hour from `now`.  Time specification format:
+
+    [n]s - seconds from now
+    [n]m - minutes from now
+    [n]h - hours from now
+    [n]d - days from now
+    [n]w - weeks from now
+    [n]y - years from now
 
 `-h, --help`
   Print a help message and exit.

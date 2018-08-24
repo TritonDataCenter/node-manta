@@ -1,4 +1,4 @@
-.TH msign 1 "May 2013" Manta "Manta Commands"
+.TH msign 1 "August 2018" Manta "Manta Commands"
 .SH NAME
 .PP
 msign \- create a signed URL to a Manta object
@@ -34,6 +34,19 @@ On OS X, you would sign this way:
 $ msign \-e $(date \-v+1m "+%s") ~~/stor/tmp
 .fi
 .RE
+.PP
+You can also use \fB\fC\-E\fR for a friendly relative date format:
+.PP
+.RS
+.nf
+$ msign \-E 5s ~~/foo # expires in 5 seconds
+$ msign \-E 5m ~~/foo # expires in 5 minutes
+$ msign \-E 5h ~~/foo # expires in 5 hours
+$ msign \-E 5d ~~/foo # expires in 5 days
+$ msign \-E 5w ~~/foo # expires in 5 weeks
+$ msign \-E 5y ~~/foo # expires in 5 years
+.fi
+.RE
 .SH OPTIONS
 .TP
 \fB\fC\-a, \-\-account login\fR
@@ -42,6 +55,21 @@ Authenticate as account (login name).
 \fB\fC\-e, \-\-expires expiration\fR
 Signed URL should last until EXPIRATION (seconds since epoch).  Default is 1
 hour from \fB\fCnow\fR\&.
+.TP
+\fB\fC\-e, \-\-expires\-relative expiration\fR
+Signed URL should last until EXPIRATION (relative time spec).  Default is 1
+hour from \fB\fCnow\fR\&.  Time specification format:
+.PP
+.RS
+.nf
+[n]s \- seconds from now
+[n]m \- minutes from now
+[n]h \- hours from now
+[n]d \- days from now
+[n]w \- weeks from now
+[n]y \- years from now
+.fi
+.RE
 .TP
 \fB\fC\-h, \-\-help\fR
 Print a help message and exit.
