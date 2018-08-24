@@ -104,11 +104,7 @@ function parseCmdOptions(opts, parser) {
         opts.name = new RegExp(opts.name);
     }
 
-    if (!opts._args.length) {
-        opts.paths = ['/' + opts.account + '/stor'];
-    } else {
-        opts.paths = opts._args;
-    }
+    opts.paths = opts._args;
 
     return (opts);
 }
@@ -156,6 +152,7 @@ function printEntry(opts, obj) {
         }
     });
 
+    assert(options.paths.length >= 1, 'no paths specified');
     options.paths.forEach(function (p) {
         barrier.start(p);
         client.ftw(p, options, function (err, res) {

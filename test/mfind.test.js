@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Joyent, Inc.
+ * Copyright 2018 Joyent, Inc.
  */
 
 /*
@@ -107,6 +107,19 @@ test('check if operator (mfind forbidden)', function (t) {
         } else {
             OPER = true;
         }
+        t.done();
+    });
+});
+
+/*
+ * node-manta#303 mfind should probably require at least one path argument
+ */
+test('mfind (no arguments)', function (t) {
+    forkExecWait({
+        argv: [MFIND]
+    }, function (err, info) {
+        t.ok(err, 'mfind should fail');
+        t.ok(/^path required/m.test(info.stderr), 'path required in stderr');
         t.done();
     });
 });
