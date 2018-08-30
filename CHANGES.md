@@ -2,6 +2,15 @@
 
 ## not yet released
 
+## 5.2.1
+
+- [MANTA-3679](https://smartos.org/bugview/MANTA-3679) content-md5 bugs in
+  muskie GetJob and node-manta 'mjob get' lead to BadDigest for non-ascii
+  content.
+
+  Fixes a rare bug that can cause a Content-MD5 failure in `mjob get` against a
+  Manta webapi using a different version.
+
 ## 5.2.0
 
 - [#61](https://github.com/joyent/node-manta/issues/61) msign should allow for
