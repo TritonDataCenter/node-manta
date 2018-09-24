@@ -1,6 +1,8 @@
 /*
- * Copyright 2015 Joyent, Inc.
+ * Copyright 2018 Joyent, Inc.
  */
+
+var f = require('util').format;
 
 var manta = require('..');
 
@@ -28,6 +30,55 @@ test('escapePath encoding', function (t) {
     tests.forEach(function (_test) {
         var s = _test[0];
         t.equal(manta.escapePath(s), _test[1]);
+    });
+    t.done();
+});
+
+test('prettyBytes', function (t) {
+    var goodTests = [
+        [0, '0'],
+        [1, '1'],
+
+        [1024, '1K'],
+        [2048, '2K'],
+        [2058, '2.01K'],
+
+        [12345, '12.06K'],
+        [123456, '120.56K'],
+        [1234567, '1.18M'],
+        [12345678, '11.77M'],
+        [123456789, '117.74M'],
+        [1234567890, '1.15G'],
+        [12345678901, '11.5G'],
+        [123456789012, '114.98G'],
+        [1234567890123, '1.12T'],
+
+        [Math.pow(1024, 0), '1'],
+        [Math.pow(1024, 1), '1K'],
+        [Math.pow(1024, 2), '1M'],
+        [Math.pow(1024, 3), '1G'],
+        [Math.pow(1024, 4), '1T']
+    ];
+    goodTests.forEach(function (_test) {
+        var bytes = _test[0];
+        var out = _test[1];
+        t.equal(manta.prettyBytes(bytes), out,
+            f('prettyBytes(%d) == "%s"', bytes, out));
+    });
+
+    var badTests = [
+        -1,
+        NaN,
+        '',
+        true,
+        {},
+        [],
+        new Date()
+    ];
+    badTests.forEach(function (value) {
+        t.throws(function () {
+            manta.prettyBytes(value);
+        }, f('prettyBytes(%j) throws', value));
     });
     t.done();
 });

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /*
- * Copyright 2016 Joyent, Inc.
+ * Copyright 2018 Joyent, Inc.
  */
 
 var path = require('path-platform');
@@ -9,6 +9,7 @@ var url = require('url');
 var assert = require('assert-plus');
 var bunyan = require('bunyan');
 var dashdash = require('dashdash');
+var jsprim = require('jsprim');
 var moment = require('moment');
 var once = require('once');
 var sprintf = require('extsprintf').sprintf;
@@ -26,8 +27,17 @@ var LOG = bunyan.createLogger({
     stream: process.stderr
 });
 
+var CLI_OPTIONS = jsprim.deepCopy(manta.DEFAULT_CLI_OPTIONS);
+
+// remove `-h` from the default options so we can use it
+CLI_OPTIONS.forEach(function (opt) {
+    if (opt.names && opt.names[0] === 'help') {
+        opt.names = ['help'];
+    }
+});
+
 var OPTIONS_PARSER = dashdash.createParser({
-    options: manta.DEFAULT_CLI_OPTIONS.concat([
+    options: CLI_OPTIONS.concat([
         {
             group: NAME + ' options'
         },
@@ -45,6 +55,11 @@ var OPTIONS_PARSER = dashdash.createParser({
             names: ['long', 'l'],
             type: 'bool',
             help: 'use a long listing format'
+        },
+        {
+            names: ['human-readable', 'h'],
+            type: 'bool',
+            help: 'Human readable output when using a long listing format'
         },
         {
             names: ['marker', 'm'],
@@ -177,10 +192,11 @@ function printEntry(opts, obj) {
         }
 
         var owner = obj.parent.split(/\//)[1];
-        var out = sprintf('%srwxr-xr-x 1 %s %13d %s %s',
+        var size = obj.type === 'directory' ? 0 : (obj.size || 0);
+        var out = sprintf('%srwxr-xr-x 1 %s %13s %s %s',
                           (obj.type === 'directory' ? 'd' : '-'),
                           owner,
-                          (obj.type === 'directory' ? '0' : (obj.size || '0')),
+                          opts.human_readable ? manta.prettyBytes(size) : size,
                           d.format(fmt),
                           safename);
 

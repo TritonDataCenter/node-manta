@@ -10,6 +10,11 @@ See `CONTRIBUTING.md` for details on how to update this file
   removal of files for `mrm`
 
   `mrm -I` and `mrmdir -I` now supported
+- [#62](https://github.com/joyent/node-manta/issues/62) RFE - mls list with human readable format
+
+  `mls` now supports `-h` for human readable output with `-l`, ie: `mls -lh`.
+
+  **Note:** this means `-h` is no longer an alias for `--help`.
 
 ## 5.2.1
 

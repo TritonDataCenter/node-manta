@@ -1,4 +1,4 @@
-mls 1 "May 2013" Manta "Manta Commands"
+mls 1 "Sep 2018" Manta "Manta Commands"
 =======================================
 
 NAME
@@ -34,7 +34,10 @@ OPTIONS
 `-a, --account login`
   Authenticate as account (login name).
 
-`-h, --help`
+`-h, --human-readable`
+  Human readable output when using a long listing format.
+
+`--help`
   Print a help message and exit.
 
 `-i, --insecure`
