@@ -4,8 +4,9 @@
  * Copyright 2018 Joyent, Inc.
  */
 
+var assert = require('assert-plus');
+var f = require('util').format;
 var path = require('path');
-var url = require('url');
 
 var bunyan = require('bunyan');
 var dashdash = require('dashdash');
@@ -19,6 +20,11 @@ function optionsParser(name) {
         options: manta.DEFAULT_CLI_OPTIONS.concat([
             {
                 group: name + ' options'
+            },
+            {
+                names: ['interactive', 'I'],
+                type: 'bool',
+                help: 'confirm before deleting objects'
             },
             {
                 names: ['parallel', 'p'],
@@ -46,12 +52,6 @@ function ifError(err) {
     }
 }
 
-
-function printEntry(obj) {
-    console.log('%j', obj);
-}
-
-
 ///--- Mainline
 
 (function main() {
@@ -70,10 +70,13 @@ function printEntry(obj) {
         log: log
     };
     var options = manta.parseOptions(parseArgs);
-
-
     var client = manta.createBinClient(options);
     var i = -1;
+
+    if (options.interactive && !process.stdin.isTTY) {
+        console.error('stdin must be a tty when interactive specified');
+        process.exit(1);
+    }
 
     (function rm(cb_err) {
         ifError(cb_err);
@@ -95,16 +98,47 @@ function printEntry(obj) {
             }
 
             if (info.extension === 'directory') {
-                if (options.recursive) {
-                    client.rmr(p, options, rm);
-                } else {
-                    console.error(p + ' is not an object');
+                // entry is a directory
+                if (!options.recursive) {
+                    console.error('%s is not an object', p);
                     process.exit(1);
                 }
-                return;
-            }
 
-            client.unlink(p, rm);
+                if (!options.interactive) {
+                    client.rmr(p, options, rm);
+                    return;
+                }
+
+                manta.promptConfirm(
+                    f('recursively remove directory `%s` [y/N]?: ', p),
+                    function (ans) {
+
+                    if (!ans) {
+                        // skip removing
+                        rm();
+                        return;
+                    }
+
+                    client.rmr(p, options, rm);
+                });
+            } else {
+                // entry is an object
+                if (!options.interactive) {
+                    client.unlink(p, rm);
+                    return;
+                }
+
+                manta.promptConfirm(f('remove object `%s` [y/N]?: ', p),
+                    function (ans) {
+
+                    if (!ans) {
+                        rm();
+                        return;
+                    }
+
+                    client.unlink(p, rm);
+                });
+            }
         });
     })();
 })();

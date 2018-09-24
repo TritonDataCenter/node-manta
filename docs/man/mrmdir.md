@@ -1,4 +1,4 @@
-mrmdir 1 "May 2013" Manta "Manta Commands"
+mrmdir 1 "August 2018" Manta "Manta Commands"
 =======================================
 
 NAME
@@ -34,6 +34,9 @@ OPTIONS
   This option explicitly allows "insecure" SSL connections and transfers.  All
   SSL connections are attempted to be made secure by using the CA certificate
   bundle installed by default.
+
+`-I, --interactive`
+  Confirm before deleting directories.
 
 `-k, --key fingerprint`
   Authenticate using the SSH key described by FINGERPRINT.  The key must

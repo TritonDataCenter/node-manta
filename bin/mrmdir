@@ -4,8 +4,9 @@
  * Copyright 2018 Joyent, Inc.
  */
 
+var assert = require('assert-plus');
+var f = require('util').format;
 var path = require('path');
-var url = require('url');
 
 var bunyan = require('bunyan');
 var dashdash = require('dashdash');
@@ -17,7 +18,16 @@ var manta = require('../lib');
 
 function optionsParser(name) {
     var parser = dashdash.createParser({
-        options: manta.DEFAULT_CLI_OPTIONS
+        options: manta.DEFAULT_CLI_OPTIONS.concat([
+            {
+                group: name + ' options'
+            },
+            {
+                names: ['interactive', 'I'],
+                type: 'bool',
+                help: 'confirm before deleting directories'
+            }
+        ])
     });
 
     return (parser);
@@ -30,12 +40,6 @@ function ifError(err) {
         process.exit(1);
     }
 }
-
-
-function printEntry(obj) {
-    console.log('%j', obj);
-}
-
 
 ///--- Mainline
 
@@ -55,9 +59,13 @@ function printEntry(obj) {
         log: log
     };
     var options = manta.parseOptions(parseArgs);
-
     var client = manta.createBinClient(options);
     var i = -1;
+
+    if (options.interactive && !process.stdin.isTTY) {
+        console.error('stdin must be a tty when interactive specified');
+        process.exit(1);
+    }
 
     (function rmdir(cb_err) {
         ifError(cb_err);
@@ -79,13 +87,25 @@ function printEntry(obj) {
             }
 
             if (info.extension !== 'directory') {
-                console.error(p + ' is not a directory');
+                console.error('%s is not a directory', p);
                 process.exit(1);
             }
 
-            client.unlink(p, function (err2) {
-                ifError(err2);
-                process.exit(0);
+            if (!options.interactive) {
+                client.unlink(p, rmdir);
+                return;
+            }
+
+            manta.promptConfirm(f('remove directory `%s` [y/N]?: ', p),
+                function (ans) {
+
+                if (!ans) {
+                    // skip removing this file
+                    rmdir();
+                    return;
+                }
+
+                client.unlink(p, rmdir);
             });
         });
     })();
