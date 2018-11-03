@@ -4,6 +4,7 @@ See `CONTRIBUTING.md` for details on how to update this file
 
 ## not yet released
 
+- [#358](https://github.com/joyent/node-manta/issues/358) mchmod command stopped working after v5.1.1
 - [#349](https://github.com/joyent/node-manta/issues/349) issue numbers in
   CHANGES.md should link to GitHub issues
 - [#335](https://github.com/joyent/node-manta/issues/335) Want option to confim
