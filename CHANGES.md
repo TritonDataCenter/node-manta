@@ -4,6 +4,7 @@ See `CONTRIBUTING.md` for details on how to update this file
 
 ## not yet released
 
+- [#361](https://github.com/joyent/node-manta/issues/361) expires-relative short option has wrong case in man page
 - [#349](https://github.com/joyent/node-manta/issues/349) issue numbers in
   CHANGES.md should link to GitHub issues
 - [#335](https://github.com/joyent/node-manta/issues/335) Want option to confim

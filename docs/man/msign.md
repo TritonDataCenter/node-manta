@@ -1,4 +1,4 @@
-msign 1 "August 2018" Manta "Manta Commands"
+msign 1 "December 2018" Manta "Manta Commands"
 =======================================
 
 NAME
@@ -55,7 +55,7 @@ OPTIONS
   Signed URL should last until EXPIRATION (seconds since epoch).  Default is 1
   hour from `now`.
 
-`-e, --expires-relative expiration`
+`-E, --expires-relative expiration`
   Signed URL should last until EXPIRATION (relative time spec).  Default is 1
   hour from `now`.  Time specification format:
 
