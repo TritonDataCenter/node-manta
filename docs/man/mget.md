@@ -1,4 +1,4 @@
-mget 1 "May 2013" Manta "Manta Commands"
+mget 1 "March 2019" Manta "Manta Commands"
 =======================================
 
 NAME
@@ -46,7 +46,7 @@ OPTIONS
   Authenticate as account (login name).
 
 `-H, --headers`
-  Print HTTP headers on stderr.
+  Additional HTTP headers to include.
 
 `-h, --help`
   Print a help message and exit.
