@@ -1,6 +1,6 @@
 [submodule "deps/jsstyle"]
 	path = deps/jsstyle
-	url = git://github.com/davepacheco/jsstyle.git
+	url = https://github.com/joyent/jsstyle.git
 [submodule "deps/restdown"]
 	path = deps/restdown
 	url = git://github.com/trentm/restdown.git
