@@ -62,6 +62,11 @@ var OPTIONS_PARSER = dashdash.createParser({
             help: 'Human readable output when using a long listing format'
         },
         {
+            names: ['turbo'],
+            type: 'bool',
+            help: 'Turbo button. Operators only. No sorting. This overrides the --reverse and --time options.'
+        },
+        {
             names: ['marker', 'm'],
             type: 'string',
             help: 'start listing from MARKER',
@@ -138,6 +143,12 @@ function parseOptions() {
             ifError(new Error('invalid type, must be "d" (directory) or ' +
               '"o" (object)'));
         }
+    }
+
+    if (opts.turbo) {
+        delete opts.reverse;
+        delete opts.mtime;
+        delete opts.time;
     }
 
     try {
