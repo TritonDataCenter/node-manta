@@ -178,10 +178,7 @@ for how we can make that shorter. tl;dr:
     mbucket cp foo.txt manta:mybucket
     mbucket cp manta:mybucket/foo.txt foo.txt
 
-That is quite the change from current node-manta usage: (a) because `cp` vs
-`put/get`, but more so (b) because of the "manta:..." URI. QQQ
-
-Why might we consider
+That is quite the change from current node-manta usage. Why might we consider
 this? Just replacing `put` and `get` commands with a single `cp` command isn't
 *that* compelling by itself. The benefits I see are:
 
@@ -226,9 +223,6 @@ this? Just replacing `put` and `get` commands with a single `cp` command isn't
 
         Pull: rsync [OPTION...] [USER@]HOST:SRC... [DEST]
         Push: rsync [OPTION...] SRC... [USER@]HOST:DEST
-
-  (Aside: Remote-to-remote copy could be less problematic replacement for `mln`,
-  FWIW.)
 
 - The cp/mv/rm command semantics map well to the familiar local filesystem
   commands.
