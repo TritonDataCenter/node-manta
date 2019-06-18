@@ -49,15 +49,15 @@ operations for buckets are:
 
 Here is what those operations look like using the `aws s3` CLI:
 
-    aws s3 mb s3://BUKKIT --region REGION               # 1. create bucket
-    aws s3 ls [s3://]                                   # 2. list buckets
-    aws s3 rb [--force] s3://BUKKIT                     # 3. delete bucket
-    aws s3api head-bucket --bucket=BUKKIT               # 4. head bucket
-    aws s3 ls s3://BUKKIT[/OBJ.EXT]                     # 5. list objects
-    aws s3api head-object --bucket=BUKKIT --key=foo.txt # 6. head object
-    aws s3 cp OBJ.EXT s3://BUKKIT/OBJ.EXT               # 7. put object(s)
-    aws s3 cp s3://BUKKIT/OBJ.EXT OBJ.EXT               # 8. get object(s)
-    aws s3 rm s3://BUKKIT[/OBJ.EXT]                     # 9. delete object(s)
+    aws s3 mb s3://mybucket --region REGION               # 1. create bucket
+    aws s3 ls [s3://]                                     # 2. list buckets
+    aws s3 rb [--force] s3://mybucket                     # 3. delete bucket
+    aws s3api head-bucket --bucket=mybucket               # 4. head bucket
+    aws s3 ls s3://mybucket[/foo.txt]                     # 5. list objects
+    aws s3api head-object --bucket=mybucket --key=foo.txt # 6. head object
+    aws s3 cp foo.txt s3://mybucket/foo.txt               # 7. put object(s)
+    aws s3 cp s3://mybucket/foo.txt foo.txt               # 8. get object(s)
+    aws s3 rm s3://mybucket[/foo.txt]                     # 9. delete object(s)
 
 
 ## manta take 1: directory/URL-path style, re-using existing `m*` tools
@@ -65,15 +65,15 @@ Here is what those operations look like using the `aws s3` CLI:
 A first mapping of the Buckets API onto existing `m*` tools in node-manta
 might look like:
 
-    mmkdir ~~/buckets/BUKKIT                            # 1. create bucket
-    mls ~~/buckets                                      # 2. list buckets
-    mrm ~~/buckets/BUKKIT                               # 3. delete bucket
-    minfo ~~/buckets/BUKKIT                             # 4. head bucket
-    mls ~~/buckets/BUKKIT/objects[/PREFIX]              # 5. list objects
-    minfo ~~/buckets/BUKKIT/objects/OBJ.EXT             # 6. head object
-    mput -f OBJ.EXT ~~/buckets/BUKKIT/objects/OBJ.EXT   # 7. put object(s)
-    mget -o OBJ.EXT ~~/buckets/BUKKIT/objects/OBJ.EXT   # 8. get object(s)
-    mrm ~~/buckets/BUKKIT/objects/OBJ.EXT               # 9. delete object(s)
+    mmkdir ~~/buckets/mybucket                            # 1. create bucket
+    mls ~~/buckets                                        # 2. list buckets
+    mrm ~~/buckets/mybucket                               # 3. delete bucket
+    minfo ~~/buckets/mybucket                             # 4. head bucket
+    mls ~~/buckets/mybucket/objects[/PREFIX]              # 5. list objects
+    minfo ~~/buckets/mybucket/objects/foo.txt             # 6. head object
+    mput -f foo.txt ~~/buckets/mybucket/objects/foo.txt   # 7. put object(s)
+    mget -o foo.txt ~~/buckets/mybucket/objects/foo.txt   # 8. get object(s)
+    mrm ~~/buckets/mybucket/objects/foo.txt               # 9. delete object(s)
 
 Cons:
 - I don't love that it persists the idea of a directory hierarchy that isn't
@@ -90,21 +90,20 @@ Say we drop the metaphor mapping API URL-path and directory, and add a new
 separated the commands for deleting a bucket (`rb`) and objects (`rm`) -- for
 clarity, somewhat for scripting safety, and to match the S3 CLI.
 
-    mbucket mb BUKKIT                                   # 1. create bucket
-    mbucket ls                                          # 2. list buckets
-    mbucket rb BUKKIT                                   # 3. delete bucket
-    mbucket info BUKKIT                                 # 4. head bucket
-    mbucket ls BUKKIT [OBJ.EXT]                         # 5. list objects
-    mbucket info BUKKIT [OBJ.EXT]]                      # 6. head object
-    mbucket put -f OBJ.EXT BUKKIT OBJ.EXT               # 7. put object(s)
-    mbucket get -o OBJ.EXT BUKKIT OBJ.EXT               # 8. get object(s)
-    mbucket rm BUKKIT [OBJ.EXT]                         # 9. delete object(s)
+    mbucket mb trentm/mybucket                      # 1. create bucket
+    mbucket ls                                      # 2. list buckets
+    mbucket rb trentm/mybucket                      # 3. delete bucket
+    mbucket info trentm/mybucket                    # 4. head bucket
+    mbucket ls trentm/mybucket [foo.txt]            # 5. list objects
+    mbucket info trentm/mybucket [foo.txt]]         # 6. head object
+    mbucket put -f foo.txt trentm/mybucket foo.txt  # 7. put object(s)
+    mbucket get -o foo.txt trentm/mybucket foo.txt  # 8. get object(s)
+    mbucket rm trentm/mybucket [foo.txt]            # 9. delete object(s)
 
-To allow referring to buckets other than those owned by my account (I'm not
-sure our design for buckets allows for cross-account bucket access), `BUKKIT`
-here could be `LOGIN/BUCKET-NAME`, e.g.:
-
-    mbucket ls trentm/mybucket foo.txt
+We could default to assuming the current `$MANTA_USER`, such that
+"trentm/mybucket" in the above examples could be just "mybucket". Also, if
+referring to buckets other than those owned by my account is not something we
+care to support, then the "trentm/" scope isn't necessary.
 
 
 ## manta take 3: put/get files rather than stdout
@@ -144,15 +143,15 @@ thing?
 
 A manta buckets version of this could be:
 
-    mbucket mb BUKKIT                                   # 1. create bucket
-    mbucket ls                                          # 2. list buckets
-    mbucket rb BUKKIT                                   # 3. delete bucket
-    mbucket info BUKKIT                                 # 4. head bucket
-    mbucket ls BUKKIT/[OBJ.EXT]                         # 5. list objects
-    mbucket info BUKKIT/[/OBJ.EXT]                      # 6. head object
-    mbucket put OBJ.EXT BUKKIT/OBJ.EXT                  # 7. put object(s)
-    mbucket get BUKKIT/OBJ.EXT OBJ.EXT                  # 8. get object(s)
-    mbucket rm BUKKIT/[OBJ.EXT]                         # 9. delete object(s)
+    mbucket mb mybucket                             # 1. create bucket
+    mbucket ls                                      # 2. list buckets
+    mbucket rb mybucket                             # 3. delete bucket
+    mbucket info mybucket                           # 4. head bucket
+    mbucket ls mybucket/[foo.txt]                   # 5. list objects
+    mbucket info mybucket/[/foo.txt]                # 6. head object
+    mbucket put foo.txt mybucket/foo.txt            # 7. put object(s)
+    mbucket get mybucket/foo.txt foo.txt            # 8. get object(s)
+    mbucket rm mybucket/[foo.txt]                   # 9. delete object(s)
 
 
 ## manta take 4: require explicit full URI for remote paths
@@ -237,37 +236,37 @@ Cons:
 
 The nine ops would now look like:
 
-    mbucket mb manta:BUKKIT                           # 1. create bucket
-    mbucket ls                                        # 2. list buckets
-    mbucket rb manta:BUKKIT                           # 3. delete bucket
-    mbucket info manta:BUKKIT                         # 4. head bucket
-    mbucket ls manta:BUKKIT/[OBJ.EXT]                 # 5. list objects
-    mbucket info manta:BUKKIT/[/OBJ.EXT]              # 6. head object
-    mbucket cp OBJ.EXT manta:BUKKIT/OBJ.EXT           # 7. put object(s)
-    mbucket cp manta:BUKKIT/OBJ.EXT OBJ.EXT           # 8. get object(s)
-    mbucket rm manta:BUKKIT/[OBJ.EXT]                 # 9. delete object(s)
+    mbucket mb manta:mybucket                       # 1. create bucket
+    mbucket ls                                      # 2. list buckets
+    mbucket rb manta:mybucket                       # 3. delete bucket
+    mbucket info manta:mybucket                     # 4. head bucket
+    mbucket ls manta:mybucket/[foo.txt]             # 5. list objects
+    mbucket info manta:mybucket/[/foo.txt]          # 6. head object
+    mbucket cp foo.txt manta:mybucket/foo.txt       # 7. put object(s)
+    mbucket cp manta:mybucket/foo.txt foo.txt       # 8. get object(s)
+    mbucket rm manta:mybucket/[foo.txt]             # 9. delete object(s)
 
 
 ## Compare take 4 to the aws CLI
 
-Comparing take 4 to the aws CLI and they are very similar (I've elided the
-less important `info` commands)
+Take 4 and the S3 CLI are very similar (I've elided the less important `info`
+commands):
 
-    mbucket mb manta:BUKKIT                             # 1. create bucket
-    mbucket ls                                          # 2. list buckets
-    mbucket rb manta:BUKKIT                             # 3. delete bucket
-    mbucket ls manta:BUKKIT/[OBJ.EXT]                   # 5. list objects
-    mbucket cp OBJ.EXT manta:BUKKIT/OBJ.EXT             # 7. put object(s)
-    mbucket cp manta:BUKKIT/OBJ.EXT OBJ.EXT             # 8. get object(s)
-    mbucket rm manta:BUKKIT/[OBJ.EXT]                   # 9. delete object(s)
+    mbucket mb manta:mybucket                       # 1. create bucket
+    mbucket ls                                      # 2. list buckets
+    mbucket rb manta:mybucket                       # 3. delete bucket
+    mbucket ls manta:mybucket/[foo.txt]             # 5. list objects
+    mbucket cp foo.txt manta:mybucket/foo.txt       # 7. put object(s)
+    mbucket cp manta:mybucket/foo.txt foo.txt       # 8. get object(s)
+    mbucket rm manta:mybucket/[foo.txt]             # 9. delete object(s)
 
-    aws s3 mb s3://BUKKIT --region REGION               # 1. create bucket
-    aws s3 ls [s3://]                                   # 2. list buckets
-    aws s3 rb [--force] s3://BUKKIT                     # 3. delete bucket
-    aws s3 ls s3://BUKKIT[/OBJ.EXT]                     # 5. list objects
-    aws s3 cp OBJ.EXT s3://BUKKIT/OBJ.EXT               # 7. put object(s)
-    aws s3 cp s3://BUKKIT/OBJ.EXT OBJ.EXT               # 8. get object(s)
-    aws s3 rm s3://BUKKIT[/OBJ.EXT]                     # 9. delete object(s)
+    aws s3 mb s3://mybucket --region REGION         # 1. create bucket
+    aws s3 ls [s3://]                               # 2. list buckets
+    aws s3 rb [--force] s3://mybucket               # 3. delete bucket
+    aws s3 ls s3://mybucket[/foo.txt]               # 5. list objects
+    aws s3 cp foo.txt s3://mybucket/foo.txt         # 7. put object(s)
+    aws s3 cp s3://mybucket/foo.txt foo.txt         # 8. get object(s)
+    aws s3 rm s3://mybucket[/foo.txt]               # 9. delete object(s)
 
 
 # Open Questions
@@ -276,6 +275,9 @@ less important `info` commands)
 - Support `sign` (The S3 CLI calls it "presign") for buckets?
 
 # Out of scope questions
+
+This section includes questions I have about buckets and the node-manta CLI,
+but are likely out of scope for initial CLI work.
 
 - Support client-side encryption (CSE)?
 - Support a "wait" like `aws s3api wait ...` (see Appendix B)?
@@ -346,8 +348,8 @@ the same cloud/UFDS).
 
 ## Appendix B: An aside on `aws s3api`
 
-    aws s3api head-bucket --bucket=BUKKIT               # 4. head bucket
-    aws s3api head-object --bucket=BUKKIT --key=foo.txt # 6. head object
+    aws s3api head-bucket --bucket=mybucket               # 4. head bucket
+    aws s3api head-object --bucket=mybucket --key=foo.txt # 6. head object
 
 An interesting thing from the aws CLI is the separate `aws s3api ...` set
 of commands. These appear (to me) to be all the raw S3 API primitives.
