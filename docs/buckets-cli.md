@@ -249,8 +249,8 @@ The nine ops would now look like:
 
 ## Compare take 4 to the aws CLI
 
-Take 4 and the S3 CLI are very similar (I've elided the less important `info`
-commands):
+Take 4 and the S3 CLI are very similar, which I don't think is a bad thing.
+(I've elided the less important `info` commands.)
 
     mbucket mb manta:mybucket                       # 1. create bucket
     mbucket ls                                      # 2. list buckets
@@ -267,6 +267,11 @@ commands):
     aws s3 cp foo.txt s3://mybucket/foo.txt         # 7. put object(s)
     aws s3 cp s3://mybucket/foo.txt foo.txt         # 8. get object(s)
     aws s3 rm s3://mybucket[/foo.txt]               # 9. delete object(s)
+
+## Next Steps
+
+- Get thoughts from others.
+- Write a prototype of this in the node-manta "buckets" branch to play with.
 
 
 # Open Questions
