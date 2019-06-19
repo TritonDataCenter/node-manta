@@ -297,6 +297,10 @@ Take 4 and the S3 CLI are very similar, which I don't think is a bad thing.
 
 - Lots to discuss in the "Proposal" section above.
 - Support `sign` (The S3 CLI calls it "presign") for buckets?
+- Drop "buckets/" from `mls /:login` output? Unless discussion of this proposal
+  biases back to us exposing the buckets API on the directory-based view, I
+  think it is misleading to have "/:login/buckets/" hanging off that directory
+  listing.
 
 
 # Out of scope questions

@@ -1,0 +1,10 @@
+#!/usr/bin/env node --abort-on-uncaught-exception
+/*
+ * Copyright 2019 Joyent, Inc.
+ */
+
+/*
+ * The `mbucket` CLI command.
+ */
+
+require('../lib/mbucket').main();
