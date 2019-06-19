@@ -11,6 +11,7 @@ This document is a proposal for the node-manta CLI for Manta buckets.
 
 
 - [Proposal](#proposal)
+  - [tl;dr](#tldr)
   - [operations](#operations)
   - [aws cli](#aws-cli)
   - [manta take 1: directory/URL-path style, re-using existing `m*` tools](#manta-take-1-directoryurl-path-style-re-using-existing-m-tools)
@@ -18,16 +19,34 @@ This document is a proposal for the node-manta CLI for Manta buckets.
   - [manta take 3: put/get files rather than stdout](#manta-take-3-putget-files-rather-than-stdout)
   - [manta take 4: require explicit full URI for remote paths](#manta-take-4-require-explicit-full-uri-for-remote-paths)
   - [Compare take 4 to the aws CLI](#compare-take-4-to-the-aws-cli)
+  - [Next Steps](#next-steps)
 - [Open Questions](#open-questions)
 - [Out of scope questions](#out-of-scope-questions)
 - [Answered Questions](#answered-questions)
 - [Appendices](#appendices)
   - [Appendix A: "manta:" URI](#appendix-a-manta-uri)
   - [Appendix B: An aside on `aws s3api`](#appendix-b-an-aside-on-aws-s3api)
+  - [Appendix C: Collecting feedback](#appendix-c-collecting-feedback)
+    - [from joshw](#from-joshw)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 # Proposal
+
+## tl;dr
+
+    mbucket mb manta:mybucket                       # 1. create bucket
+    mbucket ls                                      # 2. list buckets
+    mbucket rb manta:mybucket                       # 3. delete bucket
+    mbucket info manta:mybucket                     # 4. head bucket
+    mbucket ls manta:mybucket/[foo.txt]             # 5. list objects
+    mbucket info manta:mybucket/[/foo.txt]          # 6. head object
+    mbucket cp foo.txt manta:mybucket/foo.txt       # 7. put object(s)
+    mbucket cp manta:mybucket/foo.txt foo.txt       # 8. get object(s)
+    mbucket rm manta:mybucket/[foo.txt]             # 9. delete object(s)
+
+I attempt to explain my line of thinking, through several takes, in getting to
+this in the rest of this section. Please read on.
 
 ## operations
 
@@ -102,8 +121,8 @@ clarity, somewhat for scripting safety, and to match the S3 CLI.
 
 We could default to assuming the current `$MANTA_USER`, such that
 "trentm/mybucket" in the above examples could be just "mybucket". Also, if
-referring to buckets other than those owned by my account is not something we
-care to support, then the "trentm/" scope isn't necessary.
+referring to buckets owned by other accounts is not something we care to
+support, then the "trentm/" scope isn't necessary.
 
 
 ## manta take 3: put/get files rather than stdout
@@ -270,7 +289,7 @@ Take 4 and the S3 CLI are very similar, which I don't think is a bad thing.
 
 ## Next Steps
 
-- Get thoughts from others.
+- Get feedback from others.
 - Write a prototype of this in the node-manta "buckets" branch to play with.
 
 
@@ -278,6 +297,7 @@ Take 4 and the S3 CLI are very similar, which I don't think is a bad thing.
 
 - Lots to discuss in the "Proposal" section above.
 - Support `sign` (The S3 CLI calls it "presign") for buckets?
+
 
 # Out of scope questions
 
@@ -293,6 +313,7 @@ but are likely out of scope for initial CLI work.
 - Support `mv`?
 - Support S3-like object tagging?
 - Support S3-like object versioning? I'm assuming not.
+
 
 # Answered Questions
 
