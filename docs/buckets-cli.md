@@ -67,7 +67,7 @@ might look like:
 
     mmkdir ~~/buckets/mybucket                            # 1. create bucket
     mls ~~/buckets                                        # 2. list buckets
-    mrm ~~/buckets/mybucket                               # 3. delete bucket
+    mrmdir ~~/buckets/mybucket                            # 3. delete bucket
     minfo ~~/buckets/mybucket                             # 4. head bucket
     mls ~~/buckets/mybucket/objects[/PREFIX]              # 5. list objects
     minfo ~~/buckets/mybucket/objects/foo.txt             # 6. head object
@@ -363,3 +363,46 @@ with sugar. The rarer "head bucket" and "head object" live there. There are
 some other interesting tidbits in there that we might include, e.g.:
 
     aws s3api wait bucket-exists --bucket trentm-play
+
+
+## Appendix C: Collecting feedback
+
+### from joshw
+
+Some snippets from a chat convo:
+
+> I wish we could have something like MANTA_DOMAIN=manta.joyent.com and then just do manta:us-east:mybucket/foo Or even us-east:mybucket/foo
+
+He doesn't particularly like 'mb' and 'rb' for the bucket-only opts.
+Discussed alternatives:
+
+    # given the name is already `mbucket`
+    mbucket create ...
+    mbucket delete ...
+
+Or these:
+
+    manta bucket create ...
+    manta bucket delete ...
+    manta object {rm,ls,mv,...}
+
+I don't hate those at all. I don't know claiming `manta object` just for
+*bucket* objects will fly. There is also extra typing in `manta bucket ...` vs.
+`mbucket ...`.
+
+Could have top-level aliases for the more command object commands:
+
+    manta ls ...
+
+However is there confusion with directory-based Manta objects? Having that
+top-level one attempt to be "smart" and switch to the appropriate type
+(directory- or bucket-) based on the args seems like it could get awkward.
+
+Then suggested:
+
+    banta bucket ...
+
+I'm assuming this wasn't serious. :)
+
+We went around for a bit and I wore joshw down back to my "take 4" above for
+now.
