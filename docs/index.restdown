@@ -880,3 +880,30 @@ The `err` object has the following properties:
 ||message||String||human readable error message||
 ||stderr||String||*(optional)* a manta key that saved the stderr for the given command||
 ||key||String||*(optional)* the input key being processed when the task failed (if manta can determine it)||
+
+
+# Buckets
+
+## var stream = client.createListBucketsStream([opts])
+
+List buckets. This returns a `ReadableStream` of buckets objects.
+
+    var s = client.createListBucketsStream();
+    s.on('readable', function onReadable() {
+        var bucket;
+        while ((bucket = s.read()) !== null) {
+            console.log('BUCKET:', bucket);
+        }
+    });
+    s.once('error', function onError(err) {
+        cb(new VError(err, 'createListBucketsStream stream error'));
+    });
+    s.once('end', function onEnd() {
+        cb();
+    });
+
+### Inputs
+
+||**Name**||**JS Type**||**Description**||
+||options||Object||*(optional)* optional overrides for this request||
+

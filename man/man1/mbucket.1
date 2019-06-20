@@ -1,0 +1,113 @@
+.TH mbucket 1 "June 2019" Manta "Manta Commands"
+.SH NAME
+.PP
+mbucket \- work with Manta buckets and bucket objects
+.SH SYNOPSIS
+.PP
+\fB\fCmbucket\fR [GLOBAL OPTIONS...] command [command\-specific arguments]
+.SH DESCRIPTION
+.PP
+mbucket provides sub\-commands to create, list, delete Manta buckets and
+bucket objects.
+.PP
+For example:
+.PP
+.RS
+.nf
+mbucket mb play
+mbucket ls
+echo hi >hi.txt
+mbucket cp hi.txt manta:play/hi.txt
+mbucket ls manta:play/
+.fi
+.RE
+.SH GLOBAL OPTIONS
+.PP
+The following options are supported before the subcommand:
+.TP
+\fB\fC\-a, \-\-account login\fR
+Authenticate as account (login name).
+.TP
+\fB\fC\-h, \-\-help\fR
+Print a help message and exit.
+.TP
+\fB\fC\-i, \-\-insecure\fR
+This option explicitly allows "insecure" SSL connections and transfers.  All
+SSL connections are attempted to be made secure by using the CA certificate
+bundle installed by default.
+.TP
+\fB\fC\-k, \-\-key fingerprint\fR
+Authenticate using the SSH key described by \fB\fCfingerprint\fR\&.  The key must
+either be in \fB\fC~/.ssh\fR or loaded in the SSH agent via \fB\fCssh\-add\fR\&.
+.TP
+\fB\fC\-p, \-\-parallel NUM\fR
+Limit concurrent operations to NUM. The default varies by command. This
+applies to operations issued by mjob itself (e.g., to add inputs or poll on
+the job). It has no effect on the concurrency of the job.
+.TP
+\fB\fC\-\-role=ROLE,ROLE,...\fR
+Specify which roles to assume for the request.
+.TP
+\fB\fC\-\-user user\fR
+Authenticate as user under account.
+.TP
+\fB\fC\-u, \-\-url url\fR
+Manta base URL (such as \fB\fChttps://manta.us\-east.joyent.com\fR).
+.TP
+\fB\fC\-v, \-\-verbose\fR
+Print debug output to stderr.  Repeat option to increase verbosity.
+.SH COMMANDS
+.PP
+The following commands and options are supported:
+.SS mbucket ls [OPTIONS...] [MANTA\-URI]
+.PP
+When no MANTA\-URI argument is given, this will list all of this account's
+buckets.
+.PP
+.RS
+.nf
+$ mbucket ls
+play
+.fi
+.RE
+.PP
+When a MANTA\-URI argument is given, it will list objects in the bucket.
+.PP
+The following options are supported on \fB\fCcreate\fR:
+.PP
+XXX
+.SH ENVIRONMENT
+.TP
+\fB\fCMANTA_USER\fR
+In place of \fB\fC\-a, \-\-account\fR\&.
+.TP
+\fB\fCMANTA_SUBUSER\fR
+In place of \fB\fC\-\-user\fR\&.
+.TP
+\fB\fCMANTA_KEY_ID\fR
+In place of \fB\fC\-k, \-\-key\fR\&.
+.TP
+\fB\fCMANTA_ROLE\fR
+In place of \fB\fC\-\-role\fR\&.
+.TP
+\fB\fCMANTA_URL\fR
+In place of \fB\fC\-u, \-\-url\fR\&.
+.TP
+\fB\fCMANTA_TLS_INSECURE\fR
+In place of \fB\fC\-i, \-\-insecure\fR\&.
+.SH DIAGNOSTICS
+.PP
+When using the \fB\fC\-v\fR global option, trace\-level logging is written to stderr
+in bunyan format (\fB\fCnpm install \-g bunyan\fR to install the Bunyan tool).
+An example of viewing that trace logging:
+.PP
+.RS
+.nf
+$ mbucket \-v ls 2> >(bunyan)
+.fi
+.RE
+.SH BUGS
+.PP
+DSA keys do not work when loaded via the SSH agent.
+.PP
+Report bugs at Github \[la]https://github.com/joyent/node-manta/issues\[ra]
