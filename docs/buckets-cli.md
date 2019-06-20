@@ -10,6 +10,7 @@ This document is a proposal for the node-manta CLI for Manta buckets.
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
 
+- [Getting started with `mbucket`](#getting-started-with-mbucket)
 - [Proposal](#proposal)
   - [tl;dr](#tldr)
   - [operations](#operations)
@@ -30,6 +31,40 @@ This document is a proposal for the node-manta CLI for Manta buckets.
     - [from joshw](#from-joshw)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
+
+# Getting started with `mbucket`
+
+#### install
+
+```
+cd ~/tmp
+git clone git@github.com:joyent/node-manta.git
+cd node-manta
+git checkout buckets
+npm install
+
+# for bash completions
+make completion
+source share/manta.completion
+```
+
+#### examples
+
+```
+$ mbucket raw -h   # a curl-like tool for raw Manta API calls
+
+$ mbucket raw ~~/buckets
+{"name":"bar","type":"bucket","mtime":"2019-06-13T23:23:22.230Z"}
+{"name":"foo","type":"bucket","mtime":"2019-06-13T23:13:48.075Z"}
+
+$ mbucket ls
+mbucket ls: error: not yet implemented
+```
+
+Still early days. :)
+
+
 
 # Proposal
 
@@ -296,6 +331,11 @@ Take 4 and the S3 CLI are very similar, which I don't think is a bad thing.
 # Open Questions
 
 - Lots to discuss in the "Proposal" section above.
+  A: Positive reactions from Isaac and Kelly and JoshW.
+- Add updatemetadata support from
+  https://github.com/joyent/manta-muskie/commit/8b3c3c6d6c03fdaf3153dab2de8b78d3be72e809
+- Add OPTIONS ~~/buckets support.
+
 - Support `sign` (The S3 CLI calls it "presign") for buckets?
 - Drop "buckets/" from `mls /:login` output? Unless discussion of this proposal
   biases back to us exposing the buckets API on the directory-based view, I
