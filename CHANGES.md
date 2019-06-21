@@ -27,10 +27,12 @@ Support for the in-development Buckets features of Manta:
   `MantaClient`:
     - createListBucketsStream
     - isBucketsSupported
+    - createBucket
 - A new `mbucket` CLI:
     - mbucket ls - listing buckets
     - mbucket raw - for dev/debugging the raw Manta API
     - mbucket is-supported - hidden command for testing `isBucketsSupported`.
+    - mbucket mb - Create bucket
 
 
 ## 5.2.1
