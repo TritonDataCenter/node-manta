@@ -19,6 +19,20 @@ See `CONTRIBUTING.md` for details on how to update this file
 
   **Note:** this means `-h` is no longer an alias for `--help`.
 
+## 5.3.0
+
+Support for the in-development Buckets features of Manta:
+
+- New "Buckets"-related methods on the `MantaBucketsClient` subclass of
+  `MantaClient`:
+    - createListBucketsStream
+    - isBucketsSupported
+- A new `mbucket` CLI:
+    - mbucket ls - listing buckets
+    - mbucket raw - for dev/debugging the raw Manta API
+    - mbucket is-supported - hidden command for testing `isBucketsSupported`.
+
+
 ## 5.2.1
 
 - [MANTA-3679](https://smartos.org/bugview/MANTA-3679) content-md5 bugs in
