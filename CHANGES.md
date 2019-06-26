@@ -29,12 +29,21 @@ Support for the in-development Buckets features of Manta:
     - isBucketsSupported
     - createBucket
     - deleteBucket
+    - createListBucketObjectsStream
+    - createBucketObject
 - A new `mbucket` CLI:
     - mbucket ls - listing buckets
     - mbucket raw - for dev/debugging the raw Manta API
     - mbucket is-supported - hidden command for testing `isBucketsSupported`.
     - mbucket mb - Create bucket
     - mbucket rb - Delete bucket
+    - mbucket cp - Copy files to and from a Manta bucket
+- Known issues:
+    - '/' in object names is messed up
+    - `mbucket rm` is not yet implemented
+    - metadata endpoints not yet implemented
+    - testing is lacking
+    - API docs have not been added to docs/index.md
 
 
 
