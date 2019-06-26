@@ -40,12 +40,15 @@ Support for the in-development Buckets features of Manta:
     - mbucket rb - Delete bucket
     - mbucket cp - Copy files to and from a Manta bucket
     - mbucket info - Print HTTP headers for a given Manta bucket or object.
-- Known issues:
+- Known issues/limitations:
     - '/' in object names is messed up
     - `mbucket rm` is not yet implemented
-    - metadata endpoints not yet implemented
+    - metadata endpoints are not yet implemented
     - testing is lacking
-    - API docs have not been added to docs/index.md
+    - missing docs: API docs in docs/index.md; user guide docs
+    - `mbucket ls` does not support pagination or non-recursive listing
+      with common prefixes (waiting on MANTA-4355 work)
+    - RBAC roles are not yet supported
 
 
 
