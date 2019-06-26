@@ -19,7 +19,7 @@ See `CONTRIBUTING.md` for details on how to update this file
 
   **Note:** this means `-h` is no longer an alias for `--help`.
 
-## 5.3.0
+### Buckets
 
 Support for the in-development Buckets features of Manta:
 
@@ -53,7 +53,6 @@ Support for the in-development Buckets features of Manta:
     - `mbucket ls` does not support pagination or non-recursive listing
       with common prefixes (waiting on MANTA-4355 work)
     - RBAC roles are not yet supported
-
 
 
 ## 5.2.1

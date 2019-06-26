@@ -87,7 +87,9 @@ test('manta:mybucket/myobject.txt (from component fields)', function (t) {
 test('no args (parse fail, num of args)', function (t) {
     t.expect(1);
     try {
+        // jsl:ignore
         var muri = new MantaUri();
+        // jsl:end
     } catch (err) {
         t.ok(/incorrect number of arguments/.test(err.message), err.message);
     }
@@ -153,4 +155,3 @@ test('from components, login non null (parse fail, do not yet support long forms
     }
     t.done();
 });
-
