@@ -32,19 +32,23 @@ Support for the in-development Buckets features of Manta:
     - createListBucketObjectsStream
     - createBucketObject
     - headBucketObject
+    - deleteBucketObject
 - A new `mbucket` CLI:
     - mbucket ls - listing buckets
     - mbucket raw - for dev/debugging the raw Manta API
     - mbucket is-supported - hidden command for testing `isBucketsSupported`.
     - mbucket mb - Create bucket
     - mbucket rb - Delete bucket
-    - mbucket cp - Copy files to and from a Manta bucket
+    - mbucket cp - Copy files to and from a Manta bucket.
+    - mbucket rm - Delete a Manta bucket object.
     - mbucket info - Print HTTP headers for a given Manta bucket or object.
 - Known issues/limitations:
     - '/' in object names is messed up
-    - `mbucket rm` is not yet implemented
     - metadata endpoints are not yet implemented
     - testing is lacking
+    - currently this is a first pass implementation that needs another go over
+    - lots of options are missing for which the intent is to implement:
+      --recursive, --dry-run, etc.
     - missing docs: API docs in docs/index.md; user guide docs
     - `mbucket ls` does not support pagination or non-recursive listing
       with common prefixes (waiting on MANTA-4355 work)
