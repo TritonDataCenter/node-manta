@@ -42,6 +42,7 @@ Support for the in-development Buckets features of Manta:
     - mbucket cp - Copy files to and from a Manta bucket.
     - mbucket rm - Delete a Manta bucket object.
     - mbucket info - Print HTTP headers for a given Manta bucket or object.
+    - mbucket cat - Stream a buckect object to stdout.
 - Known issues/limitations:
     - '/' in object names is messed up
     - metadata endpoints are not yet implemented
