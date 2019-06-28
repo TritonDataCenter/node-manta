@@ -19,6 +19,10 @@ See `CONTRIBUTING.md` for details on how to update this file
 
   **Note:** this means `-h` is no longer an alias for `--help`.
 
+- The node-name client will not specify a user-agent in its HTTP requests,
+  e.g. "node-manta/5.2.1 node/10.15.3".
+- Buckets support. See the "Buckets" section just below.
+
 ### Buckets
 
 Support for the in-development Buckets features of Manta:
@@ -44,7 +48,6 @@ Support for the in-development Buckets features of Manta:
     - mbucket info - Print HTTP headers for a given Manta bucket or object.
     - mbucket cat - Stream a buckect object to stdout.
 - Known issues/limitations:
-    - '/' in object names is messed up
     - metadata endpoints are not yet implemented
     - testing is lacking
     - currently this is a first pass implementation that needs another go over
