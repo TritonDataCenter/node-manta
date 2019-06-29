@@ -49,6 +49,8 @@ Support for the in-development Buckets features of Manta:
     - mbucket cat - Stream a buckect object to stdout.
 - Known issues/limitations:
     - metadata endpoints are not yet implemented
+    - RBAC "role" headers are not yet supported
+    - conditional header support isn't yet plumbed through the client methods
     - testing is lacking
     - currently this is a first pass implementation that needs another go over
     - lots of options are missing for which the intent is to implement:
@@ -56,7 +58,6 @@ Support for the in-development Buckets features of Manta:
     - missing docs: API docs in docs/index.md; user guide docs
     - `mbucket ls` does not support pagination or non-recursive listing
       with common prefixes (waiting on MANTA-4355 work)
-    - RBAC roles are not yet supported
 
 
 ## 5.2.1
