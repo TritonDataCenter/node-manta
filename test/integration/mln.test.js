@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Joyent, Inc.
+ * Copyright 2019 Joyent, Inc.
  */
 
 /*
@@ -11,15 +11,16 @@ var forkExecWait = require('forkexec').forkExecWait;
 var fs = require('fs');
 var libuuid = require('uuid');
 var path = require('path');
+var test = require('tap').test;
 var vasync = require('vasync');
 var sprintf = require('extsprintf').sprintf;
 
-var logging = require('./lib/logging');
+var logging = require('../lib/logging');
 
 
 var log = logging.createLogger();
 
-var BINDIR = path.resolve(__dirname, '../bin');
+var BINDIR = path.resolve(__dirname, '../../bin');
 var MGET = path.resolve(BINDIR, 'mget');
 var MMKDIR = path.resolve(BINDIR, 'mmkdir');
 var MPUT = path.resolve(BINDIR, 'mput');
@@ -68,11 +69,6 @@ for (i = 1; i <= 3; i++) {
 
 
 // ---- helper functions
-
-function test(name, testfunc) {
-    module.exports[name] = testfunc;
-}
-
 
 function unlinkIfExists(targ) {
     try {
@@ -129,7 +125,7 @@ test('setup: create test tree at ' + TESTDIR, function (t) {
         }
     }, function (err) {
         t.ifError(err, err);
-        t.done();
+        t.end();
     });
 });
 
@@ -171,7 +167,7 @@ test('mln ', function (t) {
                       t.equal(info3.stderr, '', 'no stderr');
 
                       t.equal(info2.stdout, info3.stdout, 'stdout from mget');
-                      t.done();
+                      t.end();
                   });
            });
     });
@@ -221,7 +217,7 @@ if (process.env.MANTA_TEST_ROLE) {
                       t.notEqual(headerIndex, -1,
                           'minfo response contains header');
 
-                      t.done();
+                      t.end();
                   });
            });
     });
@@ -235,7 +231,7 @@ test('cleanup: rm test tree ' + TESTDIR, function (t) {
 
     forkExecWait({ argv: [ MRM, '-r', TESTDIR ]}, function (err) {
         t.ifError(err, err);
-        t.done();
+        t.end();
     });
 });
 
@@ -245,5 +241,5 @@ test('cleanup: rm tmp directory ' + TMPDIR, function (t) {
 
     unlinkIfExists(tmpFile);
 
-    t.done();
+    t.end();
 });

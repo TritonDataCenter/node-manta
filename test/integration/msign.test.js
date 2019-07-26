@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Joyent, Inc.
+ * Copyright 2019 Joyent, Inc.
  */
 
 /*
@@ -9,21 +9,17 @@
 var f = require('util').format;
 var forkExecWait = require('forkexec').forkExecWait;
 var path = require('path');
+var test = require('tap').test;
 var url = require('url');
+
 
 // ---- globals
 
-var BINDIR = path.resolve(__dirname, '../bin');
+var BINDIR = path.resolve(__dirname, '../../bin');
 var MSIGN = path.resolve(BINDIR, 'msign');
 
 // This doesn't really matter - msign doesn't check to see if the object exists
 var PATH = '~~/stor/foo';
-
-// ---- helper functions
-
-function test(name, testfunc) {
-    module.exports[name] = testfunc;
-}
 
 
 // ---- tests
@@ -34,7 +30,7 @@ test('msign (no arguments)', function (t) {
     }, function (err, info) {
         t.ok(err, 'msign should fail');
         t.ok(/^path required/m.test(info.stderr), 'path required in stderr');
-        t.done();
+        t.end();
     });
 });
 
@@ -61,7 +57,7 @@ test(f('msign %s', PATH), function (t) {
         t.ok(q.expires, 'expires');
         t.ok(q.keyId, 'keyId');
 
-        t.done();
+        t.end();
     });
 });
 
@@ -79,9 +75,9 @@ test(f('msign -e <expires> %s', PATH), function (t) {
         var q = signed.query;
 
         t.ok(q, 'query');
-        t.equal(q.expires, expires, 'expires');
+        t.equal(Number(q.expires), expires, 'expires');
 
-        t.done();
+        t.end();
     });
 });
 
@@ -107,7 +103,7 @@ test(f('msign -E 1h %s', PATH), function (t) {
         t.ok(q.expires >= expires, 'q.expires >= expires');
         t.ok(q.expires < expires + 5, 'q.expires < expires + 5');
 
-        t.done();
+        t.end();
     });
 });
 
@@ -125,7 +121,7 @@ test(f('msign -E 1h %s', PATH), function (t) {
             argv: [MSIGN, '-E', expires, PATH]
         }, function (err, info) {
             t.ifError(err, err);
-            t.done();
+            t.end();
         });
     });
 });
@@ -150,7 +146,7 @@ test(f('msign -E 1h %s', PATH), function (t) {
             t.ok(err, 'msign should fail');
             t.ok(/invalid expires: /m.test(info.stderr),
                 'invalid expires in stderr');
-            t.done();
+            t.end();
         });
     });
 });
@@ -162,6 +158,6 @@ test('msign -E and -e together', function (t) {
         t.ok(err, 'msign should fail');
         t.ok(/-e and -E cannot be specified together/m.test(info.stderr),
             '-e and -E cannot be specified together in stderr');
-        t.done();
+        t.end();
     });
 });

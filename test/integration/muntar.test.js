@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Joyent, Inc.
+ * Copyright 2019 Joyent, Inc.
  */
 
 var exec = require('child_process').exec;
@@ -10,16 +10,18 @@ var libuuid = require('uuid');
 var MemoryStream = require('readable-stream/passthrough.js');
 var bunyan = require('bunyan');
 var format = require('util').format;
+var test = require('tap').test;
 var vasync = require('vasync');
 
-var logging = require('./lib/logging');
-var manta = require('../lib');
+var logging = require('../lib/logging');
+var manta = require('../../lib');
 
 
 /*
  * Globals
  */
 
+var client;
 var log = logging.createLogger();
 
 var ROOT = '/' + (process.env.MANTA_USER || 'admin') + '/stor';
@@ -28,26 +30,16 @@ var TSTDIR = ROOT + '/node-manta-test-muntar-' + libuuid.v4().split('-')[0];
 
 
 /*
- * Helper functions
+ * Tests
  */
 
-function test(name, testfunc) {
-    module.exports[name] = testfunc;
-}
-
-
-
-/*
- * Pre- and Post-test actions
- */
-
-module.exports.setUp = function (cb) {
-    var self = this;
+test('setup', function (t) {
     var url = process.env.MANTA_URL || 'http://localhost:8080';
     var user = process.env.MANTA_USER || 'admin';
 
     function createClient(signer) {
-        self.client = manta.createClient({
+        // `client` is intentionally global.
+        client = manta.createClient({
             connectTimeout: 1000,
             log: log,
             rejectUnauthorized: (process.env.MANTA_TLS_INSECURE ?
@@ -57,7 +49,7 @@ module.exports.setUp = function (cb) {
             user: user
         });
 
-        cb();
+        t.end();
     }
 
     if (process.env.MANTA_KEY_ID) {
@@ -72,13 +64,15 @@ module.exports.setUp = function (cb) {
             '| awk \'{print $2}\'';
         fs.readFile(f, 'utf8', function (err, key) {
             if (err) {
-                cb(err);
+                t.error(err);
+                t.end();
                 return;
             }
 
             exec(cmd, function (err2, stdout, stderr) {
                 if (err2) {
-                    (cb(err2));
+                    t.error(err2);
+                    t.end();
                     return;
                 }
                 createClient(manta.privateKeySigner({
@@ -86,28 +80,12 @@ module.exports.setUp = function (cb) {
                     keyId: stdout.replace('\n', ''),
                     user: user
                 }));
-                return;
             });
-            return;
         });
     }
-};
+});
 
 
-module.exports.tearDown = function (cb) {
-    if (this.client) {
-        this.client.close();
-        delete this.client;
-    }
-    cb();
-};
-
-
-/*
- * Tests
- */
-
-// muntar tests
 var cases = [
     {
         tarpath: 'corpus/tar1.tar',
@@ -146,18 +124,17 @@ cases.forEach(function (c, i) {
     }
 
     var name = format('muntar case %d: %s', i, c.tarpath);
-    var cmd = format('%s -f %s %s', path.resolve(__dirname, '../bin/muntar'),
+    var cmd = format('%s -f %s %s', path.resolve(__dirname, '../../bin/muntar'),
         path.resolve(__dirname, c.tarpath), TSTDIR);
     log.debug({caseName: name, cmd: cmd}, 'run case');
 
     test(name, function (t) {
-        var self = this;
         exec(cmd, function (err, stdout, stderr) {
             t.ifError(err);
             vasync.forEachPipeline({
                 func: function checkOne(check, cb) {
                     var mpath = path.join(TSTDIR, check.path);
-                    self.client.info(mpath, function (err2, info) {
+                    client.info(mpath, function (err2, info) {
                         t.ifError(err2, err2);
                         if (!err2) {
                             t.equal(info.type, check.type, format(
@@ -179,11 +156,20 @@ cases.forEach(function (c, i) {
                 },
                 inputs: c.checks
             }, function (err3, results) {
-                self.client.rmr(TSTDIR, function (rmErr) {
+                client.rmr(TSTDIR, function (rmErr) {
                     t.ifError(rmErr, rmErr);
-                    t.done();
+                    t.end();
                 });
             });
         });
     });
+});
+
+
+test('teardown', function (t) {
+    if (client) {
+        client.close();
+        client = null;
+    }
+    t.end();
 });

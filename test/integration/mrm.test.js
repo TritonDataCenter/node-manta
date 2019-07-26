@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Joyent, Inc.
+ * Copyright 2019 Joyent, Inc.
  */
 
 /*
@@ -11,12 +11,13 @@ var fs = require('fs');
 var forkExecWait = require('forkexec').forkExecWait;
 var libuuid = require('uuid');
 var path = require('path');
+var test = require('tap').test;
 var vasync = require('vasync');
 var sprintf = require('extsprintf').sprintf;
 
-var utils = require('./lib/utils');
+var utils = require('../lib/utils');
 
-var BINDIR = path.resolve(__dirname, '../bin');
+var BINDIR = path.resolve(__dirname, '../../bin');
 var MMKDIR = path.resolve(BINDIR, 'mmkdir');
 var MRM = path.resolve(BINDIR, 'mrm');
 var MPUT = path.resolve(BINDIR, 'mput');
@@ -39,16 +40,13 @@ for (var i = 0; i < NUMSUBDIRS; i++) {
 
 // ---- helper functions
 
-function test(name, testfunc) {
-    module.exports[name] = testfunc;
-}
-
 function safePath(p) {
     assert.string(p);
     assert(p.indexOf('node-manta-test') !== -1);
 }
 
 // ---- tests
+
 test('setup: create test tree at ' + TESTDIR, function (t) {
     vasync.pipeline({funcs: [
         function (_, cb) {
@@ -76,7 +74,7 @@ test('setup: create test tree at ' + TESTDIR, function (t) {
         }
     ]}, function (err) {
         t.ifError(err, err);
-        t.done();
+        t.end();
     });
 });
 
@@ -86,7 +84,7 @@ test('mrm (no arguments)', function (t) {
     }, function (err, info) {
         t.ok(err, 'mrm should fail');
         t.ok(/^path required/m.test(info.stderr), 'path required in stderr');
-        t.done();
+        t.end();
     });
 });
 
@@ -96,7 +94,7 @@ test('mrm -I fails without tty', function (t) {
     }, function (err, info) {
         t.ok(err, 'mrm should fail');
         t.ok(/^stdin must be a tty/m.test(info.stderr), 'stdin must be a tty');
-        t.done();
+        t.end();
     });
 });
 
@@ -109,7 +107,7 @@ test('mrm 1 directory', function (t) {
         argv: [MRM, '-r', p]
     }, function (err) {
         t.ifError(err, err);
-        t.done();
+        t.end();
     });
 });
 
@@ -156,7 +154,7 @@ test('remove remaining directories', function (t) {
         }
     ]}, function (err) {
         t.ifError(err, err);
-        t.done();
+        t.end();
     });
 });
 
@@ -169,7 +167,7 @@ test('mrm 1 object', function (t) {
         argv: [MRM, p]
     }, function (err) {
         t.ifError(err, err);
-        t.done();
+        t.end();
     });
 });
 
@@ -216,7 +214,7 @@ test('remove remaining objects', function (t) {
         }
     ]}, function (err) {
         t.ifError(err, err);
-        t.done();
+        t.end();
     });
 });
 
@@ -224,12 +222,12 @@ test('ensure test tree is empty', function (t) {
     utils.mls(TESTDIR, function (err, list) {
         if (err) {
             t.ifError(err, err);
-            t.done();
+            t.end();
             return;
         }
 
         t.equal(list.length, 0, '0 remaining entities');
-        t.done();
+        t.end();
     });
 });
 
@@ -239,6 +237,6 @@ test('cleanup: rm test tree ' + TESTDIR, function (t) {
 
     forkExecWait({ argv: [MRM, '-r', TESTDIR]}, function (err) {
         t.ifError(err, err);
-        t.done();
+        t.end();
     });
 });

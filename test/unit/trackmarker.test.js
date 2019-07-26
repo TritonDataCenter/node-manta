@@ -1,12 +1,10 @@
 /*
- * Copyright 2015 Joyent, Inc.
+ * Copyright 2019 Joyent, Inc.
  */
 
-var mod_trackmarker = require('../lib/trackmarker');
+var test = require('tap').test;
+var mod_trackmarker = require('../../lib/trackmarker');
 
-function test(name, testfunc) {
-    module.exports[name] = testfunc;
-}
 
 var SCENARIOS = [
     {
@@ -128,6 +126,6 @@ SCENARIOS.forEach(function (scenario) {
             });
         });
         check_scenario(t, scenario, count++, tm, results);
-        t.done();
+        t.end();
     });
 });

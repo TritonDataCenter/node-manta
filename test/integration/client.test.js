@@ -1,26 +1,24 @@
 /*
- * Copyright 2016 Joyent, Inc.
+ * Copyright 2019 Joyent, Inc.
  */
 
 var exec = require('child_process').exec;
-var crypto = require('crypto');
 var fs = require('fs');
 var path = require('path');
 
-var bunyan = require('bunyan');
-var jsprim = require('jsprim');
 var libuuid = require('uuid');
 var MemoryStream = require('readable-stream/passthrough.js');
-var verror = require('verror');
+var test = require('tap').test;
 
-var logging = require('./lib/logging');
-var manta = require('../lib');
+var logging = require('../lib/logging');
+var manta = require('../../lib');
 
 
 /*
  * Globals
  */
 
+var client;
 var log = logging.createLogger();
 
 var JOB;
@@ -33,38 +31,22 @@ var CHILD2 = SUBDIR2 + '/child2-' + libuuid.v4().split('-')[0]; // link
 var NOENTSUB1 = SUBDIR1 + '/a/b/c';
 var NOENTSUB2 = SUBDIR1 + '/d/e/f';
 var SPECIALOBJ1 = SUBDIR1 + '/' + 'before-\r-after';
-var MPU_ENABLED;
-var UPLOAD1; // committed upload
-var UPLOAD2; // aborted upload
-var PATH1 = ROOT + '/committed-obj';
-var PATH2 = ROOT + '/aborted-obj';
-var PATH3 = ROOT + '/#311-test';
-var ETAGS1 = [];
 
 var SUBDIR1_NOBJECTS = 1;
 var SUBDIR1_NDIRECTORIES = 2;
 
 
 /*
- * Helper functions
+ * Tests
  */
 
-function test(name, testfunc) {
-    module.exports[name] = testfunc;
-}
-
-
-/*
- * Pre- and Post-test actions
- */
-
-module.exports.setUp = function (cb) {
-    var self = this;
+test('setup', function (t) {
     var url = process.env.MANTA_URL || 'http://localhost:8080';
     var user = process.env.MANTA_USER || 'admin';
 
     function createClient(signer) {
-        self.client = manta.createClient({
+        // `client` is intentionally global.
+        client = manta.createClient({
             connectTimeout: 1000,
             log: log,
             rejectUnauthorized: (process.env.MANTA_TLS_INSECURE ? false : true),
@@ -73,7 +55,7 @@ module.exports.setUp = function (cb) {
             user: user
         });
 
-        cb();
+        t.end();
     }
 
     if (process.env.MANTA_KEY_ID) {
@@ -88,13 +70,15 @@ module.exports.setUp = function (cb) {
             '| awk \'{print $2}\'';
         fs.readFile(f, 'utf8', function (err, key) {
             if (err) {
-                cb(err);
+                t.error(err);
+                t.end();
                 return;
             }
 
             exec(cmd, function (err2, stdout, stderr) {
                 if (err2) {
-                    (cb(err2));
+                    t.error(err2);
+                    t.end();
                     return;
                 }
                 createClient(manta.privateKeySigner({
@@ -102,39 +86,24 @@ module.exports.setUp = function (cb) {
                     keyId: stdout.replace('\n', ''),
                     user: user
                 }));
-                return;
             });
-            return;
         });
     }
-};
+});
 
-
-module.exports.tearDown = function (cb) {
-    if (this.client) {
-        this.client.close();
-        delete this.client;
-    }
-    cb();
-};
-
-
-/*
- * Tests
- */
 
 test('mkdir', function (t) {
-    this.client.mkdir(SUBDIR1, function (err) {
+    client.mkdir(SUBDIR1, function (err) {
         t.ifError(err);
-        t.done();
+        t.end();
     });
 });
 
 
 test('mkdir (sub)', function (t) {
-    this.client.mkdir(SUBDIR2, function (err) {
+    client.mkdir(SUBDIR2, function (err) {
         t.ifError(err);
-        t.done();
+        t.end();
     });
 });
 
@@ -144,9 +113,9 @@ test('put', function (t) {
     var size = Buffer.byteLength(text);
     var stream = new MemoryStream();
 
-    this.client.put(CHILD1, stream, {size: size}, function (err) {
+    client.put(CHILD1, stream, {size: size}, function (err) {
         t.ifError(err);
-        t.done();
+        t.end();
     });
 
     process.nextTick(function () {
@@ -161,9 +130,9 @@ test('#231: put (special characters)', function (t) {
     var size = Buffer.byteLength(text);
     var stream = new MemoryStream();
 
-    this.client.put(SPECIALOBJ1, stream, {size: size}, function (err) {
+    client.put(SPECIALOBJ1, stream, {size: size}, function (err) {
         t.ifError(err);
-        t.done();
+        t.end();
     });
 
     process.nextTick(function () {
@@ -173,7 +142,7 @@ test('#231: put (special characters)', function (t) {
 });
 
 test('#231: ls (special characters)', function (t) {
-    this.client.ls(SUBDIR1, function (err, res) {
+    client.ls(SUBDIR1, function (err, res) {
         t.ifError(err);
 
         var found = false;
@@ -184,13 +153,13 @@ test('#231: ls (special characters)', function (t) {
 
         res.on('end', function () {
             t.ok(found);
-            t.done();
+            t.end();
         });
     });
 });
 
 test('#231: get (special characters)', function (t) {
-    this.client.get(SPECIALOBJ1, function (err, stream) {
+    client.get(SPECIALOBJ1, function (err, stream) {
         t.ifError(err);
 
         var data = '';
@@ -200,16 +169,16 @@ test('#231: get (special characters)', function (t) {
         });
         stream.on('end', function (chunk) {
             t.equal(data, 'my filename can mess stuff up\n');
-            t.done();
+            t.end();
         });
     });
 });
 
 
 test('#231: rm (special characters)', function (t) {
-    this.client.unlink(SPECIALOBJ1, function (err) {
+    client.unlink(SPECIALOBJ1, function (err) {
         t.ifError(err);
-        t.done();
+        t.end();
     });
 });
 
@@ -219,21 +188,20 @@ test('chattr', function (t) {
             'm-foo': 'bar'
         }
     };
-    var self = this;
 
-    this.client.info(CHILD1, function (err, info) {
+    client.info(CHILD1, function (err, info) {
         t.ifError(err);
         t.ok(info);
 
         if (!info) {
-            t.done();
+            t.end();
             return;
         }
 
-        self.client.chattr(CHILD1, opts, function onChattr(err1) {
+        client.chattr(CHILD1, opts, function onChattr(err1) {
             t.ok(!err1, 'err1: ' + err1);
 
-            self.client.info(CHILD1, function onInfo(err2, info2) {
+            client.info(CHILD1, function onInfo(err2, info2) {
                 t.ok(!err2, 'err2: ' + err2);
                 t.ok(info2, 'got info2: ' + info2);
                 if (info2) {
@@ -245,7 +213,7 @@ test('chattr', function (t) {
                         'info2.etag is unchanged: before=' + info.etag
                         + ' after=' + info2.etag);
                 }
-                t.done();
+                t.end();
             });
         });
     });
@@ -253,13 +221,12 @@ test('chattr', function (t) {
 
 
 test('put (zero byte streaming)', function (t) {
-    var self = this;
     var stream = fs.createReadStream('/dev/null');
 
     stream.once('open', function () {
-        self.client.put(CHILD1, stream, function (err) {
+        client.put(CHILD1, stream, function (err) {
             t.ifError(err);
-            t.done();
+            t.end();
         });
     });
 });
@@ -270,9 +237,9 @@ test('put without mkdirp', function (t) {
     var size = Buffer.byteLength(text);
     var stream = new MemoryStream();
 
-    this.client.put(NOENTSUB1, stream, { size: size }, function (err) {
+    client.put(NOENTSUB1, stream, { size: size }, function (err) {
         t.ok(err);
-        t.done();
+        t.end();
     });
 
     process.nextTick(function () {
@@ -286,12 +253,12 @@ test('put with mkdirp', function (t) {
     var size = Buffer.byteLength(text);
     var stream = new MemoryStream();
 
-    this.client.put(NOENTSUB2, stream, {
+    client.put(NOENTSUB2, stream, {
         size: size,
         mkdirs: true
     }, function (err) {
         t.ifError(err);
-        t.done();
+        t.end();
     });
 
     process.nextTick(function () {
@@ -301,7 +268,6 @@ test('put with mkdirp', function (t) {
 });
 
 test('streams', function (t) {
-    var client = this.client;
     var stream = new MemoryStream();
     var text = 'The lazy brown fox streamed some text';
     var w = client.createWriteStream(CHILD1, {type: 'text/plain'});
@@ -311,7 +277,7 @@ test('streams', function (t) {
 
     w.once('error', function (err) {
         t.ifError(err);
-        t.done();
+        t.end();
     });
     w.once('close', function (res) {
         t.ok(res);
@@ -328,33 +294,41 @@ test('streams', function (t) {
         r.once('open', function (res2) {
             opened = true;
         });
+        r.once('close', function (res2) {
+            t.equal(res2.statusCode, 200);
+            t.ok(opened);
+        });
         r.once('end', function () {
             t.equal(str, text);
+            t.end();
         });
 
         r.pipe(s);
 
-        r.once('close', function (res2) {
-            t.equal(res2.statusCode, 200);
-            t.ok(opened);
-            t.done();
-        });
     });
 });
 
 
 test('put MD5 mismatch', function (t) {
     var text = 'The lazy brown fox \nsomething \nsomething foo';
+    var buf;
+    // https://nodejs.org/fr/docs/guides/buffer-constructor-deprecation/
+    if (Buffer.from && Buffer.from !== Uint8Array.from) {
+        buf = Buffer.from(text);
+    } else {
+        // Deprecated;
+        buf = new Buffer(text);
+    }
     var size = Buffer.byteLength(text);
     var opts = {
-        md5: new Buffer(text).toString('base64'),
+        md5: buf.toString('base64'),
         size: size
     };
     var stream = new MemoryStream();
 
-    this.client.put(CHILD1, stream, opts, function (err) {
+    client.put(CHILD1, stream, opts, function (err) {
         t.ok(err);
-        t.done();
+        t.end();
     });
 
     process.nextTick(function () {
@@ -373,9 +347,9 @@ test('GH-72 content-length: undefined', function (t) {
     var text = 'The lazy brown fox \nsomething \nsomething foo';
     var stream = new MemoryStream();
 
-    this.client.put(CHILD1, stream, opts, function (err) {
+    client.put(CHILD1, stream, opts, function (err) {
         t.ifError(err);
-        t.done();
+        t.end();
     });
 
     process.nextTick(function () {
@@ -386,11 +360,9 @@ test('GH-72 content-length: undefined', function (t) {
 
 
 test('ls', function (t) {
-    t.expect(3 + 2 * (SUBDIR1_NOBJECTS + SUBDIR1_NDIRECTORIES));
-
     var dirs = 0;
     var objs = 0;
-    this.client.ls(SUBDIR1, function (err, res) {
+    client.ls(SUBDIR1, function (err, res) {
         t.ifError(err);
         res.on('object', function (obj) {
             objs++;
@@ -405,16 +377,14 @@ test('ls', function (t) {
         res.once('end', function () {
             t.equal(objs, SUBDIR1_NOBJECTS);
             t.equal(dirs, SUBDIR1_NDIRECTORIES);
-            t.done();
+            t.end();
         });
     });
 });
 
 
 test('createListStream', function (t) {
-    t.expect(2 + 2 * (SUBDIR1_NOBJECTS + SUBDIR1_NDIRECTORIES));
-
-    var lstr = this.client.createListStream(SUBDIR1);
+    var lstr = client.createListStream(SUBDIR1);
 
     var dirs = 0;
     var objs = 0;
@@ -436,15 +406,15 @@ test('createListStream', function (t) {
     lstr.once('end', function () {
         t.equal(objs, SUBDIR1_NOBJECTS);
         t.equal(dirs, SUBDIR1_NDIRECTORIES);
-        t.done();
+        t.end();
     });
 });
 
 
 test('createListStream (dir only)', function (t) {
-    t.expect(2 * (SUBDIR1_NDIRECTORIES));
+    var numDirs = 0;
 
-    var lstr = this.client.createListStream(SUBDIR1, {
+    var lstr = client.createListStream(SUBDIR1, {
         type: 'directory'
     });
 
@@ -456,18 +426,20 @@ test('createListStream (dir only)', function (t) {
         while ((obj = lstr.read()) !== null) {
             t.ok(obj);
             t.ok(obj.type === 'directory');
+            numDirs++;
         }
     });
     lstr.once('end', function () {
-        t.done();
+        t.equal(numDirs, SUBDIR1_NDIRECTORIES);
+        t.end();
     });
 });
 
 
 test('createListStream (object only)', function (t) {
-    t.expect(2 * (SUBDIR1_NOBJECTS));
+    var numObjs = 0;
 
-    var lstr = this.client.createListStream(SUBDIR1, {
+    var lstr = client.createListStream(SUBDIR1, {
         type: 'object'
     });
 
@@ -479,24 +451,26 @@ test('createListStream (object only)', function (t) {
         while ((obj = lstr.read()) !== null) {
             t.ok(obj);
             t.ok(obj.type === 'object');
+            numObjs++;
         }
     });
     lstr.once('end', function () {
-        t.done();
+        t.equal(numObjs, SUBDIR1_NOBJECTS);
+        t.end();
     });
 });
 
 
 test('ln', function (t) {
-    this.client.ln(CHILD1, CHILD2, function (err) {
+    client.ln(CHILD1, CHILD2, function (err) {
         t.ifError(err);
-        t.done();
+        t.end();
     });
 });
 
 
 test('info (link)', function (t) {
-    this.client.info(CHILD2, function (err, type) {
+    client.info(CHILD2, function (err, type) {
         t.ifError(err);
         t.ok(type);
         if (type) {
@@ -506,23 +480,22 @@ test('info (link)', function (t) {
             t.ok(type.etag);
             t.ok(type.md5);
         }
-        t.done();
+        t.end();
     });
 });
 
 
 test('ftw', function (t) {
     var text = 'The lazy brown fox \nsomething \nsomething foo';
-    var self = this;
     var size = Buffer.byteLength(text);
     var stream = new MemoryStream();
 
-    this.client.mkdirp(SUBDIR2, function (err) {
+    client.mkdirp(SUBDIR2, function (err) {
         t.ifError(err);
-        self.client.put(CHILD1, stream, {size: size}, function (err2) {
+        client.put(CHILD1, stream, {size: size}, function (err2) {
             t.ifError(err);
 
-            self.client.ftw(SUBDIR1, function (err3, res) {
+            client.ftw(SUBDIR1, function (err3, res) {
                 t.ifError(err3);
                 t.ok(res);
 
@@ -540,7 +513,7 @@ test('ftw', function (t) {
 
                 res.once('end', function () {
                     t.equal(count, 2);
-                    t.done();
+                    t.end();
                 });
             });
         });
@@ -556,17 +529,17 @@ test('ftw', function (t) {
 test('create job (simple grep)', function (t) {
     var j = 'grep foo';
 
-    this.client.createJob(j, function (err, job) {
+    client.createJob(j, function (err, job) {
         t.ifError(err);
         t.ok(job);
         JOB = job;
-        t.done();
+        t.end();
     });
 });
 
 
 test('get job', function (t) {
-    this.client.job(JOB, function (err, job) {
+    client.job(JOB, function (err, job) {
         t.ifError(err);
         t.ok(job);
         t.equal(job.id, JOB);
@@ -576,7 +549,7 @@ test('get job', function (t) {
         t.ok(job.phases);
         t.ok(!job.cancelled);
         t.ok(!job.inputDone);
-        t.done();
+        t.end();
     });
 });
 
@@ -587,9 +560,9 @@ test('add input keys', function (t) {
         CHILD2
     ];
 
-    this.client.addJobKey(JOB, keys, function (err) {
+    client.addJobKey(JOB, keys, function (err) {
         t.ifError(err);
-        t.done();
+        t.end();
     });
 });
 
@@ -599,10 +572,10 @@ test('get job input', function (t) {
     function cb(err) {
         t.ifError(err);
         t.equal(keys, 2);
-        t.done();
+        t.end();
     }
 
-    this.client.jobInput(JOB, function (err, res) {
+    client.jobInput(JOB, function (err, res) {
         t.ifError(err);
         t.ok(res);
 
@@ -618,28 +591,27 @@ test('get job input', function (t) {
 
 
 test('end job', function (t) {
-    this.client.endJob(JOB, function (err) {
+    client.endJob(JOB, function (err) {
         t.ifError(err);
-        t.done();
+        t.end();
     });
 });
 
 
 test('wait for job', function (t) {
     var attempts = 1;
-    var client = this.client;
 
     function getState() {
         client.job(JOB, function (err, job) {
             t.ifError(err);
             if (err) {
-                t.done();
+                t.end();
             } else if (job.state === 'done') {
-                t.done();
+                t.end();
             } else {
                 if (++attempts >= 60) {
                     t.ok(!attempts);
-                    t.done();
+                    t.end();
                 } else {
                     setTimeout(getState, 1000);
                 }
@@ -656,10 +628,10 @@ test('get job output', function (t) {
     function cb(err) {
         t.ifError(err);
         t.ok(_keys > 0);
-        t.done();
+        t.end();
     }
 
-    this.client.jobOutput(JOB, function (err, res) {
+    client.jobOutput(JOB, function (err, res) {
         t.ifError(err);
         t.ok(res);
 
@@ -675,20 +647,18 @@ test('get job output', function (t) {
 
 
 test('create and cancel job', function (t) {
-    var self = this;
-
-    this.client.createJob('grep foo', function (err, job) {
+    client.createJob('grep foo', function (err, job) {
         t.ifError(err);
         t.ok(job);
-        self.client.cancelJob(job, function (err2) {
+        client.cancelJob(job, function (err2) {
             t.ifError(err2);
-            self.client.job(job, function (err3, job2) {
+            client.job(job, function (err3, job2) {
                 t.ifError(err3);
                 t.ok(job2);
                 t.ok(job2.cancelled);
                 t.ok(job2.inputDone);
                 // t.equal(job2.state, 'done');
-                t.done();
+                t.end();
             });
         });
     });
@@ -696,328 +666,35 @@ test('create and cancel job', function (t) {
 
 
 test('unlink object', function (t) {
-    this.client.unlink(CHILD2, function (err) {
+    client.unlink(CHILD2, function (err) {
         t.ifError(err);
-        t.done();
+        t.end();
     });
 });
 
 
 test('unlink link', function (t) {
-    this.client.unlink(CHILD1, function (err) {
+    client.unlink(CHILD1, function (err) {
         t.ifError(err);
-        t.done();
+        t.end();
     });
 });
 
 
 test('rmr', function (t) {
-    this.client.rmr(SUBDIR1, function (err) {
+    client.rmr(SUBDIR1, function (err) {
         t.ifError(err);
-        t.done();
+        t.end();
     });
 });
 
 
 test('mkdirp/rmr', function (t) {
-    var self = this;
-    this.client.mkdirp(SUBDIR2, function (err) {
+    client.mkdirp(SUBDIR2, function (err) {
         t.ifError(err);
-        self.client.rmr(SUBDIR1, function (err2) {
+        client.rmr(SUBDIR1, function (err2) {
             t.ifError(err2);
-            t.done();
-        });
-    });
-});
-
-test('create upload', function (t) {
-    var opts = {
-        account: this.client.user
-    };
-
-    this.client.createUpload(PATH1, opts, function (err, obj) {
-        if (err && verror.hasCauseWithName(err, 'FeatureNotSupportedError')) {
-            MPU_ENABLED = false;
-            console.log('WARNING: skipping test "create upload": multipart ' +
-                'upload is not enabled on this Manta deployment');
-            t.done();
-            return;
-        }
-        MPU_ENABLED = true;
-
-        t.ifError(err);
-        if (err) {
-            t.done();
-            return;
-        }
-
-        t.ok(obj);
-        t.ok(obj.id);
-        UPLOAD1 = obj.id;
-        t.done();
-    });
-});
-
-test('upload part', function (t) {
-    if (!MPU_ENABLED) {
-        console.log('WARNING: skipping test "upload part": multipart ' +
-            'upload is not enabled on this Manta deployment');
-        t.done();
-        return;
-    }
-
-    var text = 'The lazy brown fox \nsomething \nsomething foo';
-    var stream = new MemoryStream();
-    var opts = {
-        account: this.client.user,
-        md5: crypto.createHash('md5').update(text).digest('base64'),
-        size: Buffer.byteLength(text),
-        type: 'text/plain'
-    };
-
-    var pn = 0;
-    this.client.uploadPart(stream, UPLOAD1, pn, opts, function (err, res) {
-        t.ifError(err);
-        if (err) {
-            t.done();
-            return;
-        }
-
-        t.ok(res);
-        t.ok(res.headers && res.headers.etag);
-        ETAGS1[pn] = res.headers.etag;
-        t.done();
-    });
-
-    setImmediate(function () {
-        stream.write(text);
-        stream.end();
-    });
-});
-
-test('get upload', function (t) {
-    if (!MPU_ENABLED) {
-        console.log('WARNING: skipping test "get upload": multipart ' +
-            'upload is not enabled on this Manta deployment');
-        t.done();
-        return;
-    }
-
-    var opts = {
-        account: this.client.user
-    };
-
-    this.client.getUpload(UPLOAD1, opts, function (err, upload) {
-        t.ifError(err);
-        if (err) {
-            t.done();
-            return;
-        }
-
-        t.ok(upload);
-        t.equal(upload.id, UPLOAD1);
-        t.equal(upload.state, 'created');
-        t.done();
-    });
-});
-
-test('commit upload', function (t) {
-    if (!MPU_ENABLED) {
-        console.log('WARNING: skipping test "commit upload": multipart ' +
-            'upload is not enabled on this Manta deployment');
-        t.done();
-        return;
-    }
-
-    var opts = {
-        account: this.client.user
-    };
-
-    var self = this;
-    self.client.commitUpload(UPLOAD1, ETAGS1, opts, function (err, res) {
-        t.ifError(err);
-        if (err) {
-            t.done();
-            return;
-        }
-        t.ok(res);
-        t.equal(res.statusCode, 201);
-        self.client.getUpload(UPLOAD1, opts, function (err2, upload) {
-            t.ifError(err2);
-            if (err2) {
-                t.done();
-                return;
-            }
-            t.ok(upload);
-            t.equal(upload.id, UPLOAD1);
-            t.equal(upload.state, 'done');
-            t.equal(upload.result, 'committed');
-
-            self.client.get(PATH1, function (err3, stream) {
-                t.ifError(err3);
-                if (err3) {
-                    t.done();
-                    return;
-                }
-
-                var text = 'The lazy brown fox \nsomething \nsomething foo';
-                var data = '';
-                stream.setEncoding('utf8');
-                stream.on('data', function (chunk) {
-                    data += chunk;
-                });
-                stream.on('end', function (chunk) {
-                    t.equal(data, text);
-
-                    self.client.unlink(PATH1, opts, function (err4) {
-                        t.ifError(err4);
-                        if (err4) {
-                            t.done();
-                            return;
-                        }
-                        t.done();
-                    });
-                });
-            });
-        });
-    });
-});
-
-test('errant commit upload returns undefined res', function (t) {
-    if (!MPU_ENABLED) {
-        console.log('WARNING: skipping test "commit upload": multipart ' +
-            'upload is not enabled on this Manta deployment');
-        t.done();
-        return;
-    }
-
-    var opts = {
-        account: this.client.user
-    };
-    var self = this;
-    self.client.commitUpload(libuuid.v4(), ETAGS1, opts, function (err, res) {
-        t.ok(err);
-        t.ok(res === undefined);
-        t.done();
-    });
-});
-
-test('abort upload', function (t) {
-    if (!MPU_ENABLED) {
-        console.log('WARNING: skipping test "abort upload": multipart ' +
-            'upload is not enabled on this Manta deployment');
-        t.done();
-        return;
-    }
-
-    var opts = {
-        account: this.client.user
-    };
-
-    var self = this;
-    this.client.createUpload(PATH2, opts, function (err, obj) {
-        t.ifError(err);
-        if (err) {
-            t.done();
-            return;
-        }
-
-        t.ok(obj);
-        t.ok(obj.id);
-        UPLOAD2 = obj.id;
-
-        self.client.abortUpload(UPLOAD2, opts, function (err2) {
-            t.ifError(err2);
-            if (err2) {
-                t.done();
-                return;
-            }
-            self.client.getUpload(UPLOAD2, opts, function (err3, upload) {
-                t.ifError(err3);
-                if (err3) {
-                    t.done();
-                    return;
-                }
-                t.ok(upload);
-                t.equal(upload.id, UPLOAD2);
-                t.equal(upload.state, 'done');
-                t.equal(upload.result, 'aborted');
-
-                t.done();
-            });
-        });
-    });
-});
-
-test('#311: create upload with special headers', function (t) {
-    if (!MPU_ENABLED) {
-        console.log('WARNING: skipping test: "#311: create upload with ' +
-            'special headers": multipart upload is not enabled on this ' +
-            'Manta deployment');
-        t.done();
-        return;
-    }
-
-    /*
-     * Test adding some headers to the target object that are also parsed by
-     * the Manta client, to ensure the headers for the target object are sent
-     * in the body of the `mpu-create` request, not as headers on the request
-     * itself.
-     */
-    var headers = {
-        'accept':  'acceptstring',
-        'role': 'rolestring',
-        'content-length': 10,
-        'content-md5': 'md5string',
-        'content-type': 'text/plain',
-        'expect': '100-continue',
-        'location': 'locationstring',
-        'x-request-id': 'requestidstring'
-    };
-
-    var self = this;
-    var createOpts = {
-        account: self.client.user,
-        headers: headers
-    };
-
-    self.client.createUpload(PATH3, createOpts, function (err, obj) {
-        t.ifError(err);
-        if (err) {
-            t.done();
-            return;
-        }
-
-        t.ok(obj);
-        t.ok(obj.id);
-        var id = obj.id;
-
-        var getOpts = {
-            account: self.client.user
-        };
-        self.client.getUpload(id, getOpts, function (err2, upload) {
-            t.ifError(err2);
-            if (err2) {
-                t.done();
-                return;
-            }
-
-            t.ok(upload);
-            t.equal(upload.id, id);
-            t.ok(upload.headers);
-            t.ok(jsprim.deepEqual(headers, upload.headers));
-
-            var abortOpts = {
-                account: self.client.user
-            };
-            self.client.abortUpload(id, abortOpts, function (err3) {
-                t.ifError(err3);
-                if (err3) {
-                    t.done();
-                    return;
-                }
-                t.done();
-            });
+            t.end();
         });
     });
 });
@@ -1025,17 +702,17 @@ test('#311: create upload with special headers', function (t) {
 
 test('GH-196 getPath ~~/', function (t) {
     // confirm that evaluating ~~/ works with and without ENV variables
-    var user = this.client.user;
+    var user = client.user;
     var old = process.env.MANTA_USER;
 
     process.env.MANTA_USER = user;
-    t.equal(decodeURIComponent(this.client.path('~~/')), '/' + user);
+    t.equal(decodeURIComponent(client.path('~~/')), '/' + user);
     delete process.env.MANTA_USER;
-    t.equal(decodeURIComponent(this.client.path('~~/')), '/' + user);
+    t.equal(decodeURIComponent(client.path('~~/')), '/' + user);
     process.env.MANTA_USER = old;
     // The plain export depends on the ENV variable
     t.equal(decodeURIComponent(manta.path('~~/')), '/' + user);
-    t.done();
+    t.end();
 });
 
 
@@ -1052,7 +729,7 @@ test('#180: Invalid key results in no client error', function (t) {
             rejectUnauthorized: (process.env.MANTA_TLS_INSECURE ? false : true)
         });
     });
-    t.done();
+    t.end();
 });
 
 test('MANTA-2812 null signer', function (t) {
@@ -1069,7 +746,7 @@ test('MANTA-2812 null signer', function (t) {
 
         c.ls(PUBLIC, function (err2) {
             t.ifError(err2);
-            t.done();
+            t.end();
         });
     });
 });
@@ -1088,7 +765,16 @@ test('MANTA-2812 undefined signer', function (t) {
 
         c.ls(PUBLIC, function (err2) {
             t.ifError(err2);
-            t.done();
+            t.end();
         });
     });
+});
+
+
+test('teardown', function (t) {
+    if (client) {
+        client.close();
+        client = null;
+    }
+    t.end();
 });

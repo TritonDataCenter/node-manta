@@ -141,27 +141,72 @@ Docs can be found here:
 
 # Testing
 
-Running this test suite will create files in Manta (using your current
-`MANTA_*` environment variables).
+node-manta has both unit tests ("test/unit/*.test.js") and integration tests
+("test/integration/*.test.js"). Integration tests require `MANTA_` envvars for
+configuration and will run tests against the configured Manta.
 
-    make test
+Usage:
 
-The set of test files run can be filtered:
+    make test [TEST-VARS]               # run all sets
+    node test/.../foo.test.js           # run a specific test file
+    make test [TEST_FILTER=unit/]       # run just the unit tests
 
-    make test TEST_FILTER=muntar
+    # trace-logging of test code
+    make test TEST_LOG_LEVEL=trace TEST_JOBS=1 2> >(bunyan)
 
-As well, you can get debug/trace logging (note that we intentionally avoid
-`LOG_LEVEL` because the `m*` tools use that and sharing the same envvar can
-break tests):
+Test output is node-tap's default "classic" output. Full TAP output is written
+to "test.tap". You can use `TAP=1` to have TAP output emited to stdout.
 
-    make test TEST_LOG_LEVEL=trace 2>&1 | bunyan
+## Test vars
+
+The following `MANTA_...` envvars configure the test run and `TEST_...`
+envvars can tweak how the tests are run. As well, a number of node-tap
+`TAP_...` envvars are available -- run `./node_modules/.bin/tap` for docs
+on those.
+
+- The usual `MANTA_USER`, `MANTA_URL`, `MANTA_KEY_ID` and other vars apply
+  for integration tests.
+
+- `MANTA_TEST_ROLE` is used for some tests that need an RBAC subrole. Those
+  tests are skipped if this isn't set.
+
+- `TEST_LOG_LEVEL=<bunyan log level name>` - This can be used to get debug and
+  trace-level logging of test code. This intentionally avoids using `LOG_LEVEL`
+  which is used by the `m*` tools. E.g.: use the following to run one test
+  file at a time and get rendered trace logging
+
+        make test TEST_LOG_LEVEL=trace TEST_JOBS=1 2> >(bunyan)
+
+- `TEST_FILTER=<grep pattern for test file paths>` - By default all "\*.test.js"
+  in the "test/unit/" and "test/integration" dirs are run. To run just
+  those with "image" in the name, use `make test TEST_FILTER=image`.
+
+- `TEST_JOBS=<number of test files to run concurrently>` - By default this is
+  10. Set to 1 to run tests serially.
+
+- `TEST_TIMEOUT_S=<number of seconds timeout for each test file>` - By default
+  this is 1200 (10 minutes). Ideally tests are written to take much less than
+  10 minutes.
+
+- `TAP=1` to have the test suite emit TAP output. This is a node-tap envvar.
 
 
-There is a mechanism to re-build and test with a number of installed node
-versions. First you must create "test/node.paths" (based on
-"test/node.paths.example") and then:
+## Testing Development Guide
 
-    make testall
+- Unit tests (i.e. not requiring the Manta endpoint) in "unit/\*.test.js".
+  Integration tests "integration/\*.test.js".
+
+- We are using node-tap. Read [RFD
+  139](https://github.com/joyent/rfd/blob/master/rfd/0139/README.md#guidelines-for-using-node-tap-in-triton-repos)
+  for some guidelines for node-tap usage. The more common we can make some
+  basic usage patterns in the many Triton and Manta repos, the easier the
+  maintenance.
+
+- Node-tap supports running test files in parallel, and `make test` by
+  default runs tests in parallel. Therefore:
+    - Ensure that test files do not depend on each other and can run
+      concurrently.
+    - Prefer more and smaller and more targeted test files.
 
 
 # License
@@ -190,9 +235,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
+
 # Bugs
 
 See https://github.com/joyent/node-manta/issues.
+
 
 # Release process
 

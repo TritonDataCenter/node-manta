@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Joyent, Inc.
+ * Copyright 2019 Joyent, Inc.
  */
 
 /*
@@ -8,9 +8,10 @@
 
 var forkExecWait = require('forkexec').forkExecWait;
 var path = require('path');
+var test = require('tap').test;
 var vasync = require('vasync');
 
-var BINDIR = path.resolve(__dirname, '../bin');
+var BINDIR = path.resolve(__dirname, '../../bin');
 
 const ALLCMDS = [ 'mchattr', 'mchmod', 'mfind', 'mget', 'minfo',
                   'mln', 'mlogin', 'mls', 'mmd5', 'mmkdir', 'mput',
@@ -22,11 +23,6 @@ const ALLCMDS = [ 'mchattr', 'mchmod', 'mfind', 'mget', 'minfo',
 function resolveCommand(cmd) {
     var r = path.resolve(BINDIR, cmd);
     return (r);
-}
-
-
-function test(name, testfunc) {
-    module.exports[name] = testfunc;
 }
 
 
@@ -83,13 +79,12 @@ function inputObject(testObj) {
  * result in a warning about the missing URL. This verifies the fix for
  * https://github.com/joyent/node-manta/issues/328.
  */
-
 test('Run commands with --help with no manta URL specified', function (t) {
     vasync.forEachPipeline({
         inputs: ALLCMDS.map(inputObject(t)),
         func: forkHelpOption
     }, function (err, results) {
-           t.done();
+           t.end();
        });
 });
 
@@ -104,6 +99,6 @@ test('Run commands with --version with no manta URL specified', function (t) {
         inputs: ALLCMDS.map(inputObject(t)),
         func: forkVersionOption
     }, function (err, results) {
-           t.done();
+           t.end();
        });
 });

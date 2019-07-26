@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Joyent, Inc.
+ * Copyright 2019 Joyent, Inc.
  */
 
 /*
@@ -11,21 +11,18 @@
 var assert = require('assert-plus');
 var path = require('path');
 var spawn = require('child_process').spawn;
+var test = require('tap').test;
 
-var logging = require('./lib/logging');
+var logging = require('../lib/logging');
 
 
 // ---- globals
 
 var log = logging.createLogger();
-var MJOB = path.resolve(__dirname, '../bin/mjob');
+var MJOB = path.resolve(__dirname, '../../bin/mjob');
 
 
 // ---- helper functions
-
-function test(name, testfunc) {
-    module.exports[name] = testfunc;
-}
 
 /*
  * For some reason that I don't want to chase right now, running the following
@@ -77,6 +74,6 @@ test('mjob create --close -or "echo hello"', function (t) {
         t.ifError(err, err);
         t.equal(stderr, '', 'stderr is empty: ' + stderr);
         t.equal(stdout, 'hello\n', 'stdout mismatch');
-        t.done();
+        t.end();
     });
 });

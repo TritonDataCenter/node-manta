@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Joyent, Inc.
+ * Copyright 2019 Joyent, Inc.
  */
 
 /*
@@ -11,20 +11,13 @@ var fs = require('fs');
 var path = require('path');
 
 var forkExecWait = require('forkexec').forkExecWait;
+var test = require('tap').test;
 
 /*
  * Globals
  */
 
-var binDir = path.resolve(__dirname, '..', 'bin');
-
-/*
- * Helper functions
- */
-
-function test(name, testfunc) {
-    module.exports[name] = testfunc;
-}
+var binDir = path.resolve(__dirname, '../../bin');
 
 /*
  * Tests
@@ -46,7 +39,7 @@ fs.readdirSync(binDir).forEach(function (name) {
                 'no stderr output from "' + name + ' --completion"');
             t.ok(/COMPREPLY/.test(info.stdout), 'stdout from "' + name +
                 ' --completion" looks like Bash completion code');
-            t.done();
+            t.end();
         });
     });
 });

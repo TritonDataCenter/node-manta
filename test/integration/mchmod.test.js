@@ -11,15 +11,16 @@ var forkExecWait = require('forkexec').forkExecWait;
 var fs = require('fs');
 var libuuid = require('uuid');
 var path = require('path');
+var test = require('tap').test;
 var vasync = require('vasync');
 var sprintf = require('extsprintf').sprintf;
 
-var logging = require('./lib/logging');
+var logging = require('../lib/logging');
 
 
 var log = logging.createLogger();
 
-var BINDIR = path.resolve(__dirname, '../bin');
+var BINDIR = path.resolve(__dirname, '../../bin');
 var MMKDIR = path.resolve(BINDIR, 'mmkdir');
 var MCHMOD = path.resolve(BINDIR, 'mchmod');
 var MPUT = path.resolve(BINDIR, 'mput');
@@ -65,13 +66,13 @@ for (i = 1; i <= 3; i++) {
     });
 }
 
+var testOpts = {
+    skip: !process.env.MANTA_TEST_ROLE && 'MANTA_TEST_ROLE envvar not set'
+};
+
+
 
 // ---- helper functions
-
-function test(name, testfunc) {
-    module.exports[name] = testfunc;
-}
-
 
 function unlinkIfExists(targ) {
     try {
@@ -91,9 +92,9 @@ function unlinkIfExists(targ) {
  * These tests require a role to be configured in triton to work properly so it
  * is condtional upon the user setting MANTA_TEST_ROLE in the environment.
  */
-if (process.env.MANTA_TEST_ROLE) {
+test('mchmod with role-tag', testOpts, function (suite) {
 
-    test('setup: create test tree at ' + TESTDIR, function (t) {
+    suite.test('setup: create test tree at ' + TESTDIR, function (t) {
         var tmpFile = path.join(TMPDIR, 'node-manta-test-tmp-file-'
             + process.pid);
 
@@ -136,11 +137,11 @@ if (process.env.MANTA_TEST_ROLE) {
             }
         }, function (err) {
             t.ifError(err, err);
-            t.done();
+            t.end();
         });
     });
 
-    test('minfo to verify lack of --role-tag header', function (t) {
+    suite.test('minfo to verify lack of --role-tag header', function (t) {
 
         // Expect the role-tag header
         var role = process.env.MANTA_TEST_ROLE;
@@ -153,19 +154,19 @@ if (process.env.MANTA_TEST_ROLE) {
         forkExecWait({
             argv: argv1
         }, function (err, info) {
-               t.ifError(err, err);
+            t.ifError(err, err);
 
-               t.equal(info.stderr, '', 'no stderr');
+            t.equal(info.stderr, '', 'no stderr');
 
-               var headerIndex = info.stdout.indexOf(expectedHeader);
-               t.equal(headerIndex, -1,
-                   'minfo response doe not contain role-tag header');
+            var headerIndex = info.stdout.indexOf(expectedHeader);
+            t.equal(headerIndex, -1,
+                'minfo response does not contain role-tag header');
 
-               t.done();
-           });
+            t.end();
+        });
     });
 
-    test('mchmod to add role-tag', function (t) {
+    suite.test('mchmod to add role-tag', function (t) {
 
         // Expect the role-tag header
         var role = process.env.MANTA_TEST_ROLE;
@@ -186,26 +187,26 @@ if (process.env.MANTA_TEST_ROLE) {
         forkExecWait({
             argv: argv1
         }, function (err, info) {
-               t.ifError(err, err);
+            t.ifError(err, err);
 
-               t.equal(info.stderr, '', 'no stderr');
+            t.equal(info.stderr, '', 'no stderr');
 
-               forkExecWait({
-                   argv: argv2
-               }, function (err2, info2) {
-                      t.ifError(err2, err2);
-                      t.equal(info2.stderr, '', 'no stderr');
+            forkExecWait({
+                argv: argv2
+            }, function (err2, info2) {
+                t.ifError(err2, err2);
+                t.equal(info2.stderr, '', 'no stderr');
 
-                      var headerIndex = info2.stdout.indexOf(expectedHeader);
-                      t.notEqual(headerIndex, -1,
-                          'minfo response contains role-tag header');
+                var headerIndex = info2.stdout.indexOf(expectedHeader);
+                t.notEqual(headerIndex, -1,
+                    'minfo response contains role-tag header');
 
-                      t.done();
-                  });
-           });
+                t.end();
+            });
+        });
     });
 
-    test('mchmod to remove role-tag', function (t) {
+    suite.test('mchmod to remove role-tag', function (t) {
 
         // Expect the role-tag header
         var role = process.env.MANTA_TEST_ROLE;
@@ -226,43 +227,45 @@ if (process.env.MANTA_TEST_ROLE) {
         forkExecWait({
             argv: argv1
         }, function (err, info) {
-               t.ifError(err, err);
+            t.ifError(err, err);
 
-               t.equal(info.stderr, '', 'no stderr');
+            t.equal(info.stderr, '', 'no stderr');
 
-               forkExecWait({
-                   argv: argv2
-               }, function (err2, info2) {
-                      t.ifError(err2, err2);
-                      t.equal(info2.stderr, '', 'no stderr');
+            forkExecWait({
+                argv: argv2
+            }, function (err2, info2) {
+                t.ifError(err2, err2);
+                t.equal(info2.stderr, '', 'no stderr');
 
-                      var headerIndex = info2.stdout.indexOf(expectedHeader);
-                      t.equal(headerIndex, -1,
-                          'minfo response does not contain role-tag header');
+                var headerIndex = info2.stdout.indexOf(expectedHeader);
+                t.equal(headerIndex, -1,
+                    'minfo response does not contain role-tag header');
 
-                      t.done();
-                  });
-           });
+                t.end();
+            });
+        });
     });
 
-    test('cleanup: rm test tree ' + TESTDIR, function (t) {
+    suite.test('cleanup: rm test tree ' + TESTDIR, function (t) {
         // Sanity checks that we don't `mrm -r` a non-test dir.
         assert.ok(TESTDIR);
         assert.ok(TESTDIR.indexOf('node-manta-test') !== -1);
 
         forkExecWait({ argv: [ MRM, '-r', TESTDIR ]}, function (err) {
             t.ifError(err, err);
-            t.done();
+            t.end();
         });
     });
 
 
-    test('cleanup: rm tmp directory ' + TMPDIR, function (t) {
+    suite.test('cleanup: rm tmp directory ' + TMPDIR, function (t) {
         var tmpFile = path.join(TMPDIR, 'node-manta-test-tmp-file-'
             + process.pid);
 
         unlinkIfExists(tmpFile);
 
-        t.done();
+        t.end();
     });
-}
+
+    suite.end();
+});

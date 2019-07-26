@@ -39,7 +39,8 @@
     },
     "devDependencies": {
         "forkexec": "^1.0.0",
-        "nodeunit": "^0.11.3"
+        "semver": "^6.3.0",
+        "tap": "^12.7.0"
     },
     "directories": {
         "bin": "./bin",
@@ -48,9 +49,6 @@
     },
     "engines": {
         "node": ">=0.10"
-    },
-    "scripts": {
-        "test": "./node_modules/.bin/nodeunit test/*.test.js"
     },
     "license": "MIT"
 }

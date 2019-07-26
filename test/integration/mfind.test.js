@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Joyent, Inc.
+ * Copyright 2019 Joyent, Inc.
  */
 
 /*
@@ -12,16 +12,17 @@ var format = require('util').format;
 var fs = require('fs');
 var libuuid = require('uuid');
 var path = require('path');
+var test = require('tap').test;
 var vasync = require('vasync');
 
-var logging = require('./lib/logging');
+var logging = require('../lib/logging');
 
 
 // ---- globals
 
 var log = logging.createLogger();
 
-var BINDIR = path.resolve(__dirname, '../bin');
+var BINDIR = path.resolve(__dirname, '../../bin');
 var MFIND = path.resolve(BINDIR, 'mfind');
 var MMKDIR = path.resolve(BINDIR, 'mmkdir');
 var MPUT = path.resolve(BINDIR, 'mput');
@@ -51,13 +52,6 @@ var TESTTREE = [
         content: 'bfile'
     }
 ];
-
-
-// ---- helper functions
-
-function test(name, testfunc) {
-    module.exports[name] = testfunc;
-}
 
 
 // ---- tests
@@ -93,7 +87,7 @@ test('setup: create test tree at ' + TESTDIR, function (t) {
         }
     }, function (err) {
         t.ifError(err, err);
-        t.done();
+        t.end();
     });
 });
 
@@ -107,7 +101,7 @@ test('check if operator (mfind forbidden)', function (t) {
         } else {
             OPER = true;
         }
-        t.done();
+        t.end();
     });
 });
 
@@ -120,7 +114,7 @@ test('mfind (no arguments)', function (t) {
     }, function (err, info) {
         t.ok(err, 'mfind should fail');
         t.ok(/^path required/m.test(info.stderr), 'path required in stderr');
-        t.done();
+        t.end();
     });
 });
 
@@ -132,7 +126,7 @@ test('mfind TESTDIR', function (t) {
         t.ok(/afile.txt$/m.test(info.stdout), 'afile.txt in stdout');
         t.ok(/adir$/m.test(info.stdout), 'adir in stdout');
         t.ok(/adir\/bfile.txt$/m.test(info.stdout), 'adir/bfile.txt in stdout');
-        t.done();
+        t.end();
     });
 });
 
@@ -145,7 +139,7 @@ test('mfind TESTDIR TESTDIR (same argument multiple times)', function (t) {
         argv: [MFIND, TESTDIR, TESTDIR]
     }, function (err, info) {
         t.ifError(err, err);
-        t.done();
+        t.end();
     });
 });
 
@@ -171,7 +165,7 @@ test('mfind -j TESTDIR', function (t) {
         t.equal(typeof (hit['parent']), 'string',
             'have "parent" (string) field');
         t.equal(typeof (hit['depth']), 'number', 'have "depth" (string) field');
-        t.done();
+        t.end();
     });
 });
 
@@ -181,7 +175,7 @@ test('mfind TESTDIR/afile.txt', function (t) {
     }, function (err, info) {
         t.ifError(err, err);
         t.ok(/afile.txt$/m.test(info.stdout), 'afile.txt in stdout');
-        t.done();
+        t.end();
     });
 });
 
@@ -193,7 +187,7 @@ test('mfind TESTDIR/notafile.txt', function (t) {
         t.equal(info.status, 1);
         t.ok(/notafile\.txt/m.test(info.stderr), 'notafile.txt in stderr');
         t.ok(/NotFound/m.test(info.stderr), 'NotFound in stderr');
-        t.done();
+        t.end();
     });
 });
 
@@ -206,15 +200,16 @@ test('mfind TESTDIR/notafile.txt TESTDIR/afile.txt', function (t) {
         t.ok(/afile.txt$/m.test(info.stdout), 'afile.txt in stdout');
         t.ok(/notafile\.txt/m.test(info.stderr), 'notafile.txt in stderr');
         t.ok(/NotFound/m.test(info.stderr), 'NotFound in stderr');
-        t.done();
+        t.end();
     });
 });
 
 test('mfind /poseidon/stor TESTDIR/afile.txt', function (t) {
     if (OPER === true) {
-        console.log('WARNING: skipping mfind forbidden test: user is an ' +
-            'operator');
-        t.done();
+        t.ok(true, 'mfind forbidden test', {
+            skip: 'MANTA_USER=' + process.env.MANTA_USER + ' is an operator'
+        });
+        t.end();
         return;
     }
     forkExecWait({
@@ -226,7 +221,7 @@ test('mfind /poseidon/stor TESTDIR/afile.txt', function (t) {
         /* t.ok(!/afile.txt$/m.test(info.stdout), 'afile.txt in stdout'); */
         t.ok(/poseidon\/stor/m.test(info.stderr), 'poseidon/stor in stderr');
         t.ok(/Forbidden/m.test(info.stderr), 'Forbidden in stderr');
-        t.done();
+        t.end();
     });
 });
 
@@ -237,6 +232,6 @@ test('cleanup: rm test tree ' + TESTDIR, function (t) {
 
     forkExecWait({argv: [MRM, '-r', TESTDIR]}, function (err) {
         t.ifError(err, err);
-        t.done();
+        t.end();
     });
 });

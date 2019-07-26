@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Joyent, Inc.
+ * Copyright 2019 Joyent, Inc.
  */
 
 /*
@@ -11,15 +11,16 @@ var forkExecWait = require('forkexec').forkExecWait;
 var fs = require('fs');
 var libuuid = require('uuid');
 var path = require('path');
+var test = require('tap').test;
 var vasync = require('vasync');
 var sprintf = require('extsprintf').sprintf;
 
-var logging = require('./lib/logging');
+var logging = require('../lib/logging');
 
 
 var log = logging.createLogger();
 
-var BINDIR = path.resolve(__dirname, '../bin');
+var BINDIR = path.resolve(__dirname, '../../bin');
 var MGET = path.resolve(BINDIR, 'mget');
 var MMKDIR = path.resolve(BINDIR, 'mmkdir');
 var MPUT = path.resolve(BINDIR, 'mput');
@@ -65,10 +66,6 @@ for (i = 1; i <= 3; i++) {
 
 
 // ---- helper functions
-
-function test(name, testfunc) {
-    module.exports[name] = testfunc;
-}
 
 function unlinkIfExists(targ) {
     try {
@@ -125,7 +122,7 @@ test('setup: create test tree at ' + TESTDIR, function (t) {
         }
     }, function (err) {
         t.ifError(err, err);
-        t.done();
+        t.end();
     });
 });
 
@@ -155,7 +152,7 @@ test('mget TESTDIR/02.data', function (t) {
         t.equal(info.stderr, '', 'no stderr');
         t.equal(info.stdout, expected, 'stdout from mget');
 
-        t.done();
+        t.end();
     });
 });
 
@@ -187,7 +184,7 @@ test('mget TESTDIR/01.data TESTDIR/02.data TESTDIR/03.data', function (t) {
         t.equal(info.stderr, '', 'no stderr');
         t.equal(info.stdout, expected, 'stdout from mget');
 
-        t.done();
+        t.end();
     });
 });
 
@@ -224,7 +221,7 @@ test('mget TESTDIR/01.txt TESTDIR/02.txt TESTDIR/03.txt', function (t) {
         t.equal(info.stderr, '', 'no stderr');
         t.equal(info.stdout, expected, 'stdout from mget');
 
-        t.done();
+        t.end();
     });
 });
 
@@ -272,7 +269,7 @@ test('mget -o TMPFILE TESTDIR/01.txt TESTDIR/02.txt TESTDIR/03.txt',
 
         unlinkIfExists(tmpFile);
 
-        t.done();
+        t.end();
     });
 });
 
@@ -311,7 +308,7 @@ test('mget -O TESTDIR/01.txt',
 
         unlinkIfExists(file);
 
-        t.done();
+        t.end();
     });
 });
 
@@ -353,7 +350,7 @@ test('mget TESTDIR/01.txt TESTDIR/02.txt TESTDIR/XX.txt TESTDIR/03.txt',
         t.ok(info.stderr.match(/^mget: ResourceNotFoundError/, 'stderr'));
         t.equal(info.stdout, expected, 'expected stdout');
 
-        t.done();
+        t.end();
     });
 });
 
@@ -403,7 +400,7 @@ test('mget -o TMPFILE TESTDIR/01.txt TESTDIR/02.txt TESTDIR/XX.txt ' +
 
         unlinkIfExists(tmpFile);
 
-        t.done();
+        t.end();
     });
 });
 
@@ -415,6 +412,6 @@ test('cleanup: rm test tree ' + TESTDIR, function (t) {
 
     forkExecWait({ argv: [ MRM, '-r', TESTDIR ]}, function (err) {
         t.ifError(err, err);
-        t.done();
+        t.end();
     });
 });

@@ -1,14 +1,13 @@
 /*
- * Copyright 2018 Joyent, Inc.
+ * Copyright 2019 Joyent, Inc.
  */
 
 var f = require('util').format;
 
-var manta = require('..');
+var test = require('tap').test;
 
-function test(name, testfunc) {
-    module.exports[name] = testfunc;
-}
+var manta = require('../..');
+
 
 // a name on the left should match the name on the right
 // when escaped.
@@ -31,7 +30,7 @@ test('escapePath encoding', function (t) {
         var s = _test[0];
         t.equal(manta.escapePath(s), _test[1]);
     });
-    t.done();
+    t.end();
 });
 
 test('prettyBytes', function (t) {
@@ -80,5 +79,5 @@ test('prettyBytes', function (t) {
             manta.prettyBytes(value);
         }, f('prettyBytes(%j) throws', value));
     });
-    t.done();
+    t.end();
 });
