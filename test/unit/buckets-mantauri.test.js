@@ -6,8 +6,10 @@
  * Unit tests for lib/mantauri.js.
  */
 
-var logging = require('./lib/logging');
-var MantaUri = require('../lib/mantauri').MantaUri;
+var test = require('tap').test;
+
+var logging = require('../lib/logging');
+var MantaUri = require('../../lib/mantauri').MantaUri;
 
 
 /*
@@ -15,15 +17,6 @@ var MantaUri = require('../lib/mantauri').MantaUri;
  */
 
 var log = logging.createLogger();
-
-
-/*
- * Helper functions
- */
-
-function test(name, testfunc) {
-    module.exports[name] = testfunc;
-}
 
 
 /*
@@ -37,7 +30,7 @@ test('manta:mybucket/myobject.txt', function (t) {
     t.equal(muri.bucket, 'mybucket');
     t.equal(muri.object, 'myobject.txt');
     t.equal(muri.toString(), 'manta:mybucket/myobject.txt');
-    t.done();
+    t.end();
 });
 
 test('manta:mybucket/this/is/my/obj.jpg', function (t) {
@@ -47,7 +40,7 @@ test('manta:mybucket/this/is/my/obj.jpg', function (t) {
     t.equal(muri.bucket, 'mybucket');
     t.equal(muri.object, 'this/is/my/obj.jpg');
     t.equal(muri.toString(), 'manta:mybucket/this/is/my/obj.jpg');
-    t.done();
+    t.end();
 });
 
 test('manta:mybucket', function (t) {
@@ -57,7 +50,7 @@ test('manta:mybucket', function (t) {
     t.equal(muri.bucket, 'mybucket');
     t.equal(muri.object, null);
     t.equal(muri.toString(), 'manta:mybucket');
-    t.done();
+    t.end();
 });
 
 test('manta:mybucket/ (normalize trailing slash on bucket)', function (t) {
@@ -67,7 +60,7 @@ test('manta:mybucket/ (normalize trailing slash on bucket)', function (t) {
     t.equal(muri.bucket, 'mybucket');
     t.equal(muri.object, null);
     t.equal(muri.toString(), 'manta:mybucket');
-    t.done();
+    t.end();
 });
 
 
@@ -78,14 +71,14 @@ test('manta:mybucket/myobject.txt (from component fields)', function (t) {
     t.equal(muri.bucket, 'mybucket');
     t.equal(muri.object, 'myobject.txt');
     t.equal(muri.toString(), 'manta:mybucket/myobject.txt');
-    t.done();
+    t.end();
 });
 
 
 // Some expected failures
 
 test('no args (parse fail, num of args)', function (t) {
-    t.expect(1);
+    t.plan(1);
     try {
         // jsl:ignore
         var muri = new MantaUri();
@@ -93,65 +86,65 @@ test('no args (parse fail, num of args)', function (t) {
     } catch (err) {
         t.ok(/incorrect number of arguments/.test(err.message), err.message);
     }
-    t.done();
+    t.end();
 });
 
 test('"" (parse fail)', function (t) {
-    t.expect(1);
+    t.plan(1);
     try {
         var muri = new MantaUri('');
     } catch (err) {
         t.ok(/scheme is not "manta:"/.test(err.message), err.message);
     }
-    t.done();
+    t.end();
 });
 
 test('MANTA:mybucket/myobject.txt (parse fail, scheme case)', function (t) {
-    t.expect(1);
+    t.plan(1);
     try {
         var muri = new MantaUri('MANTA:mybucket/myobject.txt');
     } catch (err) {
         t.ok(/scheme is not "manta:"/.test(err.message), err.message);
     }
-    t.done();
+    t.end();
 });
 
 test('manta: (parse fail, missing bucket)', function (t) {
-    t.expect(1);
+    t.plan(1);
     try {
         var muri = new MantaUri('manta:');
     } catch (err) {
         t.ok(/missing bucket name/.test(err.message), err.message);
     }
-    t.done();
+    t.end();
 });
 
 test('manta://example.com/bob/mybucket/myobject.txt (parse fail, do not yet support long forms)', function (t) {
-    t.expect(1);
+    t.plan(1);
     try {
         var muri = new MantaUri('manta://example.com/bob/mybucket/myobject.txt');
     } catch (err) {
         t.ok(/do not yet support long URI forms/.test(err.message), err.message);
     }
-    t.done();
+    t.end();
 });
 
 test('from components, host non null (parse fail, do not yet support long forms)', function (t) {
-    t.expect(1);
+    t.plan(1);
     try {
         var muri = new MantaUri('example.com', null, 'mybucket', 'myobject.txt');
     } catch (err) {
         t.ok(/do not yet support long URI forms/.test(err.message), err.message);
     }
-    t.done();
+    t.end();
 });
 
 test('from components, login non null (parse fail, do not yet support long forms)', function (t) {
-    t.expect(1);
+    t.plan(1);
     try {
         var muri = new MantaUri(null, 'bob', 'mybucket', 'myobject.txt');
     } catch (err) {
         t.ok(/do not yet support long URI forms/.test(err.message), err.message);
     }
-    t.done();
+    t.end();
 });
