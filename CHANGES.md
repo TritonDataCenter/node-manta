@@ -57,7 +57,7 @@ Support for the in-development Buckets features of Manta:
       --recursive, --dry-run, etc.
     - missing docs: API docs in docs/index.md; user guide docs
     - `mbucket ls` does not support pagination or non-recursive listing
-      with common prefixes (waiting on MANTA-4355 work)
+      with common prefixes
 
 
 ## 5.2.1
