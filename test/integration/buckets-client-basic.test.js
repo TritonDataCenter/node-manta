@@ -54,7 +54,7 @@ test('buckets client basic', testOpts, function (suite) {
     test('setup client', function (t) {
         var clientOpts = {
             log: log,
-            klass: buckets.MantaBucketsClient,
+            klass: buckets.MantaBucketsClient
         };
         client = manta.createBinClient(clientOpts);
 
@@ -95,11 +95,11 @@ test('buckets client basic', testOpts, function (suite) {
         clientMethodsToTest.delete('createListBucketsStream');
         // XXX add limit=1 or use prefix of our test prefix when supported, then assert have our test bucket
         var s = client.createListBucketsStream({});
-        var buckets = [];
+        var theBuckets = [];
         s.on('readable', function onReadable() {
             var bucket;
             while ((bucket = s.read()) !== null) {
-                buckets.push(bucket);
+                theBuckets.push(bucket);
             }
         });
         s.once('error', function onError(err) {
@@ -107,7 +107,7 @@ test('buckets client basic', testOpts, function (suite) {
             t.end();
         });
         s.once('end', function onEnd() {
-            t.ok(buckets.length > 1, 'got at least one bucket in listing');
+            t.ok(theBuckets.length > 1, 'got at least one bucket in listing');
             t.end();
         });
     });

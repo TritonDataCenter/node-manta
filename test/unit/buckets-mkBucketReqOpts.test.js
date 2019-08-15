@@ -142,4 +142,3 @@ test('req_id field not overwritten on log if matching', function (t) {
     t.equal(reqOpts.log, testLog); // reqOpts.log is the unchanged `testLog`
     t.end();
 });
-
