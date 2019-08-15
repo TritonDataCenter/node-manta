@@ -884,7 +884,10 @@ The `err` object has the following properties:
 
 # Buckets
 
-XXX document the other endpoints
+XXX doc how to create a MantaBucketsClient
+XXX document the endpoints
+
+## client.isBucketsSupported([opts,] cb)
 
 ## var stream = client.createListBucketsStream([opts])
 
@@ -904,8 +907,12 @@ List buckets. This returns a `ReadableStream` of buckets objects.
         cb();
     });
 
-### Inputs
 
-||**Name**||**JS Type**||**Description**||
-||options||Object||*(optional)* optional overrides for this request||
-
+## client.headBucket(bucketName, [opts,] cb)
+## client.createBucket(bucketName, [opts,] cb)
+## client.deleteBucket(bucketName, [opts,] cb)
+## var stream = createListBucketObjectsStream(bucketName[, opts])
+## client.createBucketObject(inStream, bucketName, objectName, [opts,] cb)
+## client.getBucketObject(bucketName, objectName, [opts,] cb)
+## client.headBucketObject(bucketName, objectName, [opts,] cb)
+## client.deleteBucketObject(bucketName, objectName, [opts,] cb)

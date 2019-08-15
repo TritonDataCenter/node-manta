@@ -68,7 +68,7 @@ test('buckets client basic', testOpts, function (suite) {
 
     test('isBucketsSupported', function (t) {
         clientMethodsToTest.delete('isBucketsSupported');
-        client.isBucketsSupported({}, function (err, isSupported) {
+        client.isBucketsSupported(function (err, isSupported) {
             t.ifError(err);
             t.ok(isSupported, 'isSupported');
             t.end();
@@ -77,7 +77,7 @@ test('buckets client basic', testOpts, function (suite) {
 
     test('createBucket', function (t) {
         clientMethodsToTest.delete('createBucket');
-        client.createBucket(BUCKET_NAME, {}, function (err) {
+        client.createBucket(BUCKET_NAME, function (err) {
             t.ifError(err);
             t.end();
         });
@@ -85,7 +85,7 @@ test('buckets client basic', testOpts, function (suite) {
 
     test('headBucket', function (t) {
         clientMethodsToTest.delete('headBucket');
-        client.headBucket(BUCKET_NAME, {}, function (err, res) {
+        client.headBucket(BUCKET_NAME, function (err, res) {
             t.ifError(err);
             t.end();
         });
@@ -94,7 +94,7 @@ test('buckets client basic', testOpts, function (suite) {
     test('createListBucketsStream', function (t) {
         clientMethodsToTest.delete('createListBucketsStream');
         // XXX add limit=1 or use prefix of our test prefix when supported, then assert have our test bucket
-        var s = client.createListBucketsStream({});
+        var s = client.createListBucketsStream();
         var theBuckets = [];
         s.on('readable', function onReadable() {
             var bucket;
@@ -115,7 +115,7 @@ test('buckets client basic', testOpts, function (suite) {
     test('createBucketObject', function (t) {
         clientMethodsToTest.delete('createBucketObject');
         var inStream = fs.createReadStream(SMALL_FILE_PATH);
-        client.createBucketObject(inStream, BUCKET_NAME, OBJECT_NAME, {},
+        client.createBucketObject(inStream, BUCKET_NAME, OBJECT_NAME,
                                   function (err) {
             t.ifError(err);
             t.end();
@@ -124,7 +124,7 @@ test('buckets client basic', testOpts, function (suite) {
 
     test('headBucketObject', function (t) {
         clientMethodsToTest.delete('headBucketObject');
-        client.headBucketObject(BUCKET_NAME, OBJECT_NAME, {},
+        client.headBucketObject(BUCKET_NAME, OBJECT_NAME,
                                 function (err, res) {
             t.ifError(err);
             t.ok(res);
@@ -136,7 +136,7 @@ test('buckets client basic', testOpts, function (suite) {
 
     test('getBucketObject', function (t) {
         clientMethodsToTest.delete('getBucketObject');
-        client.getBucketObject(BUCKET_NAME, OBJECT_NAME, {},
+        client.getBucketObject(BUCKET_NAME, OBJECT_NAME,
                                 function (err, stream, res) {
             t.ifError(err);
 
@@ -163,7 +163,7 @@ test('buckets client basic', testOpts, function (suite) {
 
     test('createListBucketObjectsStream', function (t) {
         clientMethodsToTest.delete('createListBucketObjectsStream');
-        var s = client.createListBucketObjectsStream(BUCKET_NAME, {});
+        var s = client.createListBucketObjectsStream(BUCKET_NAME);
         var objects = [];
         s.on('readable', function onReadable() {
             var object;
@@ -185,7 +185,7 @@ test('buckets client basic', testOpts, function (suite) {
 
     test('deleteBucketObject', function (t) {
         clientMethodsToTest.delete('deleteBucketObject');
-        client.deleteBucketObject(BUCKET_NAME, OBJECT_NAME, {}, function (err) {
+        client.deleteBucketObject(BUCKET_NAME, OBJECT_NAME, function (err) {
             t.ifError(err);
             t.end();
         });
@@ -193,7 +193,7 @@ test('buckets client basic', testOpts, function (suite) {
 
     test('deleteBucket', function (t) {
         clientMethodsToTest.delete('deleteBucket');
-        client.deleteBucket(BUCKET_NAME, {}, function (err) {
+        client.deleteBucket(BUCKET_NAME, function (err) {
             t.ifError(err);
             t.end();
         });
