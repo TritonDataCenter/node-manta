@@ -884,6 +884,8 @@ The `err` object has the following properties:
 
 # Buckets
 
+XXX document the other endpoints
+
 ## var stream = client.createListBucketsStream([opts])
 
 List buckets. This returns a `ReadableStream` of buckets objects.

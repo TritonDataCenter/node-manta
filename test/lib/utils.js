@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Joyent, Inc.
+ * Copyright 2019 Joyent, Inc.
  */
 
 var assert = require('assert-plus');
@@ -14,6 +14,7 @@ var VError = require('verror');
 var BINDIR = path.resolve(__dirname, '../../bin');
 var MLS = path.resolve(BINDIR, 'mls');
 var MMPU = path.resolve(BINDIR, 'mmpu');
+var MBUCKET = path.resolve(BINDIR, 'mbucket');
 
 /*
  * Call `mls` on the given path and return a JSON array of objects for each
@@ -103,7 +104,36 @@ function isMpuEnabledSync(log) {
 }
 
 
+/*
+ * *Synchronously* determine if this Manta supports Buckets.
+ * Doing so synchronously allows one to use the value for tap test() options.
+ *
+ * This returns `true` or `false`. If something unexpected happens, it throws
+ * an error.
+ */
+function isBucketsEnabledSync(log) {
+    assert.string(process.env.MANTA_USER, 'process.env.MANTA_USER');
+    assert.object(log, 'log');
+
+    var output;
+    try {
+        output = execFileSync(MBUCKET, ['is-supported'], {
+            stdio: 'pipe', // to not emit stderr to parent's stderr
+            encoding: 'utf8'
+        }).trim();
+    } catch (isSupportedErr) {
+        throw new VError(isSupportedErr,
+            'error determining if buckets is supported by this Manta (%s)',
+            process.env.MANTA_URL);
+    }
+    log.trace({output: output}, 'ran "mbucket is-supported"');
+
+    return (output === "true");
+}
+
+
 module.exports = {
+    isBucketsEnabledSync: isBucketsEnabledSync,
     isMpuEnabledSync: isMpuEnabledSync,
     mls: mls
 };
