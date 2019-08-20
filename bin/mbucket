@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env node --abort-on-uncaught-exception
 /*
  * Copyright 2019 Joyent, Inc.
  */
@@ -6,5 +6,11 @@
 /*
  * The `mbucket` CLI command.
  */
+
+process.stdout.on('error', function onStdoutError(err) {
+    if (err.code === 'EPIPE') {
+        process.exit(0);
+    }
+});
 
 require('../lib/mbucket').main();
