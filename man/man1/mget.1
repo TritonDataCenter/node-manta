@@ -50,8 +50,9 @@ $ mfind \-t o \-n '.js$' ~~/stor/foo | xargs mget \-q | less
 \fB\fC\-a, \-\-account login\fR
 Authenticate as account (login name).
 .TP
-\fB\fC\-H, \-\-headers\fR
-Additional HTTP headers to include.
+\fB\fC\-H, \-\-header='header: value'\fR
+Additional HTTP header to include. Can be specified multiple times. Must be
+specified for each additional header.
 .TP
 \fB\fC\-h, \-\-help\fR
 Print a help message and exit.

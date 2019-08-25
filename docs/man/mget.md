@@ -45,8 +45,9 @@ OPTIONS
 `-a, --account login`
   Authenticate as account (login name).
 
-`-H, --headers`
-  Additional HTTP headers to include.
+`-H, --header='header: value'`
+  Additional HTTP header to include. Can be specified multiple times. Must be
+  specified for each additional header.
 
 `-h, --help`
   Print a help message and exit.
