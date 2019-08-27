@@ -92,7 +92,9 @@ test('no args (parse fail, num of args)', function (t) {
 test('"" (parse fail)', function (t) {
     t.plan(1);
     try {
+        // jsl:ignore
         var muri = new MantaUri('');
+        // jsl:end
     } catch (err) {
         t.ok(/scheme is not "manta:"/.test(err.message), err.message);
     }
@@ -102,7 +104,9 @@ test('"" (parse fail)', function (t) {
 test('MANTA:mybucket/myobject.txt (parse fail, scheme case)', function (t) {
     t.plan(1);
     try {
+        // jsl:ignore
         var muri = new MantaUri('MANTA:mybucket/myobject.txt');
+        // jsl:end
     } catch (err) {
         t.ok(/scheme is not "manta:"/.test(err.message), err.message);
     }
@@ -112,7 +116,9 @@ test('MANTA:mybucket/myobject.txt (parse fail, scheme case)', function (t) {
 test('manta: (parse fail, missing bucket)', function (t) {
     t.plan(1);
     try {
+        // jsl:ignore
         var muri = new MantaUri('manta:');
+        // jsl:end
     } catch (err) {
         t.ok(/missing bucket name/.test(err.message), err.message);
     }
@@ -122,7 +128,9 @@ test('manta: (parse fail, missing bucket)', function (t) {
 test('manta://example.com/bob/mybucket/myobject.txt (parse fail, do not yet support long forms)', function (t) {
     t.plan(1);
     try {
+        // jsl:ignore
         var muri = new MantaUri('manta://example.com/bob/mybucket/myobject.txt');
+        // jsl:end
     } catch (err) {
         t.ok(/do not yet support long URI forms/.test(err.message), err.message);
     }
@@ -132,7 +140,9 @@ test('manta://example.com/bob/mybucket/myobject.txt (parse fail, do not yet supp
 test('from components, host non null (parse fail, do not yet support long forms)', function (t) {
     t.plan(1);
     try {
+        // jsl:ignore
         var muri = new MantaUri('example.com', null, 'mybucket', 'myobject.txt');
+        // jsl:end
     } catch (err) {
         t.ok(/do not yet support long URI forms/.test(err.message), err.message);
     }
@@ -142,7 +152,9 @@ test('from components, host non null (parse fail, do not yet support long forms)
 test('from components, login non null (parse fail, do not yet support long forms)', function (t) {
     t.plan(1);
     try {
+        // jsl:ignore
         var muri = new MantaUri(null, 'bob', 'mybucket', 'myobject.txt');
+        // jsl:end
     } catch (err) {
         t.ok(/do not yet support long URI forms/.test(err.message), err.message);
     }

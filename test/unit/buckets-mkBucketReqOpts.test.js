@@ -27,7 +27,7 @@ var TEST_REQ_ID = libuuid.v4();
  * Custom asserts
  */
 
-const uuidRe = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
+var uuidRe = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
 tap.Test.prototype.addAssert('uuid', 1, function (val, message, extra) {
     message = message || 'should be a UUID';
     return this.match(val, uuidRe, message, extra);
