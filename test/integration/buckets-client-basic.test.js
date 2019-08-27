@@ -115,7 +115,12 @@ test('buckets client basic', testOpts, function (suite) {
     test('createBucketObject', function (t) {
         clientMethodsToTest.delete('createBucketObject');
         var inStream = fs.createReadStream(SMALL_FILE_PATH);
-        client.createBucketObject(inStream, BUCKET_NAME, OBJECT_NAME,
+        var reqOpts = {
+            headers: {
+                'm-foo': 'bar'
+            }
+        };
+        client.createBucketObject(inStream, BUCKET_NAME, OBJECT_NAME, reqOpts,
                                   function (err) {
             t.ifError(err);
             t.end();
@@ -130,6 +135,7 @@ test('buckets client basic', testOpts, function (suite) {
             t.ok(res);
             t.equal(res.headers['content-md5'], SMALL_FILE_CONTENT_MD5);
             t.equal(res.headers['content-length'], SMALL_FILE_SIZE.toString());
+            t.equal(res.headers['m-foo'], 'bar');
             t.end();
         });
     });
@@ -143,6 +149,7 @@ test('buckets client basic', testOpts, function (suite) {
             t.ok(res);
             t.equal(res.headers['content-md5'], SMALL_FILE_CONTENT_MD5);
             t.equal(res.headers['content-length'], SMALL_FILE_SIZE.toString());
+            t.equal(res.headers['m-foo'], 'bar');
 
             t.ok(stream);
             var chunks = [];
