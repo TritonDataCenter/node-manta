@@ -93,7 +93,8 @@ test('buckets client basic', testOpts, function (suite) {
 
     test('createListBucketsStream', function (t) {
         clientMethodsToTest.delete('createListBucketsStream');
-        // XXX add limit=1 or use prefix of our test prefix when supported, then assert have our test bucket
+        // XXX add limit=1 or use prefix of our test prefix when supported, then
+        // assert have our test bucket
         var s = client.createListBucketsStream();
         var theBuckets = [];
         s.on('readable', function onReadable() {

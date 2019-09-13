@@ -128,7 +128,7 @@ function isBucketsEnabledSync(log) {
     }
     log.trace({output: output}, 'ran "mbucket is-supported"');
 
-    return (output === "true");
+    return (output === 'true');
 }
 
 

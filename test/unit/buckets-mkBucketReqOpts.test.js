@@ -30,7 +30,7 @@ var TEST_REQ_ID = libuuid.v4();
 var uuidRe = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
 tap.Test.prototype.addAssert('uuid', 1, function (val, message, extra) {
     message = message || 'should be a UUID';
-    return this.match(val, uuidRe, message, extra);
+    return (this.match(val, uuidRe, message, extra));
 });
 
 
@@ -51,8 +51,7 @@ test('userOpts win', function (t) {
     var reqOpts = mkBucketReqOpts(
         '/bob/buckets',
         {connectTimeout: 300, headers: {foo: 'a', bar: 'b'}, query: {baz: 'c'}},
-        {connectTimeout: 100, headers: {foo: 'd'}, query: {baz: 'e'}}
-    );
+        {connectTimeout: 100, headers: {foo: 'd'}, query: {baz: 'e'}});
     delete reqOpts.headers['x-request-id'];
     t.strictDeepEqual(reqOpts, {
         path: '/bob/buckets',
@@ -67,8 +66,7 @@ test('normalize headers', function (t) {
     var reqOpts = mkBucketReqOpts(
         '/bob/buckets',
         {headers: {Foo: 'a', Bar: 'b'}},
-        {headers: {FOO: 'c'}}
-    );
+        {headers: {FOO: 'c'}});
     delete reqOpts.headers['x-request-id'];
     t.strictDeepEqual(reqOpts, {
         path: '/bob/buckets',
@@ -83,8 +81,7 @@ test('undefined values filtered out', function (t) {
         '/bob/buckets',
         {connectTimeout: 100, headers: {foo: 'a', caz: undefined}},
         {connectTimeout: undefined,
-            headers: {bar: 'b', foo: undefined, dab: undefined}}
-    );
+            headers: {bar: 'b', foo: undefined, dab: undefined}});
     delete reqOpts.headers['x-request-id'];
     t.strictDeepEqual(reqOpts, {
         path: '/bob/buckets',
@@ -99,8 +96,7 @@ test('provided req_id is maintained', function (t) {
     var reqOpts = mkBucketReqOpts(
         '/bob/buckets',
         {headers: {foo: 'a'}},
-        {headers: {bar: 'b', 'x-request-id': TEST_REQ_ID}}
-    );
+        {headers: {bar: 'b', 'x-request-id': TEST_REQ_ID}});
     t.equal(reqOpts.headers['x-request-id'], TEST_REQ_ID);
     t.end();
 });
@@ -110,8 +106,7 @@ test('req_id field added to log', function (t) {
     var reqOpts = mkBucketReqOpts(
         '/bob/buckets',
         {log: testLog},
-        {headers: {'x-request-id': TEST_REQ_ID}}
-    );
+        {headers: {'x-request-id': TEST_REQ_ID}});
     t.ok(reqOpts.log);
     t.equal(reqOpts.log.fields.req_id, TEST_REQ_ID);
     t.end();
@@ -122,8 +117,7 @@ test('req_id field overwritten on log', function (t) {
     var reqOpts = mkBucketReqOpts(
         '/bob/buckets',
         {log: testLog},
-        {headers: {'x-request-id': TEST_REQ_ID}}
-    );
+        {headers: {'x-request-id': TEST_REQ_ID}});
     t.ok(reqOpts.log);
     t.equal(reqOpts.log.fields.req_id, TEST_REQ_ID);
     t.notEqual(reqOpts.log, testLog); // reqOpts.log is a new child logger
@@ -135,8 +129,7 @@ test('req_id field not overwritten on log if matching', function (t) {
     var reqOpts = mkBucketReqOpts(
         '/bob/buckets',
         {log: testLog},
-        {headers: {'x-request-id': TEST_REQ_ID}}
-    );
+        {headers: {'x-request-id': TEST_REQ_ID}});
     t.ok(reqOpts.log);
     t.equal(reqOpts.log.fields.req_id, TEST_REQ_ID);
     t.equal(reqOpts.log, testLog); // reqOpts.log is the unchanged `testLog`

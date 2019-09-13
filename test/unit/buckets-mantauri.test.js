@@ -96,6 +96,7 @@ test('"" (parse fail)', function (t) {
         var muri = new MantaUri('');
         // jsl:end
     } catch (err) {
+        // JSSTYLED
         t.ok(/scheme is not "manta:"/.test(err.message), err.message);
     }
     t.end();
@@ -108,6 +109,7 @@ test('MANTA:mybucket/myobject.txt (parse fail, scheme case)', function (t) {
         var muri = new MantaUri('MANTA:mybucket/myobject.txt');
         // jsl:end
     } catch (err) {
+        // JSSTYLED
         t.ok(/scheme is not "manta:"/.test(err.message), err.message);
     }
     t.end();
@@ -125,30 +127,37 @@ test('manta: (parse fail, missing bucket)', function (t) {
     t.end();
 });
 
+// JSSTYLED
 test('manta://example.com/bob/mybucket/myobject.txt (parse fail, do not yet support long forms)', function (t) {
     t.plan(1);
     try {
         // jsl:ignore
-        var muri = new MantaUri('manta://example.com/bob/mybucket/myobject.txt');
+        var muri = new MantaUri(
+            'manta://example.com/bob/mybucket/myobject.txt');
         // jsl:end
     } catch (err) {
-        t.ok(/do not yet support long URI forms/.test(err.message), err.message);
+        t.ok(/do not yet support long URI forms/.test(err.message),
+            err.message);
     }
     t.end();
 });
 
+// JSSTYLED
 test('from components, host non null (parse fail, do not yet support long forms)', function (t) {
     t.plan(1);
     try {
         // jsl:ignore
-        var muri = new MantaUri('example.com', null, 'mybucket', 'myobject.txt');
+        var muri = new MantaUri('example.com', null, 'mybucket',
+            'myobject.txt');
         // jsl:end
     } catch (err) {
-        t.ok(/do not yet support long URI forms/.test(err.message), err.message);
+        t.ok(/do not yet support long URI forms/.test(err.message),
+            err.message);
     }
     t.end();
 });
 
+// JSSTYLED
 test('from components, login non null (parse fail, do not yet support long forms)', function (t) {
     t.plan(1);
     try {
@@ -156,7 +165,8 @@ test('from components, login non null (parse fail, do not yet support long forms
         var muri = new MantaUri(null, 'bob', 'mybucket', 'myobject.txt');
         // jsl:end
     } catch (err) {
-        t.ok(/do not yet support long URI forms/.test(err.message), err.message);
+        t.ok(/do not yet support long URI forms/.test(err.message),
+            err.message);
     }
     t.end();
 });
