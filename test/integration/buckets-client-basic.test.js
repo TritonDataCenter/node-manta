@@ -58,10 +58,15 @@ test('buckets client basic', testOpts, function (suite) {
         };
         client = manta.createBinClient(clientOpts);
 
+        // We use this to enforce having an explicit basic test in this
+        // test file for *every* MantaBucketsClient method.
         clientMethodsToTest = new Set(
             Object.keys(client.constructor.prototype));
+
+        // ... except a few we don't bother testing:
         clientMethodsToTest.delete('bPath');
         clientMethodsToTest.delete('boPath');
+        clientMethodsToTest.delete('bomPath');
 
         t.end();
     });
@@ -168,6 +173,26 @@ test('buckets client basic', testOpts, function (suite) {
             });
         });
     });
+
+    test('putBucketObjectMetadata', function (t) {
+        clientMethodsToTest.delete('putBucketObjectMetadata');
+
+        var NEW_METADATA_VALUE = 'baz';
+        client.putBucketObjectMetadata(BUCKET_NAME, OBJECT_NAME,
+            {
+                headers: {
+                    'm-foo': NEW_METADATA_VALUE
+                }
+            },
+            function (err, res) {
+                t.ifError(err);
+
+                t.ok(res);
+                t.equal(res.headers['m-foo'], NEW_METADATA_VALUE);
+
+                t.end();
+            });
+    })
 
     test('createListBucketObjectsStream', function (t) {
         clientMethodsToTest.delete('createListBucketObjectsStream');

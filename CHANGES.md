@@ -37,9 +37,10 @@ Support for the in-development Buckets features of Manta:
     - createBucketObject
     - headBucketObject
     - deleteBucketObject
+    - putBucketObjectMetadata
 - A new `mbucket` CLI:
     - mbucket raw - for dev/debugging the raw Manta API
-    - mbucket ls - listing buckets and objects in buckets
+    - mbucket ls - listing buckets and bucket objects
     - mbucket is-supported - hidden command for testing `isBucketsSupported`.
     - mbucket mb - Create bucket
     - mbucket rb - Delete bucket
@@ -47,16 +48,9 @@ Support for the in-development Buckets features of Manta:
     - mbucket rm - Delete a Manta bucket object.
     - mbucket info - Print HTTP headers for a given Manta bucket or object.
     - mbucket cat - Stream a buckect object to stdout.
+    - mbucket updatemd - Set/modify custom metadata (`m-*` headers) on an
+      existing bucket object.
 - Known issues/limitations:
-    - metadata:
-        - Metadata *can* be set on newly created objects via
-          `mbucket cp --metadata DATA ...` and via `opts.headers['m-key']`
-          headers to `MantaBucketsClient.createBucketObject()`.
-        - Metadata (aka the `m-*` headers) *can* be retrieved via
-          HeadBucketObject.
-        - However, a separate command and client method is *not yet
-          implemented* for the PutBucketObjectMetadata endpoint.
-    - metadata endpoints are not yet implemented
     - RBAC "role" headers are not yet supported
     - conditional header support isn't yet plumbed through the client methods
     - testing is lacking
@@ -64,7 +58,7 @@ Support for the in-development Buckets features of Manta:
     - lots of options are missing for which the intent is to implement:
       --recursive, --dry-run, etc.
     - missing docs: API docs in docs/index.md; user guide docs
-    - there are still buckets in pagination with `mbucket ls` (MANTA-4514,
+    - there are still bugs in pagination with `mbucket ls` (MANTA-4514,
       MANTA-4515)
 
 
