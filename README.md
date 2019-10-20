@@ -255,9 +255,7 @@ Here is how to cut a release:
     ## $version
     ```
 
-2. Get that commit approved and merged via <https://cr.joyent.us>, as with all
-   commits to this repo. See the discussion of contribution at the top of this
-   readme.
+2. Get that commit approved and merged via a pull request.
 
 3. Once that is merged and you've updated your local copy, run:
 
