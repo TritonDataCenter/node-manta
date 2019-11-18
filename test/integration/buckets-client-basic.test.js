@@ -113,7 +113,9 @@ test('buckets client basic', testOpts, function (suite) {
             t.end();
         });
         s.once('end', function onEnd() {
-            t.ok(theBuckets.length > 1, 'got at least one bucket in listing');
+            t.ok(theBuckets.length >= 1,
+                'got at least one bucket in listing, theBuckets names: ' +
+                theBuckets.map(function (b) { return b.name; }).join(', '));
             t.end();
         });
     });
