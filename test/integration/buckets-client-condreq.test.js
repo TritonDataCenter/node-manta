@@ -116,20 +116,21 @@ test('buckets client conditional requests', testOpts, function (suite) {
                 t.ifError(err);
                 t.ok(res);
                 t.equal(res.headers['content-md5'], SMALL_FILE_CONTENT_MD5);
-                t.equal(res.headers['content-length'], SMALL_FILE_SIZE.toString());
+                t.equal(res.headers['content-length'],
+                    SMALL_FILE_SIZE.toString());
                 t.end();
             });
     });
 
- //*  - HeadBucketObject
- //*  - CreateBucketObject
- //*  - GetBucketObject
- //*  - DeleteBucketObject
+    //  - HeadBucketObject
+    //  - CreateBucketObject
+    //  - GetBucketObject
+    //  - DeleteBucketObject
 
- //*  - If-Modified-Since
- //*  - If-Unmodified-Since
- //*  - If-Match
- //*  - If-None-Match
+    //  - If-Modified-Since
+    //  - If-Unmodified-Since
+    //  - If-Match
+    //  - If-None-Match
 
     //test('headBucketObject', function (t) {
     //    clientMethodsToTest.delete('headBucketObject');
@@ -138,7 +139,8 @@ test('buckets client conditional requests', testOpts, function (suite) {
     //        t.ifError(err);
     //        t.ok(res);
     //        t.equal(res.headers['content-md5'], SMALL_FILE_CONTENT_MD5);
-    //        t.equal(res.headers['content-length'], SMALL_FILE_SIZE.toString());
+    //        t.equal(res.headers['content-length'],
+    //            SMALL_FILE_SIZE.toString());
     //        t.equal(res.headers['m-foo'], 'bar');
     //        t.end();
     //    });
@@ -152,7 +154,8 @@ test('buckets client conditional requests', testOpts, function (suite) {
     //
     //        t.ok(res);
     //        t.equal(res.headers['content-md5'], SMALL_FILE_CONTENT_MD5);
-    //        t.equal(res.headers['content-length'], SMALL_FILE_SIZE.toString());
+    //        t.equal(res.headers['content-length'],
+    //            SMALL_FILE_SIZE.toString());
     //        t.equal(res.headers['m-foo'], 'bar');
     //
     //        t.ok(stream);

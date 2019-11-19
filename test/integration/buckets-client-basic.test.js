@@ -194,7 +194,7 @@ test('buckets client basic', testOpts, function (suite) {
 
                 t.end();
             });
-    })
+    });
 
     test('createListBucketObjectsStream', function (t) {
         clientMethodsToTest.delete('createListBucketObjectsStream');
