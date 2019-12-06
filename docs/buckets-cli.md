@@ -1,6 +1,7 @@
 # Buckets CLI
 
-This document is a proposal for the node-manta CLI for Manta buckets.
+This is a design document for the `mbucket` CLI for the Manta Buckets API. It
+also includes an appending on the "manta:" URI scheme used by the mbucket CLI.
 
 <!--
     To update the TOC:
@@ -10,7 +11,6 @@ This document is a proposal for the node-manta CLI for Manta buckets.
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
 
-- [Getting started with `mbucket`](#getting-started-with-mbucket)
 - [Proposal](#proposal)
   - [tl;dr](#tldr)
   - [operations](#operations)
@@ -21,49 +21,11 @@ This document is a proposal for the node-manta CLI for Manta buckets.
   - [manta take 4: require explicit full URI for remote paths](#manta-take-4-require-explicit-full-uri-for-remote-paths)
   - [Compare take 4 to the aws CLI](#compare-take-4-to-the-aws-cli)
   - [Next Steps](#next-steps)
-- [Open Questions](#open-questions)
-- [Out of scope questions](#out-of-scope-questions)
-- [Answered Questions](#answered-questions)
 - [Appendices](#appendices)
   - [Appendix A: "manta:" URI](#appendix-a-manta-uri)
   - [Appendix B: An aside on `aws s3api`](#appendix-b-an-aside-on-aws-s3api)
-  - [Appendix C: Collecting feedback](#appendix-c-collecting-feedback)
-    - [from joshw](#from-joshw)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
-
-
-# Getting started with `mbucket`
-
-#### install
-
-```
-cd ~/tmp
-git clone git@github.com:joyent/node-manta.git
-cd node-manta
-git checkout buckets
-npm install
-
-# for bash completions
-make completion
-source share/manta.completion
-```
-
-#### examples
-
-```
-$ mbucket raw -h   # a curl-like tool for raw Manta API calls
-
-$ mbucket raw ~~/buckets
-{"name":"bar","type":"bucket","mtime":"2019-06-13T23:23:22.230Z"}
-{"name":"foo","type":"bucket","mtime":"2019-06-13T23:13:48.075Z"}
-
-$ mbucket ls
-mbucket ls: error: not yet implemented
-```
-
-Still early days. :)
-
 
 
 # Proposal
@@ -322,48 +284,6 @@ Take 4 and the S3 CLI are very similar, which I don't think is a bad thing.
     aws s3 cp s3://mybucket/foo.txt foo.txt         # 8. get object(s)
     aws s3 rm s3://mybucket[/foo.txt]               # 9. delete object(s)
 
-## Next Steps
-
-- Get feedback from others.
-- Write a prototype of this in the node-manta "buckets" branch to play with.
-
-
-# Open Questions
-
-- Lots to discuss in the "Proposal" section above.
-  A: Positive reactions from Isaac and Kelly and JoshW.
-- Add updatemetadata support from
-  https://github.com/joyent/manta-muskie/commit/8b3c3c6d6c03fdaf3153dab2de8b78d3be72e809
-- Add OPTIONS ~~/buckets support.
-
-- Support `sign` (The S3 CLI calls it "presign") for buckets?
-- Drop "buckets/" from `mls /:login` output? Unless discussion of this proposal
-  biases back to us exposing the buckets API on the directory-based view, I
-  think it is misleading to have "/:login/buckets/" hanging off that directory
-  listing.
-
-
-# Out of scope questions
-
-This section includes questions I have about buckets and the node-manta CLI,
-but are likely out of scope for initial CLI work.
-
-- Support client-side encryption (CSE)?
-- Support a "wait" like `aws s3api wait ...` (see Appendix B)?
-- Support remote-to-remote cp? E.g. copying an object from one name to another
-  within the same bucket? Across buckets? Across accounts? Across regions?
-  Does S3 support this across regions?
-- Support recursive cp? recursive rm?
-- Support `mv`?
-- Support S3-like object tagging?
-- Support S3-like object versioning? I'm assuming not.
-
-
-# Answered Questions
-
-None yet. :)
-
-
 
 # Appendices
 
@@ -427,47 +347,4 @@ of commands. These appear (to me) to be all the raw S3 API primitives.
 with sugar. The rarer "head bucket" and "head object" live there. There are
 some other interesting tidbits in there that we might include, e.g.:
 
-    aws s3api wait bucket-exists --bucket trentm-play
-
-
-## Appendix C: Collecting feedback
-
-### from joshw
-
-Some snippets from a chat convo:
-
-> I wish we could have something like MANTA_DOMAIN=manta.joyent.com and then just do manta:us-east:mybucket/foo Or even us-east:mybucket/foo
-
-He doesn't particularly like 'mb' and 'rb' for the bucket-only opts.
-Discussed alternatives:
-
-    # given the name is already `mbucket`
-    mbucket create ...
-    mbucket delete ...
-
-Or these:
-
-    manta bucket create ...
-    manta bucket delete ...
-    manta object {rm,ls,mv,...}
-
-I don't hate those at all. I don't know claiming `manta object` just for
-*bucket* objects will fly. There is also extra typing in `manta bucket ...` vs.
-`mbucket ...`.
-
-Could have top-level aliases for the more command object commands:
-
-    manta ls ...
-
-However is there confusion with directory-based Manta objects? Having that
-top-level one attempt to be "smart" and switch to the appropriate type
-(directory- or bucket-) based on the args seems like it could get awkward.
-
-Then suggested:
-
-    banta bucket ...
-
-I'm assuming this wasn't serious. :)
-
-We went around for a bit and I wore joshw down back to my "take 4" above for
-now.
+    aws s3api wait bucket-exists --bucket mahbukkit
