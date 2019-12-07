@@ -25,6 +25,8 @@ For example:
 
 The following options are supported before the subcommand:
 
+XXX
+
 `-a, --account login`
   Authenticate as account (login name).
 
