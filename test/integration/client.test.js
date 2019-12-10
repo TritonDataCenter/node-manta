@@ -12,6 +12,7 @@ var test = require('tap').test;
 
 var logging = require('../lib/logging');
 var manta = require('../../lib');
+var testutils = require('../lib/utils');
 
 
 /*
@@ -27,7 +28,7 @@ var PUBLIC = '/' + (process.env.MANTA_USER || 'admin') + '/public';
 var SUBDIR1 = ROOT + '/node-manta-test-client-' + libuuid.v4().split('-')[0];
 var SUBDIR2 = SUBDIR1 + '/subdir2-' + libuuid.v4().split('-')[0]; // directory
 var CHILD1 = SUBDIR1 + '/child1-' + libuuid.v4().split('-')[0]; // object
-var CHILD2 = SUBDIR2 + '/child2-' + libuuid.v4().split('-')[0]; // link
+var CHILDLINK = SUBDIR2 + '/childlink-' + libuuid.v4().split('-')[0]; // link
 var NOENTSUB1 = SUBDIR1 + '/a/b/c';
 var NOENTSUB2 = SUBDIR1 + '/d/e/f';
 var SPECIALOBJ1 = SUBDIR1 + '/' + 'before-\r-after';
@@ -35,6 +36,10 @@ var SPECIALOBJ1 = SUBDIR1 + '/' + 'before-\r-after';
 var SUBDIR1_NOBJECTS = 1;
 var SUBDIR1_NDIRECTORIES = 2;
 
+var snaplinksTestOpts = {
+    skip: !testutils.areSnaplinksSupportedSync(log) &&
+        'this Manta does not support SnapLinks (mantav2)'
+};
 
 /*
  * Tests
@@ -461,16 +466,16 @@ test('createListStream (object only)', function (t) {
 });
 
 
-test('ln', function (t) {
-    client.ln(CHILD1, CHILD2, function (err) {
+test('ln', snaplinksTestOpts, function (t) {
+    client.ln(CHILD1, CHILDLINK, function (err) {
         t.ifError(err);
         t.end();
     });
 });
 
 
-test('info (link)', function (t) {
-    client.info(CHILD2, function (err, type) {
+test('info (link)', snaplinksTestOpts, function (t) {
+    client.info(CHILDLINK, function (err, type) {
         t.ifError(err);
         t.ok(type);
         if (type) {
@@ -480,6 +485,14 @@ test('info (link)', function (t) {
             t.ok(type.etag);
             t.ok(type.md5);
         }
+        t.end();
+    });
+});
+
+
+test('unlink link', snaplinksTestOpts, function (t) {
+    client.unlink(CHILDLINK, function (err) {
+        t.ifError(err);
         t.end();
     });
 });
@@ -556,8 +569,7 @@ test('get job', function (t) {
 
 test('add input keys', function (t) {
     var keys = [
-        CHILD1,
-        CHILD2
+        CHILD1
     ];
 
     client.addJobKey(JOB, keys, function (err) {
@@ -571,7 +583,7 @@ test('get job input', function (t) {
     var keys = 0;
     function cb(err) {
         t.ifError(err);
-        t.equal(keys, 2);
+        t.equal(keys, 1);
         t.end();
     }
 
@@ -666,14 +678,6 @@ test('create and cancel job', function (t) {
 
 
 test('unlink object', function (t) {
-    client.unlink(CHILD2, function (err) {
-        t.ifError(err);
-        t.end();
-    });
-});
-
-
-test('unlink link', function (t) {
     client.unlink(CHILD1, function (err) {
         t.ifError(err);
         t.end();

@@ -9,6 +9,7 @@ var os = require('os');
 var path = require('path');
 
 var forkExecWait = require('forkexec').forkExecWait;
+var strsplit = require('strsplit');
 var VError = require('verror');
 
 var BINDIR = path.resolve(__dirname, '../../bin');
@@ -52,6 +53,46 @@ function mls(p, cb) {
     });
 }
 
+
+
+function getMantaVSync(log) {
+    assert.string(process.env.MANTA_USER, 'process.env.MANTA_USER');
+    assert.object(log, 'log');
+
+    var headers;
+    var kv;
+    var output;
+    var server;
+
+    try {
+        output = execFileSync(MBUCKET, ['raw', '-i', '/'], {
+            stdio: 'pipe', // to not emit stderr to parent's stderr
+            encoding: 'utf8'
+        });
+    } catch (err) {
+        throw new VError(error,
+            'error determining if mantav of this Manta (%s)',
+            process.env.MANTA_URL);
+    }
+    log.trace({output: output}, 'ran "mbucket raw -i /"');
+
+    headers = strsplit(output.trim(), '\n').slice(1)
+    for (line of headers) {
+        kv = strsplit(line, /:\s*/, 2);
+        if (kv[0].toLowerCase() === 'server') {
+            server = kv[1];
+            break;
+        }
+    }
+
+    if (server === 'Manta') {
+        return 1;
+    } else if (server.slice(0, 7) === 'Manta/2') {
+        return 2
+    } else {
+        throw new VError('unexpected Server header value: "%s"', server);
+    }
+}
 
 /*
  * *Synchronously* determine if this Manta supports MPU (multipart upload).
@@ -132,8 +173,22 @@ function isBucketsEnabledSync(log) {
 }
 
 
+/*
+ * *Synchronously* determine if this Manta supports Snaplinks.
+ * Doing so synchronously allows one to use the value for tap test() options.
+ *
+ * This returns `true` or `false`. If something unexpected happens, it throws
+ * an error.
+ */
+function areSnaplinksSupportedSync(log) {
+    var mantav = getMantaVSync(log);
+    return (mantav === 1);
+}
+
+
 module.exports = {
     isBucketsEnabledSync: isBucketsEnabledSync,
     isMpuEnabledSync: isMpuEnabledSync,
+    areSnaplinksSupportedSync: areSnaplinksSupportedSync,
     mls: mls
 };
