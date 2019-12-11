@@ -40,6 +40,10 @@ var snaplinksTestOpts = {
     skip: !testutils.areSnaplinksSupportedSync(log) &&
         'this Manta does not support SnapLinks (mantav2)'
 };
+var jobsTestOpts = {
+    skip: !testutils.areJobsSupportedSync(log) &&
+        'this Manta does not support jobs (mantav2)'
+};
 
 /*
  * Tests
@@ -539,141 +543,146 @@ test('ftw', function (t) {
 });
 
 
-test('create job (simple grep)', function (t) {
-    var j = 'grep foo';
+test('job (simple grep)', jobsTestOpts, function (suite) {
 
-    client.createJob(j, function (err, job) {
-        t.ifError(err);
-        t.ok(job);
-        JOB = job;
-        t.end();
-    });
-});
+    suite.test('create job (simple grep)', function (t) {
+        var j = 'grep foo';
 
-
-test('get job', function (t) {
-    client.job(JOB, function (err, job) {
-        t.ifError(err);
-        t.ok(job);
-        t.equal(job.id, JOB);
-        t.ok(job.name === '');
-        t.ok((job.state === 'queued' || job.state === 'running'));
-        t.ok(job.timeCreated);
-        t.ok(job.phases);
-        t.ok(!job.cancelled);
-        t.ok(!job.inputDone);
-        t.end();
-    });
-});
-
-
-test('add input keys', function (t) {
-    var keys = [
-        CHILD1
-    ];
-
-    client.addJobKey(JOB, keys, function (err) {
-        t.ifError(err);
-        t.end();
-    });
-});
-
-
-test('get job input', function (t) {
-    var keys = 0;
-    function cb(err) {
-        t.ifError(err);
-        t.equal(keys, 1);
-        t.end();
-    }
-
-    client.jobInput(JOB, function (err, res) {
-        t.ifError(err);
-        t.ok(res);
-
-        res.on('key', function (k) {
-            t.ok(k);
-            keys++;
+        client.createJob(j, function (err, job) {
+            t.ifError(err);
+            t.ok(job);
+            JOB = job;
+            t.end();
         });
-
-        res.once('error', cb);
-        res.once('end', cb.bind(null, null));
     });
-});
 
 
-test('end job', function (t) {
-    client.endJob(JOB, function (err) {
-        t.ifError(err);
-        t.end();
-    });
-});
-
-
-test('wait for job', function (t) {
-    var attempts = 1;
-
-    function getState() {
+    suite.test('get job', function (t) {
         client.job(JOB, function (err, job) {
             t.ifError(err);
-            if (err) {
-                t.end();
-            } else if (job.state === 'done') {
-                t.end();
-            } else {
-                if (++attempts >= 60) {
-                    t.ok(!attempts);
+            t.ok(job);
+            t.equal(job.id, JOB);
+            t.ok(job.name === '');
+            t.ok((job.state === 'queued' || job.state === 'running'));
+            t.ok(job.timeCreated);
+            t.ok(job.phases);
+            t.ok(!job.cancelled);
+            t.ok(!job.inputDone);
+            t.end();
+        });
+    });
+
+
+    suite.test('add input keys', function (t) {
+        var keys = [
+            CHILD1
+        ];
+
+        client.addJobKey(JOB, keys, function (err) {
+            t.ifError(err);
+            t.end();
+        });
+    });
+
+
+    suite.test('get job input', function (t) {
+        var keys = 0;
+        function cb(err) {
+            t.ifError(err);
+            t.equal(keys, 1);
+            t.end();
+        }
+
+        client.jobInput(JOB, function (err, res) {
+            t.ifError(err);
+            t.ok(res);
+
+            res.on('key', function (k) {
+                t.ok(k);
+                keys++;
+            });
+
+            res.once('error', cb);
+            res.once('end', cb.bind(null, null));
+        });
+    });
+
+
+    suite.test('end job', function (t) {
+        client.endJob(JOB, function (err) {
+            t.ifError(err);
+            t.end();
+        });
+    });
+
+
+    suite.test('wait for job', function (t) {
+        var attempts = 1;
+
+        function getState() {
+            client.job(JOB, function (err, job) {
+                t.ifError(err);
+                if (err) {
+                    t.end();
+                } else if (job.state === 'done') {
                     t.end();
                 } else {
-                    setTimeout(getState, 1000);
+                    if (++attempts >= 60) {
+                        t.ok(!attempts);
+                        t.end();
+                    } else {
+                        setTimeout(getState, 1000);
+                    }
                 }
-            }
-        });
-    }
+            });
+        }
 
-    getState();
-});
-
-
-test('get job output', function (t) {
-    var _keys = 0; // treat 'end' as a key
-    function cb(err) {
-        t.ifError(err);
-        t.ok(_keys > 0);
-        t.end();
-    }
-
-    client.jobOutput(JOB, function (err, res) {
-        t.ifError(err);
-        t.ok(res);
-
-        res.on('key', function (k) {
-            t.ok(k);
-            _keys++;
-        });
-
-        res.once('error', cb);
-        res.once('end', cb.bind(null, null));
+        getState();
     });
-});
 
 
-test('create and cancel job', function (t) {
-    client.createJob('grep foo', function (err, job) {
-        t.ifError(err);
-        t.ok(job);
-        client.cancelJob(job, function (err2) {
-            t.ifError(err2);
-            client.job(job, function (err3, job2) {
-                t.ifError(err3);
-                t.ok(job2);
-                t.ok(job2.cancelled);
-                t.ok(job2.inputDone);
-                // t.equal(job2.state, 'done');
-                t.end();
+    suite.test('get job output', function (t) {
+        var _keys = 0; // treat 'end' as a key
+        function cb(err) {
+            t.ifError(err);
+            t.ok(_keys > 0);
+            t.end();
+        }
+
+        client.jobOutput(JOB, function (err, res) {
+            t.ifError(err);
+            t.ok(res);
+
+            res.on('key', function (k) {
+                t.ok(k);
+                _keys++;
+            });
+
+            res.once('error', cb);
+            res.once('end', cb.bind(null, null));
+        });
+    });
+
+
+    suite.test('create and cancel job', function (t) {
+        client.createJob('grep foo', function (err, job) {
+            t.ifError(err);
+            t.ok(job);
+            client.cancelJob(job, function (err2) {
+                t.ifError(err2);
+                client.job(job, function (err3, job2) {
+                    t.ifError(err3);
+                    t.ok(job2);
+                    t.ok(job2.cancelled);
+                    t.ok(job2.inputDone);
+                    // t.equal(job2.state, 'done');
+                    t.end();
+                });
             });
         });
     });
+
+    suite.end();
 });
 
 

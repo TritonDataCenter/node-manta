@@ -14,12 +14,18 @@ var spawn = require('child_process').spawn;
 var test = require('tap').test;
 
 var logging = require('../lib/logging');
+var testutils = require('../lib/utils');
 
 
 // ---- globals
 
 var log = logging.createLogger();
 var MJOB = path.resolve(__dirname, '../../bin/mjob');
+
+var testOpts = {
+    skip: !testutils.areJobsSupportedSync(log) &&
+        'this Manta does not support jobs (mantav2)'
+};
 
 
 // ---- helper functions
@@ -68,7 +74,7 @@ function mjobExec(args, opts, cb) {
  * Note the usage of '-or "echo hello"' cuddled like that is ensuring we aren't
  * hitting <https://github.com/trentm/node-dashdash/issues/8>.
  */
-test('mjob create --close -or "echo hello"', function (t) {
+test('mjob create --close -or "echo hello"', testOpts, function (t) {
     var args = ['create', '--close', '-or', 'echo hello'];
     mjobExec(args, function (err, stdout, stderr) {
         t.ifError(err, err);

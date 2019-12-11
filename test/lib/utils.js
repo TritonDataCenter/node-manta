@@ -185,10 +185,23 @@ function areSnaplinksSupportedSync(log) {
     return (mantav === 1);
 }
 
+/*
+ * *Synchronously* determine if this Manta supports jobs.
+ * Doing so synchronously allows one to use the value for tap test() options.
+ *
+ * This returns `true` or `false`. If something unexpected happens, it throws
+ * an error.
+ */
+function areJobsSupportedSync(log) {
+    var mantav = getMantaVSync(log);
+    return (mantav === 1);
+}
+
 
 module.exports = {
     isBucketsEnabledSync: isBucketsEnabledSync,
     isMpuEnabledSync: isMpuEnabledSync,
     areSnaplinksSupportedSync: areSnaplinksSupportedSync,
+    areJobsSupportedSync: areJobsSupportedSync,
     mls: mls
 };
