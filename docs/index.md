@@ -17,7 +17,7 @@ operations, structures and error codes.
 
 Any content formatted like this:
 
-    $ curl is https://us-east.manta.joyent.com
+    $ curl -is https://us-east.manta.joyent.com
 
 is a command-line example that you can run from a shell. All other examples and
 information are formatted like this:

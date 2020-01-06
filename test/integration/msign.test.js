@@ -100,8 +100,10 @@ test(f('msign -E 1h %s', PATH), function (t) {
          * expires date set by `msign` will be a couple seconds ahead of us, so
          * allow for a slight variance.
          */
-        t.ok(q.expires >= expires, 'q.expires >= expires');
-        t.ok(q.expires < expires + 5, 'q.expires < expires + 5');
+        t.ok(q.expires >= expires,
+            f('q.expires >= expires (%s >= %s)', q.expires, expires));
+        t.ok(q.expires < expires + 30,
+            f('q.expires < expires + 30 (%s < %s + 30)', q.expires, expires));
 
         t.end();
     });
