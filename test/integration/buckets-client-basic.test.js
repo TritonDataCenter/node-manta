@@ -14,6 +14,7 @@ var libuuid = require('uuid');
 var os = require('os');
 var path = require('path');
 var test = require('tap').test;
+var util = require('util');
 
 var buckets = require('../../lib/buckets');
 var logging = require('../lib/logging');
@@ -212,8 +213,22 @@ test('buckets client basic', testOpts, function (suite) {
         });
         s.once('end', function onEnd() {
             t.equal(objects.length, 1,
-                'got one object in bucket ' + BUCKET_NAME);
-            t.equal(objects[0].name, OBJECT_NAME);
+                util.format('got one object in bucket %s: %j',
+                    BUCKET_NAME, objects[0]));
+            // Ensure expected fields per
+            // https://github.com/joyent/manta-buckets-api/blob/master/docs/index.md#listbucketobjects
+            t.equal(objects[0].name, OBJECT_NAME, 'has expected "name" field');
+            t.equal(objects[0].type, 'bucketobject', 'has expected "type" field');
+            t.ok(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z/.test(objects[0].mtime),
+                'has expected "mtime" field');
+            t.equal(typeof(objects[0].etag), 'string',
+                'has expected "etag" field');
+            t.equal(typeof(objects[0].size), 'number',
+                'has expected "size" field');
+            t.equal(typeof(objects[0].contentType), 'string',
+                'has expected "contentType" field');
+            t.equal(typeof(objects[0].contentMD5), 'string',
+                'has expected "contentMD5" field');
             t.end();
         });
     });
