@@ -6,6 +6,7 @@
  * Test bucket endpoints for proper validation of inputs
  */
 
+var assert = require('assert-plus');
 var fs = require('fs');
 var libuuid = require('uuid');
 var test = require('tap').test;
@@ -57,6 +58,10 @@ var INVALID_BUCKET_NAMES = [
     'contains spaces',
     'exclamation point!',
 
+    'check-mark-✔',
+
+    '안녕하세요',
+
     '-starts-with-hyphen',
     'ends-with-hyphen-',
 
@@ -75,11 +80,22 @@ var INVALID_BUCKET_NAMES = [
  * Valid and invalid object names. See restrictions here:
  * https://github.com/joyent/manta-buckets-api/blob/master/docs/index.md#restrictions-1
  */
+
+// string that is the maximum allowed size.
 var maxBytesString = new Array(1024 + 1).join('a');
+
+// string that is below the maximum allowed size in character count, but above
+// it in bytes.  generated via http://generator.lorem-ipsum.info/_korean
+/* JSSTYLED */
+var wideString = '대통령은 국민의 보통·평등·직접·비밀선거에 의하여 선출한다. 국가는 청원에 대하여 심사할 의무를 진다. 헌법개정안은 국회가 의결한 후 30일 이내에 국민투표에 붙여 국회의원선거권자 과반수의 투표와 투표자 과반수의 찬성을 얻어야 한다. 국민의 모든 자유와 권리는 국가안전보장·질서유지 또는 공공복리를 위하여 필요한 경우에 한하여 법률로써 제한할 수 있으며. 대통령은 국민의 보통·평등·직접·비밀선거에 의하여 선출한다. 국가는 청원에 대하여 심사할 의무를 진다. 헌법개정안은 국회가 의결한 후 30일 이내에 국민투표에 붙여 국회의원선거권자 과반수의 투표와 투표자 과반수의 찬성을 얻어야 한다. 국민의 모든 자유와 권리는 국가안전보장·질서유지 또는 공공복리를 위하여 필요한 경우에 한하여 법률로써 제한할 수 있으며. 대통령은 국민의 보통·평등·직접·비밀선거에 의하여 선출한다. 국가는 청원에 대하여 심사할 의무를 진다. 헌법개정안은 국회가 의결한 후 30일 이내에 국민투표에 붙여 국회의원선거권자 과반수의 투표와 투표자 과반수의 찬성을 얻어야 한다. 국민의 모든 자유와 권리는 국가안전보장·질서유지 또는 공공복리를 위하여 필요한 경우에 한하여 법률로써 제한할 수 있으며.';
+assert.ok(wideString.length <= 1024);
+assert.ok(Buffer.byteLength(wideString) > 1024);
 
 var VALID_OBJECT_NAMES = [
     'foo',
     'bar',
+    'check-mark-✔',
+    '안녕하세요',
     maxBytesString
 ];
 
@@ -87,6 +103,7 @@ var VALID_OBJECT_NAMES = [
 
 var INVALID_OBJECT_NAMES = [
     'nul\u0000byte',
+    wideString,
     maxBytesString + 'a'
 ];
 
@@ -105,14 +122,6 @@ test('buckets client validation', testOpts, function (suite) {
         client = manta.createBinClient(clientOpts);
 
         t.end();
-    });
-
-    test('isBucketsSupported', function (t) {
-        client.isBucketsSupported(function (err, isSupported) {
-            t.ifError(err);
-            t.ok(isSupported, 'isSupported');
-            t.end();
-        });
     });
 
     VALID_BUCKET_NAMES.forEach(function (bucket_name) {
