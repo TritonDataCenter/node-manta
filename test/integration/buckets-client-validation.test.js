@@ -108,6 +108,45 @@ var INVALID_OBJECT_NAMES = [
 ];
 
 /*
+ * Valid and invalid query parameters to listBuckets
+ * https://github.com/joyent/manta-buckets-api/blob/master/docs/index.md#query-parameters
+ */
+var VALID_LIST_BUCKETS_QUERY_OPTS = [
+    // any unset options will assume defaults by node-manta
+    {},
+    { limit: 100 },
+    { limit: 1, delimiter: '/' },
+    { limit: 5, delimiter: '-', prefix: 'foo' },
+    { limit: 10, delimiter: '_', prefix: 'bar', marker: 'abc' }
+];
+
+var INVALID_LIST_BUCKETS_QUERY_OPTS = [
+    { limit: -1 },
+    { limit: 0 },
+    { limit: 1025 },
+    { limit: 'foo' },
+    { limit: false },
+
+    { delimiter: -1 },
+    { delimiter: false },
+    { delimiter: 'AB' },
+
+    // since "marker" and "prefix" are just strings, they can't be effectively
+    // tested.  Any non-string data type will appear as a string after being
+    // stringified as query parameters.
+];
+
+/*
+ * Valid and invalid query parameters to listBuckets
+ * https://github.com/joyent/manta-buckets-api/blob/master/docs/index.md#query-parameters--pagination
+ */
+
+// The logic to list objects is identical to the logic to list objects.  as
+// such, all tests are merely copied.
+var VALID_LIST_OBJECTS_QUERY_OPTS = VALID_LIST_BUCKETS_QUERY_OPTS;
+var INVALID_LIST_OBJECTS_QUERY_OPTS = INVALID_LIST_BUCKETS_QUERY_OPTS;
+
+/*
  * Tests
  */
 
@@ -147,6 +186,62 @@ test('buckets client validation', testOpts, function (suite) {
         });
     });
 
+    VALID_LIST_BUCKETS_QUERY_OPTS.forEach(function (query_opts) {
+        test(f('validating list buckets: %j', query_opts), function (t) {
+            var s = client.createListBucketsStream({query: query_opts});
+
+            s.on('readable', function onReadable() {
+                while (s.read() !== null) {
+                    // exhaust the stream
+                }
+            });
+
+            s.once('error', function onError(err) {
+                t.ifError(err);
+                t.end();
+            });
+
+            s.once('end', function onEnd() {
+                t.ok('end seen');
+                t.end();
+            });
+        });
+    });
+
+    INVALID_LIST_BUCKETS_QUERY_OPTS.forEach(function (query_opts) {
+        test(f('validating invalid list buckets: %j', query_opts),
+            function (t) {
+
+            var s;
+
+            try {
+                s = client.createListBucketsStream({query: query_opts});
+            } catch (e) {
+                t.ok(e, f('error in client validation: %s', e.message));
+                t.end();
+                return;
+            }
+
+            s.on('readable', function onReadable() {
+                while (s.read() !== null) {
+                    // exhaust the stream
+                }
+            });
+
+            s.once('error', function onError(err) {
+                assert.ok(err, 'error seen: ' +
+                    err.messsage);
+                t.end();
+            });
+
+            s.once('end', function onEnd() {
+                // shouldn't be reached
+                t.ok(false, 'end seen');
+                t.end();
+            });
+        });
+    });
+
     test('creating bucket for object testing', function (t) {
         client.createBucket(BUCKET_NAME, function (err) {
             t.ifError(err);
@@ -178,6 +273,64 @@ test('buckets client validation', testOpts, function (suite) {
                 object_name, {}, function (err) {
 
                 t.ok(err, f('error: %s', err && err.name));
+                t.end();
+            });
+        });
+    });
+
+    VALID_LIST_OBJECTS_QUERY_OPTS.forEach(function (query_opts) {
+        test(f('validating list objects: %j', query_opts), function (t) {
+            var s = client.createListBucketObjectsStream(BUCKET_NAME,
+                {query: query_opts});
+
+            s.on('readable', function onReadable() {
+                while (s.read() !== null) {
+                    // exhaust the stream
+                }
+            });
+
+            s.once('error', function onError(err) {
+                t.ifError(err);
+                t.end();
+            });
+
+            s.once('end', function onEnd() {
+                t.ok('end seen');
+                t.end();
+            });
+        });
+    });
+
+    INVALID_LIST_OBJECTS_QUERY_OPTS.forEach(function (query_opts) {
+        test(f('validating invalid list objects: %j', query_opts),
+            function (t) {
+
+            var s;
+
+            try {
+                s = client.createListBucketObjectsStream(BUCKET_NAME,
+                    {query: query_opts});
+            } catch (e) {
+                t.ok(e, f('error in client validation: %s', e.message));
+                t.end();
+                return;
+            }
+
+            s.on('readable', function onReadable() {
+                while (s.read() !== null) {
+                    // exhaust the stream
+                }
+            });
+
+            s.once('error', function onError(err) {
+                assert.ok(err, 'error seen: ' +
+                    err.messsage);
+                t.end();
+            });
+
+            s.once('end', function onEnd() {
+                // shouldn't be reached
+                t.ok(false, 'end seen');
                 t.end();
             });
         });
