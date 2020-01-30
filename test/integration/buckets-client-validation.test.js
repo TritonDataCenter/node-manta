@@ -202,7 +202,7 @@ test('buckets client validation', testOpts, function (suite) {
             });
 
             s.once('end', function onEnd() {
-                t.ok('end seen');
+                t.ok(true, 'end seen');
                 t.end();
             });
         });
@@ -229,8 +229,7 @@ test('buckets client validation', testOpts, function (suite) {
             });
 
             s.once('error', function onError(err) {
-                assert.ok(err, 'error seen: ' +
-                    err.messsage);
+                t.ok(err, 'error seen: ' + err.message);
                 t.end();
             });
 
@@ -295,7 +294,7 @@ test('buckets client validation', testOpts, function (suite) {
             });
 
             s.once('end', function onEnd() {
-                t.ok('end seen');
+                t.ok(true, 'end seen');
                 t.end();
             });
         });
@@ -323,8 +322,7 @@ test('buckets client validation', testOpts, function (suite) {
             });
 
             s.once('error', function onError(err) {
-                assert.ok(err, 'error seen: ' +
-                    err.messsage);
+                t.ok(err, 'error seen: ' + err.message);
                 t.end();
             });
 
