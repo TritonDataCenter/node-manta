@@ -102,14 +102,15 @@ test('buckets client conditional requests', testOpts, function (suite) {
     });
 
 
-    // XXX This is incomplete. START HERE.
-    test('HeadBucketObject: if-modified-since', function (t) {
+    test('HeadBucketObject: if-modified-since (good)', function (t) {
+        var d = new Date("2000-01-01T10:00:00.000Z").toISOString();
+
         client.headBucketObject(
             BUCKET_NAME,
             OBJECT_NAME,
             {
                 headers: {
-                    'if-modified-since': 'XXX'
+                    'if-modified-since': d
                 }
             },
             function (err, res) {
@@ -118,6 +119,65 @@ test('buckets client conditional requests', testOpts, function (suite) {
                 t.equal(res.headers['content-md5'], SMALL_FILE_CONTENT_MD5);
                 t.equal(res.headers['content-length'],
                     SMALL_FILE_SIZE.toString());
+                t.end();
+            });
+    });
+
+    test('HeadBucketObject: if-modified-since (bad)', function (t) {
+        var d = new Date(mtime.getTime() + 100).toISOString();
+
+        client.headBucketObject(
+            BUCKET_NAME,
+            OBJECT_NAME,
+            {
+                headers: {
+                    'if-modified-since': d
+                }
+            },
+            function (err, res) {
+                t.ifError(err);
+                t.ok(res);
+                t.equal(res.statusCode, 304);
+                t.end();
+            });
+    });
+
+    test('HeadBucketObject: if-unmodified-since (good)', function (t) {
+        var d = new Date(mtime.getTime() + 100).toISOString();
+
+        client.headBucketObject(
+            BUCKET_NAME,
+            OBJECT_NAME,
+            {
+                headers: {
+                    'if-unmodified-since': d
+                }
+            },
+            function (err, res) {
+                t.ifError(err);
+                t.ok(res);
+                t.equal(res.headers['content-md5'], SMALL_FILE_CONTENT_MD5);
+                t.equal(res.headers['content-length'],
+                    SMALL_FILE_SIZE.toString());
+                t.end();
+            });
+    });
+
+    test('HeadBucketObject: if-unmodified-since (bad)', function (t) {
+        var d = new Date("2000-01-01T10:00:00.000Z").toISOString();
+
+        client.headBucketObject(
+            BUCKET_NAME,
+            OBJECT_NAME,
+            {
+                headers: {
+                    'if-unmodified-since': d
+                }
+            },
+            function (err, res) {
+                t.ifError(err);
+                t.ok(res);
+                t.equal(res.statusCode, 412);
                 t.end();
             });
     });
