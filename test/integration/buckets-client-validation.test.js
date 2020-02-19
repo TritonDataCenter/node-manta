@@ -341,6 +341,38 @@ test('buckets client validation', testOpts, function (suite) {
         });
     });
 
+    test('accessing object in removed bucket', function (t) {
+        // this should fail as the containing bucket was removed
+        client.getBucketObject(BUCKET_NAME, 'foo',
+            function (err, stream, res) {
+
+            t.ok(err, f('error in accessing removed bucket: %s', err.message));
+            t.end();
+        });
+    });
+
+    test('listing removed bucket', function (t) {
+        // this should fail as the containing bucket was removed
+        var s = client.createListBucketObjectsStream(BUCKET_NAME, {});
+
+        s.on('readable', function onReadable() {
+            while (s.read() !== null) {
+                // exhaust the stream if received
+            }
+        });
+
+        s.once('error', function onError(err) {
+            t.ok(err, f('error seen listing removed bucket: %s', err.message));
+            t.end();
+        });
+
+        s.once('end', function onEnd() {
+            // shouldn't be reached
+            t.ok(false, 'end seen');
+            t.end();
+        });
+    });
+
     test('teardown', function (t) {
         if (client) {
             client.close();
