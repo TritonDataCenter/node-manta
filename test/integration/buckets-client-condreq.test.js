@@ -47,9 +47,9 @@ var testOpts = {
         'this Manta does not support Buckets'
 };
 
-const TEST_RESOURCE_PREFIX = 'node-manta-test-buckets-client-condreq-' +
-    libuuid.v4().split('-')[0] + '-';
-
+//const TEST_RESOURCE_PREFIX = 'node-manta-test-buckets-client-condreq-' +
+//    libuuid.v4().split('-')[0] + '-';
+const TEST_RESOURCE_PREFIX = 'node-manta-test-buckets-client-condreq-1-';
 
 
 /*
@@ -79,7 +79,13 @@ test('buckets client conditional requests', testOpts, function (suite) {
 
     test('setup: create bucket: ' + BUCKET_NAME, function (t) {
         client.createBucket(BUCKET_NAME, function (err) {
-            t.ifError(err);
+            /*
+             * XXX For now I always want to land on one shard, so keep the same bucket over test iterations.
+             */
+            if (err && !err.message.match('already exists')) {
+                t.ifError(err);
+            }
+
             t.end();
         });
     });
@@ -124,7 +130,7 @@ test('buckets client conditional requests', testOpts, function (suite) {
     });
 
     test('HeadBucketObject: if-modified-since (bad)', function (t) {
-        var d = new Date(mtime.getTime() + 100).toISOString();
+        var d = new Date(mtime.getTime() + 1000).toISOString();
 
         client.headBucketObject(
             BUCKET_NAME,
@@ -143,7 +149,7 @@ test('buckets client conditional requests', testOpts, function (suite) {
     });
 
     test('HeadBucketObject: if-unmodified-since (good)', function (t) {
-        var d = new Date(mtime.getTime() + 100).toISOString();
+        var d = new Date(mtime.getTime() + 1000).toISOString();
 
         client.headBucketObject(
             BUCKET_NAME,
@@ -243,12 +249,14 @@ test('buckets client conditional requests', testOpts, function (suite) {
         });
     });
 
+    /*
     test('teardown: delete bucket', function (t) {
         client.deleteBucket(BUCKET_NAME, function (err) {
             t.ifError(err);
             t.end();
         });
     });
+    */
 
     test('teardown: client', function (t) {
         if (client) {
