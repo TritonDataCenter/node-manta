@@ -66,7 +66,7 @@ test('buckets client conditional requests', testOpts, function (suite) {
         update(SMALL_FILE_CONTENT).digest('base64');
 
     var client;
-    var mtime;
+    var etag, mtime;
 
     test('setup: client', function (t) {
         var clientOpts = {
@@ -101,12 +101,16 @@ test('buckets client conditional requests', testOpts, function (suite) {
         client.createBucketObject(inStream, BUCKET_NAME, OBJECT_NAME, reqOpts,
                                   function (err, res) {
             t.ifError(err);
+            etag = res.headers['etag'];
             mtime = new Date(res.headers['last-modified']);
             t.ok(!isNaN(mtime.getTime()));
             t.end();
         });
     });
 
+    /*
+     * HEAD
+     */
 
     test('HeadBucketObject: if-modified-since (good)', function (t) {
         var d = new Date("2000-01-01T10:00:00.000Z").toISOString();
@@ -125,6 +129,7 @@ test('buckets client conditional requests', testOpts, function (suite) {
                 t.equal(res.headers['content-md5'], SMALL_FILE_CONTENT_MD5);
                 t.equal(res.headers['content-length'],
                     SMALL_FILE_SIZE.toString());
+                t.equal(res.headers['m-foo'], 'bar');
                 t.end();
             });
     });
@@ -181,66 +186,184 @@ test('buckets client conditional requests', testOpts, function (suite) {
                 }
             },
             function (err, res) {
-                t.ifError(err);
+                //t.ok(err);
                 t.ok(res);
                 t.equal(res.statusCode, 412);
                 t.end();
             });
     });
 
-    //  - HeadBucketObject
-    //  - CreateBucketObject
-    //  - GetBucketObject
-    //  - DeleteBucketObject
+    test('HeadBucketObject: if-match (good)', function (t) {
+        client.headBucketObject(
+            BUCKET_NAME,
+            OBJECT_NAME,
+            {
+                headers: {
+                    'if-match': etag
+                }
+            },
+            function (err, res) {
+                t.ifError(err);
+                t.ok(res);
+                t.equal(res.headers['content-md5'], SMALL_FILE_CONTENT_MD5);
+                t.equal(res.headers['content-length'],
+                    SMALL_FILE_SIZE.toString());
+                t.end();
+            });
+    });
 
-    //  - If-Modified-Since
-    //  - If-Unmodified-Since
-    //  - If-Match
-    //  - If-None-Match
+    test('HeadBucketObject: if-match (bad)', function (t) {
+        client.headBucketObject(
+            BUCKET_NAME,
+            OBJECT_NAME,
+            {
+                headers: {
+                    'if-match': libuuid.v4()
+                }
+            },
+            function (err, res) {
+                t.ok(err);
+                t.ok(res);
+                t.equal(res.statusCode, 412);
+                t.end();
+            });
+    });
 
-    //test('headBucketObject', function (t) {
-    //    clientMethodsToTest.delete('headBucketObject');
-    //    client.headBucketObject(BUCKET_NAME, OBJECT_NAME,
-    //                            function (err, res) {
-    //        t.ifError(err);
-    //        t.ok(res);
-    //        t.equal(res.headers['content-md5'], SMALL_FILE_CONTENT_MD5);
-    //        t.equal(res.headers['content-length'],
-    //            SMALL_FILE_SIZE.toString());
-    //        t.equal(res.headers['m-foo'], 'bar');
-    //        t.end();
-    //    });
-    //});
-    //
-    //test('getBucketObject', function (t) {
-    //    clientMethodsToTest.delete('getBucketObject');
-    //    client.getBucketObject(BUCKET_NAME, OBJECT_NAME,
-    //                            function (err, stream, res) {
-    //        t.ifError(err);
-    //
-    //        t.ok(res);
-    //        t.equal(res.headers['content-md5'], SMALL_FILE_CONTENT_MD5);
-    //        t.equal(res.headers['content-length'],
-    //            SMALL_FILE_SIZE.toString());
-    //        t.equal(res.headers['m-foo'], 'bar');
-    //
-    //        t.ok(stream);
-    //        var chunks = [];
-    //        stream.on('data', function (chunk) {
-    //            chunks.push(chunk);
-    //        });
-    //        stream.on('error', function (streamErr) {
-    //            t.ifError(err);
-    //            t.end();
-    //        });
-    //        stream.on('end', function (chunk) {
-    //            var downloaded = Buffer.concat(chunks);
-    //            t.strictDeepEqual(downloaded, SMALL_FILE_CONTENT);
-    //            t.end();
-    //        });
-    //    });
-    //});
+    test('HeadBucketObject: if-none-match (good)', function (t) {
+        client.headBucketObject(
+            BUCKET_NAME,
+            OBJECT_NAME,
+            {
+                headers: {
+                    'if-none-match': libuuid.v4()
+                }
+            },
+            function (err, res) {
+                t.ifError(err);
+                t.ok(res);
+                t.equal(res.headers['content-md5'], SMALL_FILE_CONTENT_MD5);
+                t.equal(res.headers['content-length'],
+                    SMALL_FILE_SIZE.toString());
+                t.end();
+            });
+    });
 
+    test('HeadBucketObject: if-none-match (bad)', function (t) {
+        client.headBucketObject(
+            BUCKET_NAME,
+            OBJECT_NAME,
+            {
+                headers: {
+                    'if-none-match': etag
+                }
+            },
+            function (err, res) {
+                t.ifError(err);
+                t.ok(res);
+                t.equal(res.statusCode, 304);
+                t.end();
+            });
+    });
+
+    /*
+     * GET
+     */
+
+    test('GetBucketObject: if-match (good)', function (t) {
+        client.getBucketObject(BUCKET_NAME, OBJECT_NAME, {
+            headers: {
+                'if-match': etag
+            } }, function (err, stream, res) {
+
+            t.ifError(err);
+
+            t.ok(res);
+            t.equal(res.headers['content-md5'], SMALL_FILE_CONTENT_MD5);
+            t.equal(res.headers['content-length'], SMALL_FILE_SIZE.toString());
+            t.equal(res.headers['m-foo'], 'bar');
+            t.ok(stream);
+            var chunks = [];
+            stream.on('data', function (chunk) {
+                chunks.push(chunk);
+            });
+            stream.on('error', function (streamErr) {
+                t.ifError(err);
+                t.end();
+            });
+            stream.on('end', function (chunk) {
+                var downloaded = Buffer.concat(chunks);
+                t.strictDeepEqual(downloaded, SMALL_FILE_CONTENT);
+                t.end();
+            });
+        });
+    });
+
+    test('GetBucketObject: if-match (bad)', function (t) {
+        client.getBucketObject(BUCKET_NAME, OBJECT_NAME, {
+            headers: {
+                'if-match': libuuid.v4()
+            } }, function (err, stream, res) {
+
+            t.ok(err);
+            t.ok(res);
+            t.equal(res.statusCode, 412);
+            t.end();
+        });
+    });
+
+    test('GetBucketObject: if-none-match (good)', function (t) {
+        client.getBucketObject(BUCKET_NAME, OBJECT_NAME, {
+            headers: {
+                'if-match': etag
+            } }, function (err, stream, res) {
+
+            t.ifError(err);
+
+            t.ok(res);
+            t.equal(res.headers['content-md5'], SMALL_FILE_CONTENT_MD5);
+            t.equal(res.headers['content-length'], SMALL_FILE_SIZE.toString());
+            t.equal(res.headers['m-foo'], 'bar');
+            t.ok(stream);
+            var chunks = [];
+            stream.on('data', function (chunk) {
+                chunks.push(chunk);
+            });
+            stream.on('error', function (streamErr) {
+                t.ifError(err);
+                t.end();
+            });
+            stream.on('end', function (chunk) {
+                var downloaded = Buffer.concat(chunks);
+                t.strictDeepEqual(downloaded, SMALL_FILE_CONTENT);
+                t.end();
+            });
+        });
+    });
+
+    test('GetBucketObject: if-none-match (bad)', function (t) {
+        client.getBucketObject(BUCKET_NAME, OBJECT_NAME, {
+            headers: {
+                'if-none-match': etag
+            } }, function (err, stream, res) {
+
+            t.ifError(err);
+            t.ok(res);
+            t.equal(res.statusCode, 304);
+            t.end();
+        });
+    });
+
+    /*
+     * CREATE
+     */
+
+    /*
+     * UPDATE
+     */
+
+    /*
+     * DELETE
+     */
 
     test('teardown: delete object', function (t) {
         client.deleteBucketObject(BUCKET_NAME, OBJECT_NAME, function (err) {
