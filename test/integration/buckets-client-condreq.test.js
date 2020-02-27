@@ -355,18 +355,135 @@ test('buckets client conditional requests', testOpts, function (suite) {
 
     /*
      * CREATE
-     */
+     *
+     * XXX This isn't going to work yet as buckets-api only passes a subset
+     * of headers down to buckets-mdapi.
+    test('CreateBucketObject: if-match (bad)', function (t) {
+        var inStream = fs.createReadStream(SMALL_FILE_PATH);
+        var reqOpts = {
+            headers: {
+                'm-bar': 'wut',
+                'if-match': etag
+            }
+        };
+        client.createBucketObject(inStream, BUCKET_NAME, OBJECT_NAME, reqOpts,
+                                  function (err, res) {
+
+            t.ok(err);
+            t.ok(res);
+
+            t.equal(err.code, 'PreconditionFailed');
+
+            client.headBucketObject(
+                BUCKET_NAME,
+                OBJECT_NAME,
+                function (err, res) {
+                    t.ifError(err);
+                    t.ok(res);
+                    t.equal(res.headers['content-md5'], SMALL_FILE_CONTENT_MD5);
+                    t.equal(res.headers['content-length'],
+                        SMALL_FILE_SIZE.toString());
+                    t.equal(res.headers['m-foo'], 'wut');
+                    t.end();
+                });
+        });
+    });
+
+    test('CreateBucketObject: if-match (good)', function (t) {
+        var inStream = fs.createReadStream(SMALL_FILE_PATH);
+        var reqOpts = {
+            headers: {
+                'if-match': libuuid.v4(),
+                'm-bar': 'wut'
+            }
+        };
+        client.createBucketObject(inStream, BUCKET_NAME, OBJECT_NAME, reqOpts,
+                                  function (err, res) {
+            t.ifError(err);
+            etag = res.headers['etag'];
+            mtime = new Date(res.headers['last-modified']);
+            t.ok(!isNaN(mtime.getTime()));
+            t.end();
+        });
+    });
+    */
 
     /*
      * UPDATE
      */
 
+    test('UpdateBucketObject: if-match (good)', function (t) {
+        client.putBucketObjectMetadata(BUCKET_NAME, OBJECT_NAME, {
+            headers: {
+                'm-foo': 'wut',
+                'if-match': etag
+            } }, function (err, res) {
+
+            t.ifError(err);
+            t.ok(res);
+            t.equal(res.headers['m-foo'], 'wut');
+
+            mtime = new Date(res.headers['last-modified']);
+
+            t.end();
+        });
+    });
+
+    test('UpdateBucketObject: if-match (bad)', function (t) {
+        client.putBucketObjectMetadata(BUCKET_NAME, OBJECT_NAME, {
+            headers: {
+                'm-foo': 'test',
+                'if-match': libuuid.v4()
+            } }, function (err, res) {
+
+            t.ok(err);
+            t.ok(res);
+            /*
+             * XXX Why no `res.statusCode` from client, like `get` does.
+             */
+            t.equal(err.code, 'PreconditionFailed');
+
+            /*
+             * And because we're paranoid let's just quickly get it again...
+             */
+            client.headBucketObject(
+                BUCKET_NAME,
+                OBJECT_NAME,
+                function (err, res) {
+                    t.ifError(err);
+                    t.ok(res);
+                    t.equal(res.headers['content-md5'], SMALL_FILE_CONTENT_MD5);
+                    t.equal(res.headers['content-length'],
+                        SMALL_FILE_SIZE.toString());
+                    t.equal(res.headers['m-foo'], 'wut');
+                    t.end();
+                });
+        });
+    });
+
     /*
      * DELETE
      */
 
-    test('teardown: delete object', function (t) {
-        client.deleteBucketObject(BUCKET_NAME, OBJECT_NAME, function (err) {
+    test('DeleteBucketObject: if-match (bad)', function (t) {
+        client.deleteBucketObject(BUCKET_NAME, OBJECT_NAME, {
+            headers: {
+                'if-match': libuuid.v4()
+            }
+        }, function (err, res) {
+            t.ok(err);
+            t.ok(res);
+            t.equal(err.code, 'PreconditionFailed');
+            t.end();
+        });
+    });
+
+    test('DeleteBucketObject: if-match (good)', function (t) {
+        client.deleteBucketObject(BUCKET_NAME, OBJECT_NAME, {
+            headers: {
+                'if-match': etag
+            }
+        }, function (err, res) {
             t.ifError(err);
             t.end();
         });
