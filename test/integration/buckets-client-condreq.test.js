@@ -355,15 +355,14 @@ test('buckets client conditional requests', testOpts, function (suite) {
 
     /*
      * CREATE
-     *
-     * XXX This isn't going to work yet as buckets-api only passes a subset
-     * of headers down to buckets-mdapi.
+     */
+
     test('CreateBucketObject: if-match (bad)', function (t) {
         var inStream = fs.createReadStream(SMALL_FILE_PATH);
         var reqOpts = {
             headers: {
                 'm-bar': 'wut',
-                'if-match': etag
+                'if-match': libuuid.v4()
             }
         };
         client.createBucketObject(inStream, BUCKET_NAME, OBJECT_NAME, reqOpts,
@@ -383,7 +382,7 @@ test('buckets client conditional requests', testOpts, function (suite) {
                     t.equal(res.headers['content-md5'], SMALL_FILE_CONTENT_MD5);
                     t.equal(res.headers['content-length'],
                         SMALL_FILE_SIZE.toString());
-                    t.equal(res.headers['m-foo'], 'wut');
+                    t.equal(res.headers['m-foo'], 'bar');
                     t.end();
                 });
         });
@@ -393,20 +392,35 @@ test('buckets client conditional requests', testOpts, function (suite) {
         var inStream = fs.createReadStream(SMALL_FILE_PATH);
         var reqOpts = {
             headers: {
-                'if-match': libuuid.v4(),
-                'm-bar': 'wut'
+                'if-match': etag,
+                'm-bar': 'wut',
+                'm-foo': 'bar'
             }
         };
         client.createBucketObject(inStream, BUCKET_NAME, OBJECT_NAME, reqOpts,
                                   function (err, res) {
             t.ifError(err);
-            etag = res.headers['etag'];
-            mtime = new Date(res.headers['last-modified']);
-            t.ok(!isNaN(mtime.getTime()));
-            t.end();
+            t.ok(res);
+            client.headBucketObject(
+                BUCKET_NAME,
+                OBJECT_NAME,
+                function (err, res) {
+                    t.ifError(err);
+                    t.ok(res);
+                    t.equal(res.headers['content-md5'], SMALL_FILE_CONTENT_MD5);
+                    t.equal(res.headers['content-length'],
+                        SMALL_FILE_SIZE.toString());
+
+                    t.equal(res.headers['m-foo'], 'bar');
+                    t.equal(res.headers['m-bar'], 'wut');
+                    t.ok(etag !== res.headers['etag']);
+                    etag = res.headers['etag'];
+                    mtime = new Date(res.headers['last-modified']);
+                    t.ok(!isNaN(mtime.getTime()));
+                    t.end();
+                });
         });
     });
-    */
 
     /*
      * UPDATE
@@ -421,11 +435,22 @@ test('buckets client conditional requests', testOpts, function (suite) {
 
             t.ifError(err);
             t.ok(res);
-            t.equal(res.headers['m-foo'], 'wut');
+            client.headBucketObject(
+                BUCKET_NAME,
+                OBJECT_NAME,
+                function (err, res) {
+                    t.ifError(err);
+                    t.ok(res);
+                    t.equal(res.headers['content-md5'], SMALL_FILE_CONTENT_MD5);
+                    t.equal(res.headers['content-length'],
+                        SMALL_FILE_SIZE.toString());
 
-            mtime = new Date(res.headers['last-modified']);
-
-            t.end();
+                    t.equal(res.headers['m-foo'], 'wut');
+                    t.ok(!res.headers['m-bar']);
+                    mtime = new Date(res.headers['last-modified']);
+                    t.ok(!isNaN(mtime.getTime()));
+                    t.end();
+                });
         });
     });
 
