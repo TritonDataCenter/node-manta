@@ -112,6 +112,23 @@ test('buckets client conditional requests', testOpts, function (suite) {
      * HEAD
      */
 
+    test('HeadBucketObject: if-unmodified-since (bad date)', function (t) {
+        client.headBucketObject(
+            BUCKET_NAME,
+            OBJECT_NAME,
+            {
+                headers: {
+                    'if-unmodified-since': 'x'
+                }
+            },
+            function (err, res) {
+                t.ok(err);
+                t.ok(res);
+                t.equal(res.statusCode, 400);
+                t.end();
+            });
+    });
+
     test('HeadBucketObject: if-modified-since (good)', function (t) {
         var d = new Date("2000-01-01T10:00:00.000Z").toISOString();
 
