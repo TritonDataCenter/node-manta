@@ -47,9 +47,8 @@ var testOpts = {
         'this Manta does not support Buckets'
 };
 
-//const TEST_RESOURCE_PREFIX = 'node-manta-test-buckets-client-condreq-' +
-//    libuuid.v4().split('-')[0] + '-';
-const TEST_RESOURCE_PREFIX = 'node-manta-test-buckets-client-condreq-1-';
+const TEST_RESOURCE_PREFIX = 'node-manta-test-buckets-client-condreq-' +
+    libuuid.v4().split('-')[0] + '-';
 
 
 /*
@@ -79,13 +78,7 @@ test('buckets client conditional requests', testOpts, function (suite) {
 
     test('setup: create bucket: ' + BUCKET_NAME, function (t) {
         client.createBucket(BUCKET_NAME, function (err) {
-            /*
-             * XXX For now I always want to land on one shard, so keep the same bucket over test iterations.
-             */
-            if (err && !err.message.match('already exists')) {
-                t.ifError(err);
-            }
-
+            t.ifError(err);
             t.end();
         });
     });
@@ -130,7 +123,7 @@ test('buckets client conditional requests', testOpts, function (suite) {
     });
 
     test('HeadBucketObject: if-modified-since (good)', function (t) {
-        var d = new Date("2000-01-01T10:00:00.000Z").toISOString();
+        var d = new Date('2000-01-01T10:00:00.000Z').toISOString();
 
         client.headBucketObject(
             BUCKET_NAME,
@@ -192,7 +185,7 @@ test('buckets client conditional requests', testOpts, function (suite) {
     });
 
     test('HeadBucketObject: if-unmodified-since (bad)', function (t) {
-        var d = new Date("2000-01-01T10:00:00.000Z").toISOString();
+        var d = new Date('2000-01-01T10:00:00.000Z').toISOString();
 
         client.headBucketObject(
             BUCKET_NAME,
@@ -393,13 +386,14 @@ test('buckets client conditional requests', testOpts, function (suite) {
             client.headBucketObject(
                 BUCKET_NAME,
                 OBJECT_NAME,
-                function (err, res) {
-                    t.ifError(err);
-                    t.ok(res);
-                    t.equal(res.headers['content-md5'], SMALL_FILE_CONTENT_MD5);
-                    t.equal(res.headers['content-length'],
+                function (headErr, headRes) {
+                    t.ifError(headErr);
+                    t.ok(headRes);
+                    t.equal(headRes.headers['content-md5'],
+                        SMALL_FILE_CONTENT_MD5);
+                    t.equal(headRes.headers['content-length'],
                         SMALL_FILE_SIZE.toString());
-                    t.equal(res.headers['m-foo'], 'bar');
+                    t.equal(headRes.headers['m-foo'], 'bar');
                     t.end();
                 });
         });
@@ -421,18 +415,19 @@ test('buckets client conditional requests', testOpts, function (suite) {
             client.headBucketObject(
                 BUCKET_NAME,
                 OBJECT_NAME,
-                function (err, res) {
-                    t.ifError(err);
-                    t.ok(res);
-                    t.equal(res.headers['content-md5'], SMALL_FILE_CONTENT_MD5);
-                    t.equal(res.headers['content-length'],
+                function (headErr, headRes) {
+                    t.ifError(headErr);
+                    t.ok(headRes);
+                    t.equal(headRes.headers['content-md5'],
+                        SMALL_FILE_CONTENT_MD5);
+                    t.equal(headRes.headers['content-length'],
                         SMALL_FILE_SIZE.toString());
 
-                    t.equal(res.headers['m-foo'], 'bar');
-                    t.equal(res.headers['m-bar'], 'wut');
-                    t.ok(etag !== res.headers['etag']);
-                    etag = res.headers['etag'];
-                    mtime = new Date(res.headers['last-modified']);
+                    t.equal(headRes.headers['m-foo'], 'bar');
+                    t.equal(headRes.headers['m-bar'], 'wut');
+                    t.ok(etag !== headRes.headers['etag']);
+                    etag = headRes.headers['etag'];
+                    mtime = new Date(headRes.headers['last-modified']);
                     t.ok(!isNaN(mtime.getTime()));
                     t.end();
                 });
@@ -455,16 +450,17 @@ test('buckets client conditional requests', testOpts, function (suite) {
             client.headBucketObject(
                 BUCKET_NAME,
                 OBJECT_NAME,
-                function (err, res) {
-                    t.ifError(err);
-                    t.ok(res);
-                    t.equal(res.headers['content-md5'], SMALL_FILE_CONTENT_MD5);
-                    t.equal(res.headers['content-length'],
+                function (headErr, headRes) {
+                    t.ifError(headErr);
+                    t.ok(headRes);
+                    t.equal(headRes.headers['content-md5'],
+                        SMALL_FILE_CONTENT_MD5);
+                    t.equal(headRes.headers['content-length'],
                         SMALL_FILE_SIZE.toString());
 
-                    t.equal(res.headers['m-foo'], 'wut');
-                    t.ok(!res.headers['m-bar']);
-                    mtime = new Date(res.headers['last-modified']);
+                    t.equal(headRes.headers['m-foo'], 'wut');
+                    t.ok(!headRes.headers['m-bar']);
+                    mtime = new Date(headRes.headers['last-modified']);
                     t.ok(!isNaN(mtime.getTime()));
                     t.end();
                 });
@@ -491,13 +487,14 @@ test('buckets client conditional requests', testOpts, function (suite) {
             client.headBucketObject(
                 BUCKET_NAME,
                 OBJECT_NAME,
-                function (err, res) {
-                    t.ifError(err);
-                    t.ok(res);
-                    t.equal(res.headers['content-md5'], SMALL_FILE_CONTENT_MD5);
-                    t.equal(res.headers['content-length'],
+                function (headErr, headRes) {
+                    t.ifError(headErr);
+                    t.ok(headRes);
+                    t.equal(headRes.headers['content-md5'],
+                        SMALL_FILE_CONTENT_MD5);
+                    t.equal(headRes.headers['content-length'],
                         SMALL_FILE_SIZE.toString());
-                    t.equal(res.headers['m-foo'], 'wut');
+                    t.equal(headRes.headers['m-foo'], 'wut');
                     t.end();
                 });
         });
@@ -531,14 +528,12 @@ test('buckets client conditional requests', testOpts, function (suite) {
         });
     });
 
-    /*
     test('teardown: delete bucket', function (t) {
         client.deleteBucket(BUCKET_NAME, function (err) {
             t.ifError(err);
             t.end();
         });
     });
-    */
 
     test('teardown: client', function (t) {
         if (client) {
