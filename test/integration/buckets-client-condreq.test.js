@@ -47,9 +47,7 @@ var testOpts = {
         'this Manta does not support Buckets'
 };
 
-const TEST_RESOURCE_PREFIX = 'node-manta-test-buckets-client-condreq-' +
-    libuuid.v4().split('-')[0] + '-';
-
+const TEST_RESOURCE_PREFIX = 'node-manta-test-buckets-client-condreq-1-';
 
 /*
  * Tests
@@ -67,6 +65,21 @@ test('buckets client conditional requests', testOpts, function (suite) {
     var client;
     var etag, mtime;
 
+
+    /*
+     * Convenience function for asserting a common response from a HEAD request.
+     */
+    function headAndAssert(t, cb) {
+        client.headBucketObject(BUCKET_NAME, OBJECT_NAME, function (err, res) {
+            t.ifError(err);
+            t.ok(res);
+            t.equal(res.headers['content-md5'], SMALL_FILE_CONTENT_MD5);
+            t.equal(res.headers['content-length'], SMALL_FILE_SIZE.toString());
+
+            cb(res);
+        });
+    }
+
     test('setup: client', function (t) {
         var clientOpts = {
             log: log,
@@ -78,7 +91,10 @@ test('buckets client conditional requests', testOpts, function (suite) {
 
     test('setup: create bucket: ' + BUCKET_NAME, function (t) {
         client.createBucket(BUCKET_NAME, function (err) {
-            t.ifError(err);
+            if (err && !err.message.match('already exists')) {
+                t.ifError(err);
+            }
+
             t.end();
         });
     });
@@ -118,6 +134,7 @@ test('buckets client conditional requests', testOpts, function (suite) {
                 t.ok(err);
                 t.ok(res);
                 t.equal(res.statusCode, 400);
+                //console.log(err);
                 t.end();
             });
     });
@@ -381,21 +398,43 @@ test('buckets client conditional requests', testOpts, function (suite) {
             t.ok(err);
             t.ok(res);
 
+            /*
+             * Attempt to verify that we're only streaming data once the
+             * preconditions have been satisfied.
+             */
+            t.equal(inStream.readableEnded, false);
+
             t.equal(err.code, 'PreconditionFailed');
 
-            client.headBucketObject(
-                BUCKET_NAME,
-                OBJECT_NAME,
-                function (headErr, headRes) {
-                    t.ifError(headErr);
-                    t.ok(headRes);
-                    t.equal(headRes.headers['content-md5'],
-                        SMALL_FILE_CONTENT_MD5);
-                    t.equal(headRes.headers['content-length'],
-                        SMALL_FILE_SIZE.toString());
-                    t.equal(headRes.headers['m-foo'], 'bar');
-                    t.end();
-                });
+            headAndAssert(t, function (res) {
+                t.equal(res.headers['m-foo'], 'bar');
+                t.end();
+            });
+        });
+    });
+
+    test('CreateBucketObject: if-none-match (bad)', function (t) {
+        var inStream = fs.createReadStream(SMALL_FILE_PATH);
+        var reqOpts = {
+            headers: {
+                'm-bar': 'wut',
+                'if-none-match': etag
+            }
+        };
+        client.createBucketObject(inStream, BUCKET_NAME, OBJECT_NAME, reqOpts,
+                                  function (err, res) {
+
+            t.ok(err);
+            t.ok(res);
+
+            t.equal(inStream.readableEnded, false);
+
+            t.equal(err.code, 'PreconditionFailed');
+
+            headAndAssert(t, function (res) {
+                t.equal(res.headers['m-foo'], 'bar');
+                t.end();
+            });
         });
     });
 
@@ -412,25 +451,17 @@ test('buckets client conditional requests', testOpts, function (suite) {
                                   function (err, res) {
             t.ifError(err);
             t.ok(res);
-            client.headBucketObject(
-                BUCKET_NAME,
-                OBJECT_NAME,
-                function (headErr, headRes) {
-                    t.ifError(headErr);
-                    t.ok(headRes);
-                    t.equal(headRes.headers['content-md5'],
-                        SMALL_FILE_CONTENT_MD5);
-                    t.equal(headRes.headers['content-length'],
-                        SMALL_FILE_SIZE.toString());
+            t.equal(inStream.readableEnded, true);
 
-                    t.equal(headRes.headers['m-foo'], 'bar');
-                    t.equal(headRes.headers['m-bar'], 'wut');
-                    t.ok(etag !== headRes.headers['etag']);
-                    etag = headRes.headers['etag'];
-                    mtime = new Date(headRes.headers['last-modified']);
-                    t.ok(!isNaN(mtime.getTime()));
-                    t.end();
-                });
+            headAndAssert(t, function (res) {
+                t.equal(res.headers['m-foo'], 'bar');
+                t.equal(res.headers['m-bar'], 'wut');
+                t.ok(etag !== res.headers['etag']);
+                etag = res.headers['etag'];
+                mtime = new Date(res.headers['last-modified']);
+                t.ok(!isNaN(mtime.getTime()));
+                t.end();
+            });
         });
     });
 
@@ -447,23 +478,14 @@ test('buckets client conditional requests', testOpts, function (suite) {
 
             t.ifError(err);
             t.ok(res);
-            client.headBucketObject(
-                BUCKET_NAME,
-                OBJECT_NAME,
-                function (headErr, headRes) {
-                    t.ifError(headErr);
-                    t.ok(headRes);
-                    t.equal(headRes.headers['content-md5'],
-                        SMALL_FILE_CONTENT_MD5);
-                    t.equal(headRes.headers['content-length'],
-                        SMALL_FILE_SIZE.toString());
 
-                    t.equal(headRes.headers['m-foo'], 'wut');
-                    t.ok(!headRes.headers['m-bar']);
-                    mtime = new Date(headRes.headers['last-modified']);
-                    t.ok(!isNaN(mtime.getTime()));
-                    t.end();
-                });
+            headAndAssert(t, function (res) {
+                t.equal(res.headers['m-foo'], 'wut');
+                t.ok(!res.headers['m-bar']);
+                mtime = new Date(res.headers['last-modified']);
+                t.ok(!isNaN(mtime.getTime()));
+                t.end();
+            });
         });
     });
 
@@ -481,22 +503,11 @@ test('buckets client conditional requests', testOpts, function (suite) {
              */
             t.equal(err.code, 'PreconditionFailed');
 
-            /*
-             * And because we're paranoid let's just quickly get it again...
-             */
-            client.headBucketObject(
-                BUCKET_NAME,
-                OBJECT_NAME,
-                function (headErr, headRes) {
-                    t.ifError(headErr);
-                    t.ok(headRes);
-                    t.equal(headRes.headers['content-md5'],
-                        SMALL_FILE_CONTENT_MD5);
-                    t.equal(headRes.headers['content-length'],
-                        SMALL_FILE_SIZE.toString());
-                    t.equal(headRes.headers['m-foo'], 'wut');
-                    t.end();
-                });
+            headAndAssert(t, function (res) {
+                t.equal(res.headers['m-foo'], 'wut');
+                t.ok(!res.headers['m-bar']);
+                t.end();
+            });
         });
     });
 
@@ -528,12 +539,14 @@ test('buckets client conditional requests', testOpts, function (suite) {
         });
     });
 
+    /*
     test('teardown: delete bucket', function (t) {
         client.deleteBucket(BUCKET_NAME, function (err) {
             t.ifError(err);
             t.end();
         });
     });
+     */
 
     test('teardown: client', function (t) {
         if (client) {
