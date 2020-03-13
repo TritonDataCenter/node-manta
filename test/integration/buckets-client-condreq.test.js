@@ -47,7 +47,8 @@ var testOpts = {
         'this Manta does not support Buckets'
 };
 
-const TEST_RESOURCE_PREFIX = 'node-manta-test-buckets-client-condreq-1-';
+const TEST_RESOURCE_PREFIX = 'node-manta-test-buckets-client-condreq-' +
+    libuuid.v4().split('-')[0] + '-';
 
 /*
  * Tests
@@ -91,10 +92,7 @@ test('buckets client conditional requests', testOpts, function (suite) {
 
     test('setup: create bucket: ' + BUCKET_NAME, function (t) {
         client.createBucket(BUCKET_NAME, function (err) {
-            if (err && !err.message.match('already exists')) {
-                t.ifError(err);
-            }
-
+            t.ifError(err);
             t.end();
         });
     });
@@ -539,14 +537,12 @@ test('buckets client conditional requests', testOpts, function (suite) {
         });
     });
 
-    /*
     test('teardown: delete bucket', function (t) {
         client.deleteBucket(BUCKET_NAME, function (err) {
             t.ifError(err);
             t.end();
         });
     });
-     */
 
     test('teardown: client', function (t) {
         if (client) {
