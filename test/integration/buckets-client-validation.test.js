@@ -9,6 +9,7 @@
 var assert = require('assert-plus');
 var fs = require('fs');
 var libuuid = require('uuid');
+var path = require('path');
 var test = require('tap').test;
 var util = require('util');
 var f = util.format;
@@ -35,6 +36,10 @@ var BUCKET_NAME = 'node-manta-test-buckets-client-validation-' +
 function emptyStream() {
     return fs.createReadStream('/dev/null');
 }
+
+var SMALL_FILE_PATH = path.resolve(__dirname, 'corpus/small.file');
+var SMALL_FILE_SIZE = fs.statSync(SMALL_FILE_PATH).size;
+
 
 /*
  * Valid and invalid bucket names. See restrictions here:
@@ -145,6 +150,33 @@ var INVALID_LIST_BUCKETS_QUERY_OPTS = [
 // such, all tests are merely copied.
 var VALID_LIST_OBJECTS_QUERY_OPTS = VALID_LIST_BUCKETS_QUERY_OPTS;
 var INVALID_LIST_OBJECTS_QUERY_OPTS = INVALID_LIST_BUCKETS_QUERY_OPTS;
+
+/*
+ * Valid and invalid headers for a createBucketObject call.  Note that the
+ * tests will attempt to upload the SMALL_FILE_PATH defined above.  If
+ * "content-length" is unspecified in the headers below, it will be set by the
+ * tests below to SMALL_FILE_SIZE.
+ */
+var VALID_CREATE_OBJECT_HEADERS = [
+    {'durability-level': 1},
+    {'durability-level': 2},
+    /*
+     * Durability levels up to 6 are technically all valid - we just can't
+     * guarantee a lab or coal setup will have the adequate storage to allow
+     * them to be created.
+     */
+];
+
+var INVALID_CREATE_OBJECT_HEADERS = [
+    {'durability-level': 0},
+    {'durability-level': 7},
+    {'durability-level': -1},
+    {'durability-level': NaN},
+    {'durability-level': 'foo'},
+    {'durability-level': null},
+    {'content-length': 'foo'},
+    {'content-length': -1}
+];
 
 /*
  * Tests
@@ -334,9 +366,94 @@ test('buckets client validation', testOpts, function (suite) {
         });
     });
 
+    VALID_CREATE_OBJECT_HEADERS.forEach(function (headers) {
+        var objectName = 'valid-headers';
+
+        test(f('validating create object headers: %j', headers), function (t) {
+            if (!headers.hasOwnProperty('content-length')) {
+                headers['content-length'] = SMALL_FILE_SIZE.toString();
+            }
+
+            var inStream = fs.createReadStream(SMALL_FILE_PATH);
+            var reqOpts = {
+                headers: headers
+            };
+
+            client.createBucketObject(inStream, BUCKET_NAME, objectName,
+                reqOpts, function (err) {
+
+                t.ifError(err, 'create object');
+
+                // delete the object immediately
+                client.deleteBucketObject(BUCKET_NAME, objectName,
+                    function (err2) {
+
+                    t.ifError(err2, 'delete object');
+                    t.end();
+                });
+            });
+        });
+    });
+
+    INVALID_CREATE_OBJECT_HEADERS.forEach(function (headers) {
+        var objectName = 'invalid-headers';
+
+        test(f('invalidating create object headers: %j', headers),
+            function (t) {
+
+            if (!headers.hasOwnProperty('content-length')) {
+                headers['content-length'] = SMALL_FILE_SIZE.toString();
+            }
+
+            var inStream = fs.createReadStream(SMALL_FILE_PATH);
+            var reqOpts = {
+                headers: headers
+            };
+
+            client.createBucketObject(inStream, BUCKET_NAME, objectName,
+                reqOpts, function (err) {
+
+                t.ok(err, f('error creating object: %s', err.message));
+                t.end();
+            });
+        });
+    });
+
     test('removing bucket for object testing', function (t) {
         client.deleteBucket(BUCKET_NAME, function (err) {
             t.ifError(err);
+            t.end();
+        });
+    });
+
+    test('accessing object in removed bucket', function (t) {
+        // this should fail as the containing bucket was removed
+        client.getBucketObject(BUCKET_NAME, 'foo',
+            function (err, stream, res) {
+
+            t.ok(err, f('error in accessing removed bucket: %s', err.message));
+            t.end();
+        });
+    });
+
+    test('listing removed bucket', function (t) {
+        // this should fail as the containing bucket was removed
+        var s = client.createListBucketObjectsStream(BUCKET_NAME, {});
+
+        s.on('readable', function onReadable() {
+            while (s.read() !== null) {
+                // exhaust the stream if received
+            }
+        });
+
+        s.once('error', function onError(err) {
+            t.ok(err, f('error seen listing removed bucket: %s', err.message));
+            t.end();
+        });
+
+        s.once('end', function onEnd() {
+            // shouldn't be reached
+            t.ok(false, 'end seen');
             t.end();
         });
     });
