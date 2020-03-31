@@ -396,12 +396,6 @@ test('buckets client conditional requests', testOpts, function (suite) {
             t.ok(err);
             t.ok(res);
 
-            /*
-             * Attempt to verify that we're only streaming data once the
-             * preconditions have been satisfied.
-             */
-            t.equal(inStream.readableEnded, false);
-
             t.equal(err.code, 'PreconditionFailed');
 
             headAndAssert(t, function (res) {
@@ -425,8 +419,6 @@ test('buckets client conditional requests', testOpts, function (suite) {
             t.ok(err);
             t.ok(res);
 
-            t.equal(inStream.readableEnded, false);
-
             t.equal(err.code, 'PreconditionFailed');
 
             headAndAssert(t, function (res) {
@@ -449,7 +441,6 @@ test('buckets client conditional requests', testOpts, function (suite) {
                                   function (err, res) {
             t.ifError(err);
             t.ok(res);
-            t.equal(inStream.readableEnded, true);
 
             headAndAssert(t, function (res) {
                 t.equal(res.headers['m-foo'], 'bar');
