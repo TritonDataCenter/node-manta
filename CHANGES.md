@@ -4,6 +4,8 @@ See `CONTRIBUTING.md` for details on how to update this file
 
 ## not yet released
 
+## 5.2.2
+
 - [#313](https://github.com/joyent/node-manta/issues/313) mget -H option documented incorrectly
 - [#358](https://github.com/joyent/node-manta/issues/358) mchmod command stopped working after v5.1.1
 - [#361](https://github.com/joyent/node-manta/issues/361) expires-relative short option has wrong case in man page
