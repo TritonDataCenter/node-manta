@@ -103,24 +103,25 @@ test('buckets client conditional requests', testOpts, function (suite) {
 
 
     // XXX This is incomplete. START HERE.
-    test('HeadBucketObject: if-modified-since', function (t) {
-        client.headBucketObject(
-            BUCKET_NAME,
-            OBJECT_NAME,
-            {
-                headers: {
-                    'if-modified-since': 'XXX'
-                }
-            },
-            function (err, res) {
-                t.ifError(err);
-                t.ok(res);
-                t.equal(res.headers['content-md5'], SMALL_FILE_CONTENT_MD5);
-                t.equal(res.headers['content-length'],
-                    SMALL_FILE_SIZE.toString());
-                t.end();
-            });
-    });
+    //test('HeadBucketObject: if-modified-since', function (t) {
+    //    client.headBucketObject(
+    //        BUCKET_NAME,
+    //        OBJECT_NAME,
+    //        {
+    //            headers: {
+    //                'if-modified-since': 'XXX'
+    //            }
+    //        },
+    //        function (err, res) {
+    //            t.ifError(err);
+    //            t.ok(res);
+    //            t.equal(res.headers['content-md5'], SMALL_FILE_CONTENT_MD5,
+    //                'got expected Content-MD5: res.headers=' + JSON.stringify(res.headers));
+    //            t.equal(res.headers['content-length'],
+    //                SMALL_FILE_SIZE.toString());
+    //            t.end();
+    //        });
+    //});
 
     //  - HeadBucketObject
     //  - CreateBucketObject
