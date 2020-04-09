@@ -70,7 +70,7 @@ function getMantaVSync(log) {
             encoding: 'utf8'
         });
     } catch (err) {
-        throw new VError(error,
+        throw new VError(err,
             'error determining if mantav of this Manta (%s)',
             process.env.MANTA_URL);
     }
