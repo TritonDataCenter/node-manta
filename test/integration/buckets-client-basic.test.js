@@ -149,6 +149,16 @@ test('buckets client basic', testOpts, function (suite) {
         });
     });
 
+    test('headBucketObject (not found)', function (t) {
+        clientMethodsToTest.delete('headBucketObject');
+        client.headBucketObject(BUCKET_NAME, OBJECT_NAME + '-not-found',
+                                function (err) {
+            t.ok(err);
+            t.ok(err.statusCode, 404);
+            t.end();
+        });
+    });
+
     test('getBucketObject', function (t) {
         clientMethodsToTest.delete('getBucketObject');
         client.getBucketObject(BUCKET_NAME, OBJECT_NAME,
