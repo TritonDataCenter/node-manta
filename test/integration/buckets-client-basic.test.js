@@ -152,10 +152,9 @@ test('buckets client basic', testOpts, function (suite) {
     test('headBucketObject (not found)', function (t) {
         clientMethodsToTest.delete('headBucketObject');
         client.headBucketObject(BUCKET_NAME, OBJECT_NAME + '-not-found',
-                                function (err, res) {
+                                function (err) {
             t.ok(err);
-            t.ok(res);
-            t.ok(res.statusCode, 404);
+            t.ok(err.statusCode, 404);
             t.end();
         });
     });

@@ -128,11 +128,9 @@ test('buckets client conditional requests', testOpts, function (suite) {
                     'if-unmodified-since': 'x'
                 }
             },
-            function (err, res) {
+            function (err) {
                 t.ok(err);
-                t.ok(res);
-                t.equal(res.statusCode, 400);
-                //console.log(err);
+                t.equal(err.statusCode, 400);
                 t.end();
             });
     });
@@ -210,10 +208,9 @@ test('buckets client conditional requests', testOpts, function (suite) {
                     'if-unmodified-since': d
                 }
             },
-            function (err, res) {
-                //t.ok(err);
-                t.ok(res);
-                t.equal(res.statusCode, 412);
+            function (err) {
+                t.ok(err);
+                t.equal(err.statusCode, 412);
                 t.end();
             });
     });
@@ -246,10 +243,9 @@ test('buckets client conditional requests', testOpts, function (suite) {
                     'if-match': libuuid.v4()
                 }
             },
-            function (err, res) {
+            function (err) {
                 t.ok(err);
-                t.ok(res);
-                t.equal(res.statusCode, 412);
+                t.equal(err.statusCode, 412);
                 t.end();
             });
     });
@@ -330,8 +326,7 @@ test('buckets client conditional requests', testOpts, function (suite) {
             } }, function (err, stream, res) {
 
             t.ok(err);
-            t.ok(res);
-            t.equal(res.statusCode, 412);
+            t.equal(err.statusCode, 412);
             t.end();
         });
     });
