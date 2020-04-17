@@ -142,6 +142,7 @@ test('buckets client basic', testOpts, function (suite) {
                                 function (err, res) {
             t.ifError(err);
             t.ok(res);
+            t.equal(res.headers['durability-level'], '2');
             t.equal(res.headers['content-md5'], SMALL_FILE_CONTENT_MD5);
             t.equal(res.headers['content-length'], SMALL_FILE_SIZE.toString());
             t.equal(res.headers['m-foo'], 'bar');
@@ -166,6 +167,7 @@ test('buckets client basic', testOpts, function (suite) {
             t.ifError(err);
 
             t.ok(res);
+            t.equal(res.headers['durability-level'], '2');
             t.equal(res.headers['content-md5'], SMALL_FILE_CONTENT_MD5);
             t.equal(res.headers['content-length'], SMALL_FILE_SIZE.toString());
             t.equal(res.headers['m-foo'], 'bar');
@@ -201,6 +203,7 @@ test('buckets client basic', testOpts, function (suite) {
                 t.ifError(err);
 
                 t.ok(res);
+                t.equal(res.headers['durability-level'], '2');
                 t.equal(res.headers['m-foo'], NEW_METADATA_VALUE);
 
                 t.end();
