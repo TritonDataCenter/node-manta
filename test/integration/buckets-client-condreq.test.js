@@ -101,7 +101,7 @@ test('buckets client conditional requests', testOpts, function (suite) {
         var inStream = fs.createReadStream(SMALL_FILE_PATH);
         var reqOpts = {
             headers: {
-                // XXX
+                'if-none-match': '*',
                 'm-foo': 'bar'
             }
         };
@@ -376,6 +376,25 @@ test('buckets client conditional requests', testOpts, function (suite) {
     /*
      * CREATE
      */
+
+    test('CreatebucketObject: if-match (bad, *)', function (t) {
+        var inStream = fs.createReadStream(SMALL_FILE_PATH);
+        var reqOpts = {
+            headers: {
+                'if-match': '*'
+            }
+        };
+        client.createBucketObject(inStream, BUCKET_NAME, 'new-object', reqOpts,
+                                  function (err, res) {
+
+            t.ok(err);
+            t.ok(res);
+
+            t.equal(err.code, 'PreconditionFailed');
+
+            t.end();
+        });
+    });
 
     test('CreateBucketObject: if-match (bad)', function (t) {
         var inStream = fs.createReadStream(SMALL_FILE_PATH);
