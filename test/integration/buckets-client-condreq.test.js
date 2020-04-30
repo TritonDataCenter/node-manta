@@ -101,7 +101,7 @@ test('buckets client conditional requests', testOpts, function (suite) {
         var inStream = fs.createReadStream(SMALL_FILE_PATH);
         var reqOpts = {
             headers: {
-                // XXX
+                'if-none-match': '*',
                 'm-foo': 'bar'
             }
         };
@@ -377,6 +377,27 @@ test('buckets client conditional requests', testOpts, function (suite) {
      * CREATE
      */
 
+    test('CreateBucketObject: if-match (* on non-existent object)',
+        function (t) {
+
+        var inStream = fs.createReadStream(SMALL_FILE_PATH);
+        var reqOpts = {
+            headers: {
+                'if-match': '*'
+            }
+        };
+        client.createBucketObject(inStream, BUCKET_NAME, 'new-object', reqOpts,
+                                  function (err, res) {
+
+            t.ok(err);
+            t.ok(res);
+
+            t.equal(err.code, 'PreconditionFailed');
+
+            t.end();
+        });
+    });
+
     test('CreateBucketObject: if-match (bad)', function (t) {
         var inStream = fs.createReadStream(SMALL_FILE_PATH);
         var reqOpts = {
@@ -486,6 +507,50 @@ test('buckets client conditional requests', testOpts, function (suite) {
              * XXX Why no `res.statusCode` from client, like `get` does.
              */
             t.equal(err.code, 'PreconditionFailed');
+
+            headAndAssert(t, function (res) {
+                t.equal(res.headers['m-foo'], 'wut');
+                t.ok(!res.headers['m-bar']);
+                t.end();
+            });
+        });
+    });
+
+    test('UpdateBucketObject: if-match (* on non-existent objects)',
+        function (t) {
+
+        client.putBucketObjectMetadata(BUCKET_NAME, 'new-object', {
+            headers: {
+                'm-foo': 'test',
+                'if-match': '*'
+            } }, function (err, res) {
+
+            t.ok(err);
+            t.ok(res);
+
+            t.equal(err.code, 'PreconditionFailed');
+
+            headAndAssert(t, function (res) {
+                t.equal(res.headers['m-foo'], 'wut');
+                t.ok(!res.headers['m-bar']);
+                t.end();
+            });
+        });
+    });
+
+    test('UpdateBucketObject: if-none-match (* on non-existent object)',
+        function (t) {
+
+        client.putBucketObjectMetadata(BUCKET_NAME, 'new-object', {
+            headers: {
+                'm-foo': 'test',
+                'if-none-match': '*'
+            } }, function (err, res) {
+
+            t.ok(err);
+            t.ok(res);
+
+            t.equal(err.code, 'ObjectNotFound');
 
             headAndAssert(t, function (res) {
                 t.equal(res.headers['m-foo'], 'wut');
