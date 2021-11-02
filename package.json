@@ -5,7 +5,7 @@
     "homepage": "http://apidocs.joyent.com/manta",
     "repository": {
         "type": "git",
-        "url": "git://github.com/joyent/node-manta.git"
+        "url": "https://github.com/joyent/node-manta.git"
     },
     "version": "5.2.2",
     "main": "./lib/index.js",
