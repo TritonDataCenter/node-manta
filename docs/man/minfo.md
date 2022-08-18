@@ -38,6 +38,10 @@ OPTIONS
   SSL connections are attempted to be made secure by using the CA certificate
   bundle installed by default.
 
+`-j, --json`
+  Output object headers in JSON format. Additionally, `status` and `statusCode`,
+  while not technically headers, will be included in the output object.
+
 `-k, --key fingerprint`
   Authenticate using the SSH key described by FINGERPRINT.  The key must
   either be in `~/.ssh` or loaded in the SSH agent via `ssh-add`.
