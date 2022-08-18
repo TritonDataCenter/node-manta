@@ -4,7 +4,7 @@
  * *client-side* of talking to Manta.
  *
  * Usage:
- *      git clone git@github.com:joyent/node-manta.git
+ *      git clone https://github.com/TritonDataCenter/node-manta.git
  *      cd node-manta
  *      npm install
  *      node examples/client-trace-logging.js | bunyan

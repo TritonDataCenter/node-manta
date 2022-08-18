@@ -1,13 +1,14 @@
 #!/bin/bash
 #
 # Copyright 2016, Joyent, Inc.
+# Copyright 2022 MNX Cloud, Inc.
 #
 
 #
 # Provision a SmartOS container (using the given 'triton' profile) and
 # run the test suite with a number of node versions.
 #
-# This is being used for automatic tests after commit in Joyent's
+# This is being used for automatic tests after commit in the Triton
 # internal Jenkins. This is likely quite brittle right now.
 #
 
@@ -180,7 +181,7 @@ pkgin -y in git gmake >\$miscLogPath 2>&1
 if [[ -d node-manta ]]; then
     (cd node-manta && git pull) >\$miscLogPath 2>&1
 else
-    git clone https://github.com/joyent/node-manta.git >\$miscLogPath 2>&1
+    git clone https://github.com/TritonDataCenter/node-manta.git >\$miscLogPath 2>&1
 fi
 if [[ -n "$optBranch" ]]; then
     (cd node-manta && git checkout nouveau) >\$miscLogPath 2>&1

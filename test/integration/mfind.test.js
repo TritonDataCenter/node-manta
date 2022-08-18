@@ -1,5 +1,6 @@
 /*
  * Copyright 2019 Joyent, Inc.
+ * Copyright 2022 MNX Cloud, Inc.
  */
 
 /*
@@ -131,8 +132,8 @@ test('mfind TESTDIR', function (t) {
 });
 
 /*
- * joyent/node-manta#251 specifying a path multiple times to mfind results in
- * crash.
+ * TritonDataCenter/node-manta#251 specifying a path multiple times to mfind
+ * results in crash.
  */
 test('mfind TESTDIR TESTDIR (same argument multiple times)', function (t) {
     forkExecWait({

@@ -57,7 +57,7 @@ The following options are supported in all commands:
   Authenticate as user under account.
 
 `-u, --url url`
-  Manta base URL (such as `https://manta.us-east.joyent.com`).
+  Manta base URL (such as `https://us-central.manta.mnx.io`).
 
 `-v, --verbose`
   Print debug output to stderr.  Repeat option to increase verbosity.
@@ -265,4 +265,4 @@ BUGS
 
 DSA keys do not work when loaded via the SSH agent.
 
-Report bugs at [Github](https://github.com/joyent/node-manta/issues)
+Report bugs at [Github](https://github.com/TritonDataCenter/node-manta/issues)

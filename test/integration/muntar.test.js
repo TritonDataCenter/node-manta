@@ -1,5 +1,6 @@
 /*
  * Copyright 2019 Joyent, Inc.
+ * Copyright 2022 MNX Cloud, Inc.
  */
 
 var exec = require('child_process').exec;
@@ -109,7 +110,8 @@ var cases = [
         ]
     },
     {
-        // Skipping, see <https://github.com/joyent/node-manta/issues/259>
+        // Skipping, see
+        // <https://github.com/TritonDataCenter/node-manta/issues/259>
         skip: true,
         tarpath: 'corpus/259-emptydir.tar',
         checks: [

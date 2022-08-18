@@ -1,5 +1,6 @@
 /*
  * Copyright 2018 Joyent, Inc.
+ * Copyright 2022 MNX Cloud, Inc.
  */
 
 var assert = require('assert-plus');
@@ -14,6 +15,7 @@ var VError = require('verror');
 var BINDIR = path.resolve(__dirname, '../../bin');
 var MLS = path.resolve(BINDIR, 'mls');
 var MMPU = path.resolve(BINDIR, 'mmpu');
+var MINFO = path.resolve(BINDIR, 'minfo');
 
 /*
  * Call `mls` on the given path and return a JSON array of objects for each
@@ -102,8 +104,28 @@ function isMpuEnabledSync(log) {
     return (true);
 }
 
+function mantaVersion(log) {
+    assert.string(process.env.MANTA_USER, 'process.env.MANTA_USER');
+    assert.object(log, 'log');
+
+    var checkPath = format('/%s/stor', process.env.MANTA_USER);
+    var info = JSON.parse(execFileSync(MINFO, ['-j', checkPath], {
+        stdio: 'pipe', // to not emit stderr to parent's stderr
+        encoding: 'utf8'
+    }).trim());
+    log.trace(JSON.stringify(info));
+    var server = info.server;
+    if (server === 'Manta') {
+        return ('1');
+    } else {
+        var s = server.split('/');
+        return (s[1]);
+    }
+}
+
 
 module.exports = {
     isMpuEnabledSync: isMpuEnabledSync,
+    mantaVersion: mantaVersion,
     mls: mls
 };

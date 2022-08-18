@@ -1,28 +1,28 @@
 # Manta Client Tools and SDK
 
-[manta](http://apidocs.joyent.com/manta/nodesdk.html) is a Node.js SDK for
-interacting with Joyent's Manta system.
+[manta](http://apidocs.tritondatacenter.com/manta/nodesdk.html) is a Node.js SDK for
+interacting with Triton's Manta system.
 
-This repository is part of the Joyent [Manta](http://github.com/joyent/manta)
+This repository is part of the Triton [Manta](http://github.com/TritonDataCenter/manta)
 project.  See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines.
 
-# Installation
+## Installation
 
 [Node.js](https://nodejs.org/) must be installed.
 
-## Command line utilities
+### Command line utilities
 
-### Install Globally
+#### Install Globally
 
 To install globally (to use the CLI tools) you can try running:
 
-    $ npm install -g manta
+    npm install -g manta
 
 Note that this might require `sudo` or escalated privileges to install
 properly.  This can often result in permissions errors or other failures - in
 that case try the below method.
 
-### Install Globally to a User Directory
+#### Install Globally to a User Directory
 
 Based on the [npm guide to prevent permissions
 errors](https://docs.npmjs.com/getting-started/fixing-npm-permissions#option-two-change-npms-default-directory),
@@ -43,13 +43,13 @@ export PATH=$PATH:~/.npm-global/bin
 export MANPATH=$MANPATH:~/.npm-global/share/man
 ```
 
-## Node.js module
+### Node.js module
 
 To install locally as a module (to use the SDK).
 
     $ npm install manta
 
-### Bash completion
+#### Bash completion
 
 Optionally install Bash completion. This is done by `source`ing the
 `share/manta.completion` file that is installed with the tools.
@@ -68,12 +68,12 @@ the following:
     --fulljson  --json      --marker    --subuser   --url       --version
     --help      --keyId     --reverse   --time      --user
 
-# Usage
+## Usage
 
-First setup your environment to match your Joyent Manta account:
+First setup your environment to match your Manta account:
 
     $ export MANTA_KEY_ID=$(ssh-keygen -l -f ~/.ssh/id_rsa.pub | awk '{print $2}')
-    $ export MANTA_URL=https://us-east.manta.joyent.com
+    $ export MANTA_URL=https://us-central.mnx.io
     $ export MANTA_USER=mark
 
 Alternatively, you can pull your ssh key out of your `ssh-agent` if you are
@@ -81,7 +81,7 @@ using one (this snippet takes the first key in the agent).
 
     $ export MANTA_KEY_ID=$(ssh-add -l | awk '{print $2}' | head -1)
 
-## SDK
+### SDK
 
 Then a code snippet:
 
@@ -120,7 +120,7 @@ client.get('/mark/stor/foo', function (err, stream) {});
 client.get('~~/stor/foo', function (err, stream) {});
 ```
 
-## CLI
+### CLI
 
 Basic commands include:
 
@@ -133,13 +133,12 @@ Basic commands include:
 
 A full set of commands for interacting with Manta is in `bin`.
 
-# More documentation
+## More documentation
 
-Docs can be found here:
-[http://apidocs.joyent.com/manta/](http://apidocs.joyent.com/manta/)
+Docs can be found here: <http://apidocs.tritondatacenter.com/manta/>
 
 
-# Testing
+## Testing
 
 node-manta has both unit tests ("test/unit/*.test.js") and integration tests
 ("test/integration/*.test.js"). Integration tests require `MANTA_` envvars for
@@ -157,7 +156,7 @@ Usage:
 Test output is node-tap's default "classic" output. Full TAP output is written
 to "test.tap". You can use `TAP=1` to have TAP output emited to stdout.
 
-## Test vars
+### Test vars
 
 The following `MANTA_...` envvars configure the test run and `TEST_...`
 envvars can tweak how the tests are run. As well, a number of node-tap
@@ -191,13 +190,13 @@ on those.
 - `TAP=1` to have the test suite emit TAP output. This is a node-tap envvar.
 
 
-## Testing Development Guide
+### Testing Development Guide
 
 - Unit tests (i.e. not requiring the Manta endpoint) in "unit/\*.test.js".
   Integration tests "integration/\*.test.js".
 
 - We are using node-tap. Read [RFD
-  139](https://github.com/joyent/rfd/blob/master/rfd/0139/README.md#guidelines-for-using-node-tap-in-triton-repos)
+  139](https://github.com/TritonDataCenter/rfd/blob/master/rfd/0139/README.md#guidelines-for-using-node-tap-in-triton-repos)
   for some guidelines for node-tap usage. The more common we can make some
   basic usage patterns in the many Triton and Manta repos, the easier the
   maintenance.
@@ -209,12 +208,13 @@ on those.
     - Prefer more and smaller and more targeted test files.
 
 
-# License
+## License
 
 ```
 The MIT License (MIT)
 
 Copyright (c) 2018, Joyent, Inc.
+Copyright 2022 MNX Cloud, Inc.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
@@ -236,12 +236,12 @@ SOFTWARE.
 ```
 
 
-# Bugs
+## Bugs
 
-See https://github.com/joyent/node-manta/issues.
+See https://github.com/TritonDataCenter/node-manta/issues.
 
 
-# Release process
+## Release process
 
 Here is how to cut a release:
 
@@ -266,7 +266,7 @@ Here is how to cut a release:
    This will run a couple checks (clean working copy, versions in package.json
    and CHANGES.md match), then will git tag and npm publish.
 
-# Supported Node.js Versions
+## Supported Node.js Versions
 
 Currently, node-manta is officially supported on the following node versions:
 

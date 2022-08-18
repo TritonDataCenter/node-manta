@@ -7,6 +7,7 @@
 
 #
 # Copyright (c) 2014, Joyent, Inc.
+# Copyright 2022 MNX Cloud, Inc.
 #
 
 #
@@ -32,9 +33,9 @@
 TOP := $(shell pwd)
 
 #
-# Mountain Gorilla-spec'd versioning.
-# See "Package Versioning" in MG's README.md:
-# <https://mo.joyent.com/mountain-gorilla/blob/master/README.md#L139-200>
+# Triton-spec'd versioning.
+# See "Package Versioning" in Triton's Engineering guide:
+# <https://github.com/TritonDataCenter/triton/blob/master/docs/developer-guide/release-engineering.md#package-versioning>
 #
 # Need GNU awk for multi-char arg to "-F".
 _AWK := $(shell (which gawk >/dev/null && echo gawk) \

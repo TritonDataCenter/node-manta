@@ -38,6 +38,10 @@ OPTIONS
   SSL connections are attempted to be made secure by using the CA certificate
   bundle installed by default.
 
+`-j, --json`
+  Output object headers in JSON format. Additionally, `status` and `statusCode`,
+  while not technically headers, will be included in the output object.
+
 `-k, --key fingerprint`
   Authenticate using the SSH key described by FINGERPRINT.  The key must
   either be in `~/.ssh` or loaded in the SSH agent via `ssh-add`.
@@ -49,7 +53,7 @@ OPTIONS
   Authenticate as user under account.
 
 `-u, --url url`
-  Manta base URL (such as `https://manta.us-east.joyent.com`).
+  Manta base URL (such as `https://us-central.manta.mnx.io`).
 
 `-v, --verbose`
   Print debug output to stderr.  Repeat option to increase verbosity.
@@ -92,4 +96,4 @@ BUGS
 
 DSA keys do not work when loaded via the SSH agent.
 
-Report bugs at [Github](https://github.com/joyent/node-manta/issues)
+Report bugs at [Github](https://github.com/TritonDataCenter/node-manta/issues)

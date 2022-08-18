@@ -1,5 +1,6 @@
 /*
  * Copyright 2019 Joyent, Inc.
+ * Copyright 2022 MNX Cloud, Inc.
  */
 
 /*
@@ -14,6 +15,8 @@ var path = require('path');
 var test = require('tap').test;
 var vasync = require('vasync');
 var sprintf = require('extsprintf').sprintf;
+var testutils = require('../lib/utils');
+
 
 var logging = require('../lib/logging');
 
@@ -39,6 +42,13 @@ var TESTTREE = [
         type: 'directory'
     }
 ];
+
+var mantaVersion = testutils.mantaVersion(log);
+
+var testOpts = {
+    skip: mantaVersion !== '1' &&
+        'this Manta does not support snapLinks'
+};
 
 /*
  * Create three regular UNIX text files (linefeed separated, with a terminating
@@ -84,7 +94,7 @@ function unlinkIfExists(targ) {
 
 // ---- tests
 
-test('setup: create test tree at ' + TESTDIR, function (t) {
+test('setup: create test tree at ' + TESTDIR, testOpts, function (t) {
     var tmpFile = path.join(TMPDIR, 'node-manta-test-tmp-file-' + process.pid);
 
     vasync.forEachPipeline({
@@ -130,7 +140,7 @@ test('setup: create test tree at ' + TESTDIR, function (t) {
 });
 
 
-test('mln ', function (t) {
+test('mln ', testOpts, function (t) {
     var argv1 = [
         MLN,
         sprintf('%s/%02d.data', TESTDIR, 1),
@@ -177,7 +187,7 @@ test('mln ', function (t) {
 /*
  * Link a file using the role-tag option and verify the role-tag header
  * is set on the object. This verifies the fix for
- * https://github.com/joyent/node-manta/issues/333. This test requires
+ * https://github.com/TritonDataCenter/node-manta/issues/333. This test requires
  * a role to be configured in triton to work properly so it is condtional
  * upon the user setting MANTA_TEST_ROLE in the environment.
  */
@@ -224,7 +234,7 @@ if (process.env.MANTA_TEST_ROLE) {
 }
 
 
-test('cleanup: rm test tree ' + TESTDIR, function (t) {
+test('cleanup: rm test tree ' + TESTDIR, testOpts, function (t) {
     // Sanity checks that we don't `mrm -r` a non-test dir.
     assert.ok(TESTDIR);
     assert.ok(TESTDIR.indexOf('node-manta-test') !== -1);
@@ -236,7 +246,7 @@ test('cleanup: rm test tree ' + TESTDIR, function (t) {
 });
 
 
-test('cleanup: rm tmp directory ' + TMPDIR, function (t) {
+test('cleanup: rm tmp directory ' + TMPDIR, testOpts, function (t) {
     var tmpFile = path.join(TMPDIR, 'node-manta-test-tmp-file-' + process.pid);
 
     unlinkIfExists(tmpFile);
