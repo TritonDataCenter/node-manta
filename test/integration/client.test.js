@@ -292,10 +292,10 @@ test('streams', function (t) {
         // The second is emitted by createWriteStream and contains the res
         // object. After the first one fires (where we are now), we'll add a
         // once listener for the next close event. That's the one we're looking
-        // for. This makes the test pass, but I'm not even sure how to provide
+        // for. This makes the test pass, but we're not sure how to provide
         // consumers guidance for what to do here. (Un)Luckily, there don't
         // actually seem to be consumers of this in the wild.
-        // In any event, this behavior has existed for so long, I'm wary of
+        // In any event, this behavior has existed for so long, we're wary of
         // changing it.
         w.once('close', function (res) {
             t.ok(res);
