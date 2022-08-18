@@ -1,5 +1,6 @@
 /*
  * Copyright 2019 Joyent, Inc.
+ * Copyright 2022 MNX Cloud, Inc.
  */
 
 /*
@@ -12,6 +13,7 @@ var assert = require('assert-plus');
 var path = require('path');
 var spawn = require('child_process').spawn;
 var test = require('tap').test;
+var testutils = require('../lib/utils');
 
 var logging = require('../lib/logging');
 
@@ -21,6 +23,12 @@ var logging = require('../lib/logging');
 var log = logging.createLogger();
 var MJOB = path.resolve(__dirname, '../../bin/mjob');
 
+var mantaVersion = testutils.mantaVersion(log);
+
+var testOpts = {
+    skip: mantaVersion !== '1' &&
+        'this Manta does not support jobs'
+};
 
 // ---- helper functions
 
@@ -68,7 +76,7 @@ function mjobExec(args, opts, cb) {
  * Note the usage of '-or "echo hello"' cuddled like that is ensuring we aren't
  * hitting <https://github.com/trentm/node-dashdash/issues/8>.
  */
-test('mjob create --close -or "echo hello"', function (t) {
+test('mjob create --close -or "echo hello"', testOpts, function (t) {
     var args = ['create', '--close', '-or', 'echo hello'];
     mjobExec(args, function (err, stdout, stderr) {
         t.ifError(err, err);

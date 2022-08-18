@@ -2,6 +2,7 @@
 // -*- mode: js -*-
 /*
  * Copyright 2018 Joyent, Inc.
+ * Copyright 2022 MNX Cloud, Inc.
  */
 
 var http = require('http');
@@ -17,7 +18,17 @@ var manta = require('../lib');
 
 function optionsParser(name) {
     var parser = dashdash.createParser({
-        options: manta.DEFAULT_CLI_OPTIONS
+        options: manta.DEFAULT_CLI_OPTIONS.concat([
+            {
+                group: name + ' options'
+            },
+            {
+                names: [ 'json', 'j' ],
+                type: 'bool',
+                help: 'JSON output. Additional fields \'status\' and \
+                \'statusCode\' will be included in the output object.'
+            }
+        ])
     });
 
     return (parser);
@@ -68,7 +79,17 @@ function printEntry(res) {
         client.info(p, function (err, info, res) {
             if (err)
                 res = info;
-            printEntry(res);
+            if (options.json) {
+                var status = 'HTTP/' + res.httpVersion + ' ' + res.statusCode +
+                    ' ' + http.STATUS_CODES[res.statusCode];
+                var h = Object.assign({
+                    status: status,
+                    statusCode: res.statusCode
+                }, res.headers);
+                console.log(JSON.stringify(h));
+            } else {
+                printEntry(res);
+            }
             get();
         });
     }

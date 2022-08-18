@@ -23,7 +23,7 @@ supports Regular Expression matching.
 
 With the `--json` option a stream of JSON objects is printed. Each JSON object
 contains the fields from the Manta [ListDirectory API
-endpoint](https://apidocs.joyent.com/manta/api.html#ListDirectory), plus the
+endpoint](https://apidocs.tritondatacenter.com/manta/api.html#ListDirectory), plus the
 following client-side added fields:
 
 - `depth`: An integer directory depth under the given directory,
@@ -91,7 +91,7 @@ OPTIONS
   Authenticate as user under account.
 
 `-u, --url url`
-  Manta base URL (such as `https://manta.us-east.joyent.com`).
+  Manta base URL (such as `https://us-central.manta.mnx.io`).
 
 `-v, --verbose`
   Print debug output to stderr.  Repeat option to increase verbosity.
@@ -133,4 +133,4 @@ BUGS
 
 DSA keys do not work when loaded via the SSH agent.
 
-Report bugs at [Github](https://github.com/joyent/node-manta/issues)
+Report bugs at [Github](https://github.com/TritonDataCenter/node-manta/issues)

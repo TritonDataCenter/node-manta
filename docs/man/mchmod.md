@@ -54,7 +54,7 @@ OPTIONS
   Specify which roles to assume for the request.
 
 `-u, --url url`
-  Manta base URL (such as `https://manta.us-east.joyent.com`).
+  Manta base URL (such as `https://us-central.manta.mnx.io`).
 
 `--user user`
   Authenticate as user under account.
@@ -100,4 +100,4 @@ BUGS
 
 DSA keys do not work when loaded via the SSH agent.
 
-Report bugs at [Github](https://github.com/joyent/node-manta/issues)
+Report bugs at [Github](https://github.com/TritonDataCenter/node-manta/issues)

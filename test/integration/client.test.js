@@ -1,5 +1,6 @@
 /*
  * Copyright 2019 Joyent, Inc.
+ * Copyright 2022 MNX Cloud, Inc.
  */
 
 var exec = require('child_process').exec;
@@ -9,6 +10,7 @@ var path = require('path');
 var libuuid = require('uuid');
 var MemoryStream = require('readable-stream/passthrough.js');
 var test = require('tap').test;
+var testutils = require('../lib/utils');
 
 var logging = require('../lib/logging');
 var manta = require('../../lib');
@@ -35,6 +37,12 @@ var SPECIALOBJ1 = SUBDIR1 + '/' + 'before-\r-after';
 var SUBDIR1_NOBJECTS = 1;
 var SUBDIR1_NDIRECTORIES = 2;
 
+var mantaVersion = testutils.mantaVersion(log);
+
+var testOpts = {
+    skip: mantaVersion !== '1' &&
+        'this Manta is version ' + mantaVersion
+};
 
 /*
  * Tests
@@ -279,32 +287,43 @@ test('streams', function (t) {
         t.ifError(err);
         t.end();
     });
-    w.once('close', function (res) {
-        t.ok(res);
-        t.equal(res.statusCode, 204);
-        var r = client.createReadStream(CHILD1);
-        var s = new MemoryStream();
-        var str = '';
-        var opened = false;
+    w.once('close', function (x) {
+        // We get the close event *twice*. Once is emmited by node itself(?).
+        // The second is emitted by createWriteStream and contains the res
+        // object. After the first one fires (where we are now), we'll add a
+        // once listener for the next close event. That's the one we're looking
+        // for. This makes the test pass, but I'm not even sure how to provide
+        // consumers guidance for what to do here. (Un)Luckily, there don't
+        // actually seem to be consumers of this in the wild.
+        // In any event, this behavior has existed for so long, I'm wary of
+        // changing it.
+        w.once('close', function (res) {
+            t.ok(res);
+            t.equal(res.statusCode, 204);
+            var r = client.createReadStream(CHILD1);
+            var s = new MemoryStream();
+            var str = '';
+            var opened = false;
 
-        s.setEncoding('utf8');
-        s.on('data', function (chunk) {
-            str += chunk;
-        });
-        r.once('open', function (res2) {
-            opened = true;
-        });
-        r.once('close', function (res2) {
-            t.equal(res2.statusCode, 200);
-            t.ok(opened);
-        });
-        r.once('end', function () {
-            t.equal(str, text);
-            t.end();
-        });
+            s.setEncoding('utf8');
+            s.on('data', function (chunk) {
+                str += chunk;
+            });
+            r.once('open', function (res2) {
+                opened = true;
+            });
+            r.once('close', function (res2) {
+                t.equal(res2.statusCode, 200);
+                t.ok(opened);
+            });
+            r.once('end', function () {
+                t.equal(str, text);
+                t.end();
+            });
 
-        r.pipe(s);
+            r.pipe(s);
 
+        });
     });
 });
 
@@ -461,7 +480,7 @@ test('createListStream (object only)', function (t) {
 });
 
 
-test('ln', function (t) {
+test('ln', testOpts, function (t) {
     client.ln(CHILD1, CHILD2, function (err) {
         t.ifError(err);
         t.end();
@@ -469,7 +488,7 @@ test('ln', function (t) {
 });
 
 
-test('info (link)', function (t) {
+test('info (link)', testOpts, function (t) {
     client.info(CHILD2, function (err, type) {
         t.ifError(err);
         t.ok(type);
@@ -526,7 +545,7 @@ test('ftw', function (t) {
 });
 
 
-test('create job (simple grep)', function (t) {
+test('create job (simple grep)', testOpts, function (t) {
     var j = 'grep foo';
 
     client.createJob(j, function (err, job) {
@@ -538,7 +557,7 @@ test('create job (simple grep)', function (t) {
 });
 
 
-test('get job', function (t) {
+test('get job', testOpts, function (t) {
     client.job(JOB, function (err, job) {
         t.ifError(err);
         t.ok(job);
@@ -554,7 +573,7 @@ test('get job', function (t) {
 });
 
 
-test('add input keys', function (t) {
+test('add input keys', testOpts, function (t) {
     var keys = [
         CHILD1,
         CHILD2
@@ -567,7 +586,7 @@ test('add input keys', function (t) {
 });
 
 
-test('get job input', function (t) {
+test('get job input', testOpts, function (t) {
     var keys = 0;
     function cb(err) {
         t.ifError(err);
@@ -590,7 +609,7 @@ test('get job input', function (t) {
 });
 
 
-test('end job', function (t) {
+test('end job', testOpts, function (t) {
     client.endJob(JOB, function (err) {
         t.ifError(err);
         t.end();
@@ -598,7 +617,7 @@ test('end job', function (t) {
 });
 
 
-test('wait for job', function (t) {
+test('wait for job', testOpts, function (t) {
     var attempts = 1;
 
     function getState() {
@@ -623,7 +642,7 @@ test('wait for job', function (t) {
 });
 
 
-test('get job output', function (t) {
+test('get job output', testOpts, function (t) {
     var _keys = 0; // treat 'end' as a key
     function cb(err) {
         t.ifError(err);
@@ -646,7 +665,7 @@ test('get job output', function (t) {
 });
 
 
-test('create and cancel job', function (t) {
+test('create and cancel job', testOpts, function (t) {
     client.createJob('grep foo', function (err, job) {
         t.ifError(err);
         t.ok(job);
@@ -666,15 +685,15 @@ test('create and cancel job', function (t) {
 
 
 test('unlink object', function (t) {
-    client.unlink(CHILD2, function (err) {
+    client.unlink(CHILD1, function (err) {
         t.ifError(err);
         t.end();
     });
 });
 
 
-test('unlink link', function (t) {
-    client.unlink(CHILD1, function (err) {
+test('unlink link', testOpts, function (t) {
+    client.unlink(CHILD2, function (err) {
         t.ifError(err);
         t.end();
     });

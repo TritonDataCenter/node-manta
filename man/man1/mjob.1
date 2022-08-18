@@ -45,7 +45,7 @@ Specify which roles to assume for the request.
 Authenticate as user under account.
 .TP
 \fB\fC\-u, \-\-url url\fR
-Manta base URL (such as \fB\fChttps://manta.us\-east.joyent.com\fR).
+Manta base URL (such as \fB\fChttps://us\-central.manta.mnx.io\fR).
 .TP
 \fB\fC\-v, \-\-verbose\fR
 Print debug output to stderr.  Repeat option to increase verbosity.
@@ -56,8 +56,8 @@ The following commands and options are supported:
 .PP
 Creates a job that executes the commands against keys that will be specified
 via \fB\fCaddinputs\fR\&.  \fB\fCexpression\fR can specify an arbitrary UNIX pipeline, with
-map/reduce \fIphases\fP separated by the \fB\fC^\fR or \fB\fC^^\fR
-.BR character (s),
+map/reduce \fIphases\fP separated by the \fB\fC^\fR or \fB\fC^^\fR 
+.BR character (s), 
 respectively.
 .PP
 For example, to specify a simple \fB\fCgrep | sort | uniq\fR job in Manta, the
@@ -219,7 +219,7 @@ $ mjob get 3ec32136\-b125\-11e2\-8487\-1b418dd6974b
 .RE
 .SS watch JOB
 .PP
-Waits for a given job to reach the \fB\fCdone\fR state. Aliases: wait.
+Waits for a given job to reach the \fB\fCdone\fR state.
 .PP
 .RS
 .nf
@@ -379,4 +379,4 @@ $ mjob \-vv ~~/stor/foo 2>&1 | bunyan
 .PP
 DSA keys do not work when loaded via the SSH agent.
 .PP
-Report bugs at Github \[la]https://github.com/joyent/node-manta/issues\[ra]
+Report bugs at Github \[la]https://github.com/TritonDataCenter/node-manta/issues\[ra]

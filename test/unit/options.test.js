@@ -1,5 +1,6 @@
 /*
  * Copyright 2019 Joyent, Inc.
+ * Copyright 2022 MNX Cloud, Inc.
  */
 
 /*
@@ -77,7 +78,7 @@ function inputObject(testObj) {
 /*
  * Test that specifying the --help option with no manta URL specified does not
  * result in a warning about the missing URL. This verifies the fix for
- * https://github.com/joyent/node-manta/issues/328.
+ * https://github.com/TritonDataCenter/node-manta/issues/328.
  */
 test('Run commands with --help with no manta URL specified', function (t) {
     vasync.forEachPipeline({
@@ -92,7 +93,7 @@ test('Run commands with --help with no manta URL specified', function (t) {
 /*
  * Test that specifying the --version option with no manta URL specified does
  * not result in a warning about the missing URL. This verifies the fix for
- * https://github.com/joyent/node-manta/issues/328.
+ * https://github.com/TritonDataCenter/node-manta/issues/328.
  */
 test('Run commands with --version with no manta URL specified', function (t) {
     vasync.forEachPipeline({

@@ -1,5 +1,6 @@
 /*
  * Copyright 2019 Joyent, Inc.
+ * Copyright 2022 MNX Cloud, Inc.
  */
 
 /*
@@ -123,7 +124,7 @@ test('setup: create test tree at ' + TESTDIR, function (t) {
 
 /*
  * Put a file with a custom header whose value include colons. This verifies the
- * fix for https://github.com/joyent/node-manta/issues/312.
+ * fix for https://github.com/TritonDataCenter/node-manta/issues/312.
  */
 test('mput with custom header value with colons', function (t) {
     // Expect the header to include the full timestamp including the colons
@@ -170,7 +171,7 @@ test('mput with custom header value with colons', function (t) {
 /*
  * Put a file using the role-tag option and verify the role-tag header
  * is set on the object. This verifies the fix for
- * https://github.com/joyent/node-manta/issues/333. This test requires
+ * https://github.com/TritonDataCenter/node-manta/issues/333. This test requires
  * a role to be configured in triton to work properly so it is condtional
  * upon the user setting MANTA_TEST_ROLE in the environment.
  */

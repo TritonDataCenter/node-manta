@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 #
 # Copyright 2018 Joyent, Inc.
+# Copyright 2022 MNX Cloud, Inc.
 #
-# Generate a line for the changelog given a GitHub issue number or Joyent Jira
+# Generate a line for the changelog given a GitHub issue number or Jira
 # ticket identifier
 
 github_issue_re='^[1-9][0-9]*$'
@@ -22,7 +23,7 @@ usage() {
 	cat <<-EOF
 	Usage: $prog [-hv] [-o <org>] [-r <repo>] issue# [issue2# issue3# ...]
 
-	Generate a line for the changelog given a GitHub issue number or Joyent
+	Generate a line for the changelog given a GitHub issue number or
 	Jira ticket identifier
 
 	Options

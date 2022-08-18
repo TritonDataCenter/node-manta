@@ -7,6 +7,7 @@
 
 #
 # Copyright (c) 2014, Joyent, Inc.
+# Copyright 2022 MNX Cloud, Inc.
 #
 
 #
@@ -36,7 +37,7 @@
 #
 #	xref	Generates cscope (source cross-reference index)
 #
-# For details on what these targets are supposed to do, see the Joyent
+# For details on what these targets are supposed to do, see the Triton
 # Engineering Guide.
 #
 # To make use of these targets, you'll need to set some of these variables. Any
@@ -139,7 +140,7 @@ endif
 
 #
 # Targets. For descriptions on what these are supposed to do, see the
-# Joyent Engineering Guide.
+# Triton Engineering Guide.
 #
 
 #

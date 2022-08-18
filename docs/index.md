@@ -1,13 +1,13 @@
 ---
-title: Node.js SDK for Joyent Manta
+title: Node.js SDK for Manta
 markdown2extras: wiki-tables, code-friendly
 apisections: Directories, Objects, Links
 ---
 
-# Node.js SDK for Joyent Manta
+# Node.js SDK for Manta
 
 This is the reference documentation for the Manta [Node.js](http://nodejs.org/)
-SDK.  Manta is Joyent's Object Storage Service, which enables you to store data
+SDK.  Manta is Triton's Object Storage Service, which enables you to store data
 in the cloud and process that data using a built-in compute facility.
 
 This document explains the Node.js API interface and describes the various
@@ -17,7 +17,7 @@ operations, structures and error codes.
 
 Any content formatted like this:
 
-    $ curl -is https://us-east.manta.joyent.com
+    $ curl -is https://us-central.mnx.io
 
 is a command-line example that you can run from a shell. All other examples and
 information are formatted like this:
@@ -47,7 +47,7 @@ The shell command below simply parses the SSH fingerprint and sets that in the
 requisite environment variable.
 
     $ export MANTA_KEY_ID=`ssh-keygen -l -f ~/.ssh/id_rsa.pub | awk '{print $2}' | tr -d '\n'`
-    $ export MANTA_URL=https://us-east.manta.joyent.com/
+    $ export MANTA_URL=https://us-central.mnx.io/
     $ export MANTA_USER=jill
 
 # Creating a Client
@@ -128,7 +128,7 @@ the correct canonicalization for a URL:
         var opts = {
             algorithm: 'RSA-SHA256',
             expires: Math.floor(Date.now() / 1000) + 3600, // epoch time
-            host: 'us-east.manta.joyent.com',
+            host: 'us-central.mnx.io',
             keyId: process.env.MANTA_KEY_ID,
             path: '/mark/stor/my_image.png',
             sign: manta.privateKeySigner({
@@ -142,7 +142,7 @@ the correct canonicalization for a URL:
         manta.signUrl(opts, function (err, resource) {
             assert.ifError(err);
 
-            console.log('https://us-east.manta.joyent.com' + resource);
+            console.log('https://us-central.mnx.io' + resource);
         });
 
 ## Common API options

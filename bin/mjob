@@ -2,6 +2,7 @@
 // -*- mode: js -*-
 /*
  * Copyright 2018 Joyent, Inc.
+ * Copyright 2022 MNX Cloud, Inc.
  */
 
 var EventEmitter = require('events').EventEmitter;
@@ -942,7 +943,7 @@ MJob.prototype.do_create.help = [
     'specified with -m/-r; if using expression style, they apply to *all* phases.',
     'For documentation on phase properties, including supported values for --disk',
     'and --memory see:',
-    '    https://apidocs.joyent.com/manta/jobs-reference.html#job-configuration',
+    '    https://apidocs.tritondatacenter.com/manta/jobs-reference.html#job-configuration',
     '',
     'Input objects can be fed to a Manta job via stdin to `mjob create`:',
     '    mfind -t o ~~/stor/data | mjob create -m "grep foo || true" -r sort',
