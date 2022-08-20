@@ -4,6 +4,10 @@ See `CONTRIBUTING.md` for details on how to update this file
 
 ## not yet released
 
+## 5.3.1
+
+- [#391](https://github.com/TritonDataCenter/node-manta/issues/391) TypeError: mime.extension is not a function
+
 ## 5.3.0
 
 - [#389](https://github.com/TritonDataCenter/node-manta/issues/389) minfo should support json output
