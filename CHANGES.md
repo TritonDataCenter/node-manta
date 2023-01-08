@@ -4,6 +4,10 @@ See `CONTRIBUTING.md` for details on how to update this file
 
 ## not yet released
 
+## 5.3.2
+
+- [#393](https://github.com/TritonDataCenter/node-manta/issues/393) AssertionError with node <=16 and OpenSSL3
+
 ## 5.3.1
 
 - [#391](https://github.com/TritonDataCenter/node-manta/issues/391) TypeError: mime.extension is not a function
@@ -354,8 +358,8 @@ errors are no longer fatal unless none of the arguments are found)
 ## 1.3.0
 
 - RBAC Support
-    * add --role and --role-tag options
-    * add support for authentication as user (MANTA_ACCOUNT, MANTA_USER)
+  - add --role and --role-tag options
+  - add support for authentication as user (MANTA_ACCOUNT, MANTA_USER)
 
 ## v1.2.8
 

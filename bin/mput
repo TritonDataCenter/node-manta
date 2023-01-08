@@ -2,7 +2,14 @@
 // -*- mode: js -*-
 /*
  * Copyright 2018 Joyent, Inc.
+ * Copyright 2023 MNX Cloud, Inc.
  */
+
+// Workaround a bug in node v10-16 when using OpenSSL 3 without ssh-agent.
+// This needs to be set before the crypto module is loaded.
+if (typeof (process.env.OPENSSL_CONF) === 'undefined') {
+    process.env['OPENSSL_CONF'] = '';
+}
 
 var crypto = require('crypto');
 var fs = require('fs');
