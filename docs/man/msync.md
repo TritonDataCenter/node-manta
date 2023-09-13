@@ -4,7 +4,7 @@ muntar 1 "May 2023" Manta "Manta Commands"
 NAME
 ----
 
-muntar - deprecated; create a directory hierarchy from a tar file
+msync - synchronize a directory hierarchy with Manta.
 
 SYNOPSIS
 --------
@@ -14,34 +14,26 @@ SYNOPSIS
 DESCRIPTION
 -----------
 
-muntar is deprecated and will be removed in a future release.
-
 The muntar utility extracts the contents of a tar file and creates
 the corresponding objects in the path specified. If the destination
 directories do not exist, they are created.
 
-
 EXAMPLES
 --------
 
-	$ muntar -f shakespeare.tar  ~~/stor/plays/shakespeare
-	~~/stor/plays/shakespeare/README
-	~~/stor/plays/shakespeare/comedies/cymbeline
-	~~/stor/plays/shakespeare/glossary
-	. . .
-	~~/stor/plays/shakespeare/comedies/merrywivesofwindsor
-	~~/stor/plays/shakespeare/poetry/rapeoflucrece
-	~~/stor/plays/shakespeare/poetry/various
-	~~/stor/plays/shakespeare/poetry/sonnets
+    $ muntar ./shakespeare/ ~~/stor/plays/shakespeare
+    building source file list...
+    source file list built, 1222 files found
+    /fbulsara/stor/plays/shakespeare/index.html... not found, adding to sync list (1/1222)
+    /fbulsara/stor/plays/shakespeare/test.html... not found, adding to sync list (2/1222)
+    /fbulsara/stor/plays/shakespeare/favicon.ico... not found, adding to sync list (3/1222)
+    /fbulsara/stor/plays/shakespeare/news.html... not found, adding to sync list (4/1222)
+    . . .
+    /fbulsara/stor/plays/shakespeare/History/2kinghenryvi/2henryvi.2.3.html... synced (1221/1222)
+    /fbulsara/stor/plays/shakespeare/History/2kinghenryvi/2henryvi.4.8.html... synced (1222/1222)
 
-If the tarball is compressed, you can store it as an object and use muntar
-in the compute environment.
-
-    $ mput -f /var/tmp/backup.tar.gz ~~/stor/backup.tar.gz
-    $ echo ~~/stor/backup.tar.gz | \
-        mjob create -o -m gzcat -m 'muntar -f $MANTA_INPUT_FILE ~~/stor'
-
-
+    1222 files (24.07 MB) synced successfully, 0 files failed to sync (took 33s 758ms)
+    done
 
 OPTIONS
 -------
@@ -60,7 +52,6 @@ OPTIONS
 
 `-h, --help`
   Print a help message and exit.
-
 
 `-i, --insecure`
   This option explicitly allows "insecure" SSL connections and transfers.  All
@@ -93,9 +84,30 @@ OPTIONS
 `-v, --verbose`
   Print debug output to stderr.  Repeat option to increase verbosity.
 
+`-j, --just-delete`
+  don't send local files, just delete extra remote files.
+
+`-l, --ignore-links`
+  ignore symlinks.
+
+`-m, --md5`
+  use md5 instead of file size (slower, but more accurate).
+
+`-n, --dry-run`
+  don't perform any remote PUT or DELETE operations.
+
+`-p CONCURRENCY, --parallel=CONCURRENCY`
+  limit concurrent operations.
+
+`-q, --quiet`
+  suppress all output.
+
+`-r, --reverse`
+  manta to local sync.
 
 ENVIRONMENT
 -----------
+
 `MANTA_USER`
   In place of `-a, --account`.
 
@@ -120,15 +132,11 @@ where `:login` is the account login name.
 DIAGNOSTICS
 -----------
 
-When using the `-v` option, diagnostics will be sent to stderr in bunyan
-output format.  As an example of tracing all information about a request,
-try:
-
-    $ mfind -vv ~~/stor 2>&1 | bunyan
+Unlike other commands, -v does not output bunyan logs. Instead, it will list
+each file status rather than only files that are out of sync.
 
 NOTES
 -----
-
 
 BUGS
 ----

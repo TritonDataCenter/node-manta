@@ -1,0 +1,599 @@
+#!/usr/bin/env node
+/**
+ * Rsync style command for Manta
+ *
+ * Copyright 2017 Dave Eddy <dave@daveeddy.com>
+ * Copyright 2023 MNX Cloud, Inc.
+ */
+
+var util = require('util');
+
+var bunyan = require('bunyan');
+var dashdash = require('dashdash');
+var humanizeTime = require('humanize-time');
+var manta = require('../lib');
+var once = require('once');
+var path = require('path-platform');
+var prettyBytes = require('pretty-bytes');
+var restify = require('restify-clients');
+var strsplit = require('strsplit');
+var vasync = require('vasync');
+
+var Glob = require('../lib/msync/glob');
+var MantaFile = require('../lib/msync/mantafile');
+var LocalFile = require('../lib/msync/localfile');
+
+var LOG = bunyan.createLogger({
+    name: path.basename(process.argv[1]),
+    level: process.env.LOG_LEVEL || 'info',
+    stream: process.stderr,
+    serializers: restify.bunyan.serializers
+});
+
+// humanize time wrapper
+function prettyTime(t) {
+    var s = util.format('%sms', t % 1000);
+    if (t < 1000)
+        return (s);
+    return (util.format('%s %s', humanizeTime(t), s));
+}
+
+// https://github.com/bahamas10/node-manta-sync/issues/3
+function nexttick(cb) {
+    return function _nexttick() {
+        var self = this;
+        process.nextTick(function _cb() {
+            cb.apply(self, arguments);
+        });
+    };
+}
+
+var verbosity = 0;
+/**
+ * debugging/log function
+ *
+ * level is the log level number which will determine if the message is shown
+ * for example:
+ *    0: always shown
+ *    1: shown if `-v` or more are supplied
+ *    2: shown if `-vv` or more are supplied
+ */
+function log(level) {
+    var _args = Array.prototype.slice.call(arguments).slice(1);
+    if (level <= verbosity)
+        console.log.apply(console, _args);
+}
+
+// print usage with an optional error message and exit
+function usage(message) {
+    manta.cli_usage(OPTIONS_PARSER, message, [
+        'localdir ~~/remotedir',
+        '',
+        'synchronize all files found inside `localdir` to `~~/remotedir`',
+        '',
+        'examples',
+        '',
+        '    manta-sync ./ ~~/stor/foo',
+        '        - sync all files in your cwd to the dir ~~/stor/foo',
+        '',
+        '    manta-sync --dry-run ./ ~~/stor/foo',
+        '        - same as above, but just HEAD the data, don\'t PUT',
+        '',
+        '    manta-sync -r ~~/stor/foo ./bar',
+        '        - sync all files from manta in ~~/stor/foo to local dir ./bar',
+        ''
+    ].join('\n'));
+}
+
+// return dest and source file objects
+function makeFiles(relativefile) {
+    var obj = {};
+    if (opts.reverse) {
+        obj.sfile = new MantaFile(path.posix.join(sourcedir.path, relativefile),
+            client);
+        obj.dfile = new LocalFile(path.join(destdir.path, relativefile));
+    } else {
+        obj.sfile = new LocalFile(path.join(sourcedir.path, relativefile));
+        obj.dfile = new MantaFile(path.posix.join(destdir.path, relativefile),
+            client);
+    }
+    return (obj);
+}
+
+// parse command line options
+var OPTIONS_PARSER = dashdash.createParser({
+    options: manta.DEFAULT_CLI_OPTIONS.concat([
+        {
+            group: path.basename(process.argv[1]) + ' options'
+        },
+        {
+            names: ['copies', 'c'],
+            type: 'positiveInteger',
+            default: 2,
+            help: 'number of copies to make',
+            helpArg: 'COPIES'
+        },
+        {
+            names: ['delete', 'd'],
+            type: 'bool',
+            default: false,
+            help: 'delete files on the remote end not found locally'
+        },
+        {
+            names: ['exclude', 'x'],
+            type: 'arrayOfString',
+            default: [],
+            help: 'a pattern to ignore when searching the local filesystem'
+        },
+        {
+            names: ['header', 'H'],
+            type: 'arrayOfString',
+            default: [],
+            help: 'HTTP headers to include',
+            helpArg: 'HEADER'
+        },
+        {
+            names: ['just-delete', 'j'],
+            type: 'bool',
+            default: false,
+            help: 'don\'t send local files, just delete extra remote files'
+        },
+        {
+            names: ['ignore-links', 'l'],
+            type: 'bool',
+            default: false,
+            help: 'ignore symlinks'
+        },
+        {
+            names: ['md5', 'm'],
+            type: 'bool',
+            default: false,
+            help: 'use md5 instead of file size (slower, but more accurate)'
+        },
+        {
+            names: ['dry-run', 'n'],
+            type: 'bool',
+            default: false,
+            help: 'don\'t perform any remote PUT or DELETE operations'
+        },
+        {
+            names: ['parallel', 'p'],
+            type: 'positiveInteger',
+            helpArg: 'CONCURRENCY',
+            default: 50,
+            help: 'limit concurrent operations'
+        },
+        {
+            names: ['quiet', 'q'],
+            type: 'bool',
+            default: false,
+            help: 'suppress all output'
+        },
+        {
+            names: ['reverse', 'r'],
+            type: 'bool',
+            default: false,
+            help: 'manta to local sync'
+        }
+    ])
+});
+
+// read command line arguments
+var opts;
+try {
+    opts = OPTIONS_PARSER.parse(process.argv);
+    manta.checkBinEnv(opts);
+} catch (e) {
+    usage(e.message);
+}
+
+// we hijack `-v` to better suit our personal verbosity needs
+// before the rest are passed to node-manta
+if (opts.quiet) {
+    verbosity = -1;
+    delete opts.verbose;
+} else if (opts.verbose) {
+    for (var i = 0; i < 2 && opts.verbose.length > 0; i++) {
+        verbosity++;
+        opts.verbose = opts.verbose.slice(1);
+    }
+    if (opts.verbose.length === 0)
+        delete opts.verbose;
+}
+
+// initialize the logger
+manta.cli_logger(opts, LOG);
+
+// -h, return immediately
+if (opts.help) {
+    usage();
+}
+
+// check for custom headers
+opts.headers = {};
+opts.header.forEach(function (h) {
+    if (h.indexOf(':') === -1) {
+        usage('header must be in the form of "[header]: value"');
+        return;
+    }
+    var tmp = strsplit(h, ':', 2);
+    opts.headers[tmp[0]] = tmp[1].trim();
+});
+delete opts.header;
+
+// build the globs
+var globs = [];
+opts.exclude.forEach(function (s) {
+    globs.push(new Glob(s));
+});
+
+var args = opts._args;
+if (opts.completion) {
+    /*
+     * To ensure that all our stdout is written before 'process.exit()'
+     * terminates, we set stdout to blocking. This is an issue when
+     * (a) node v4 or later is used and (b) at least when exec'd by node
+     * as in test/completion.test.js. See
+     * https://gist.github.com/misterdjules/3aa4c77d8f881ffccba3b6e6f0050d03
+     * for some discussion. An alternative would be to exit the the node
+     * process without 'process.exit'.
+     */
+    if (process.stdout._handle &&
+            typeof (process.stdout._handle.setBlocking) === 'function')
+    {
+            process.stdout._handle.setBlocking(true);
+    }
+    console.log(OPTIONS_PARSER.bashCompletion({
+        name: path.basename(process.argv[1])
+    }));
+    process.exit(0);
+}
+
+// XXX maybe make this more like rsync?
+if (args.length !== 2) {
+    usage('[error] must supply exactly 2 operands\n');
+}
+
+var client = manta.createBinClient(opts);
+
+var sourcedir = args[0];
+var destdir = args[1];
+
+if (opts.reverse) {
+    // manta -> local sync
+    sourcedir = new MantaFile(client.path(sourcedir, true), client);
+    destdir = new LocalFile(path.resolve(destdir));
+} else {
+    // local -> manta sync
+    sourcedir = new LocalFile(path.resolve(sourcedir));
+    destdir = new MantaFile(client.path(destdir, true), client);
+}
+
+log(2, 'sourcedir: %s', sourcedir);
+log(2, 'destdir: %s', destdir);
+
+if (opts.dry_run)
+    log(0, '== dryrun ==');
+
+// 1. Find all source files
+log(0, 'building source file list...');
+var sourcefiles = [];
+
+var ftwOpts = {
+        ignoreSymlinks: opts.ignore_links
+};
+sourcedir.ftw(ftwOpts, function (err, ee) {
+    if (err) {
+        console.error('failed to walk files in %s - %s', sourcedir.path,
+            err.code || err.message || err);
+        process.exit(1);
+    }
+    ee.on('file', function (file) {
+        // check if the file should be excluded
+        var relativefile = file.substr(sourcedir.path.length);
+        for (var x in globs) {
+            var glob = globs[x];
+            if (glob.test(relativefile.substr(1)))
+                return log(2, 'skipping %s because it was excluded by "%s"',
+                        relativefile, globs[x]);
+        }
+
+        sourcefiles.push(relativefile);
+    });
+
+    ee.on('end', function () {
+        log(0, 'source file list built, %d files found', sourcefiles.length);
+        if (sourcefiles.length === 0)
+            return (done());
+        else if (opts.just_delete)
+            return (dodelete());
+        infoqueue.push(sourcefiles, function () {});
+        headstarted = Date.now();
+        return (0);
+    });
+});
+
+// 2. Process each source file, figure out if we need to put
+// a new version onto the destination
+var processed = 0;
+var filestoput = [];
+var errors = [];
+var headstarted;
+var infoqueue = vasync.queue(processfile, opts.parallel);
+function processfile(relativefile, cb) {
+    cb = once(nexttick(cb));
+
+    var obj = makeFiles(relativefile);
+    var dfile = obj.dfile;
+    var sfile = obj.sfile;
+
+    // check to see if the destination is there
+    dfile.info({md5: opts.md5}, function (err, dinfo) {
+        if (err) {
+            processed++;
+            if (err.code === 'NotFoundError' || err.code === 'ENOENT') {
+                log(0, '%s... not found, adding to sync list (%d/%d)',
+                        dfile.path, processed, sourcefiles.length);
+                filestoput.push(relativefile);
+            } else {
+                var s = util.format('%s... unknown error: %s (%d/%d)',
+                        dfile.path, err.code || err.message, processed,
+                        sourcefiles.length);
+                console.error(s);
+                errors.push(s);
+            }
+            cb();
+            return;
+        }
+
+        // check the source to see if they are the same
+        sfile.info({md5: opts.md5}, function (_err, sinfo) {
+            processed++;
+            if (_err) {
+                var str = util.format('%s... error: %s (%d/%d)',
+                        sfile.path, _err.message, processed,
+                        sourcefiles.length);
+                console.error(str);
+                errors.push(str);
+                cb();
+                return;
+            }
+
+            if (opts.md5) {
+                // check md5
+                if (dinfo.md5 === sinfo.md5) {
+                    log(1, '%s... md5 same as source file, skipping (%d/%d)',
+                        dfile.path, processed, sourcefiles.length);
+                } else {
+                    log(0,
+                        '%s... md5 is different, adding to sync list (%d/%d)',
+                        dfile.path, processed, sourcefiles.length);
+                    filestoput.push(relativefile);
+                }
+            } else {
+                // check size
+                if (dinfo.size === sinfo.size) {
+                    log(1, '%s... size same as source file, skipping (%d/%d)',
+                        dfile.path, processed, sourcefiles.length);
+                } else {
+                    log(0,
+                        '%s... size is different, adding to sync list (%d/%d)',
+                        dfile.path, processed, sourcefiles.length);
+                    filestoput.push(relativefile);
+                }
+            }
+            cb();
+        });
+    });
+}
+
+infoqueue.drain = function () {
+    processed = 0;
+    log(0, '\nsync list built, %d files staged for syncing (took %s)',
+            filestoput.length, prettyTime((Date.now() - headstarted) || 0));
+    if (!filestoput.length) {
+        if (opts.delete)
+            dodelete();
+        else
+            done();
+        return;
+    }
+    putqueue.push(filestoput, function () {});
+    putsstarted = Date.now();
+};
+
+// 3. sync each file that needs to be synced, lazily handling
+// directory creation
+var putqueue = vasync.queue(putfile, opts.parallel);
+var putsstarted;
+var filesput = 0;
+var filesnotput = 0;
+var bytesput = 0;
+function putfile(relativefile, cb) {
+    cb = once(nexttick(cb));
+
+    var obj = makeFiles(relativefile);
+    var dfile = obj.dfile;
+    var sfile = obj.sfile;
+
+    if (opts.dry_run) {
+        log(0, '%s... synced (dryrun)', dfile.path);
+        cb();
+        return;
+    }
+
+    // we need the source filesize to put
+    sfile.info(function (err, sinfo) {
+        if (err) {
+            var s = util.format('%s... error: %s (%d/%d)',
+                sfile.path, err.message, processed, sourcefiles.length);
+            console.error(s);
+            errors.push(s);
+            cb();
+            return;
+        }
+
+        var rs = sfile.createReadStream();
+        rs.on('error', function (_err) {
+            processed++;
+            var str = util.format('%s... error opening file: %s (%d/%d)',
+                sfile.path, _err.message, processed, filestoput.length);
+            console.error(str);
+            errors.push(str);
+            filesnotput++;
+            cb();
+        });
+
+        var _opts = {
+            size: sfile.size,
+            mkdirs: true,
+            copies: opts.copies,
+            headers: opts.headers
+        };
+        dfile.put(rs, _opts, function (_err) {
+            processed++;
+            if (_err) {
+                var str = util.format('%s... error syncing: %s (%d/%d)',
+                    dfile.path, _err.code || _err.message, processed,
+                    filestoput.length);
+                console.error(str);
+                errors.push(str);
+                filesnotput++;
+            } else {
+                log(0, '%s... synced (%d/%d)',
+                    dfile.path, processed, filestoput.length);
+                filesput++;
+                bytesput += sinfo.size;
+            }
+            cb();
+        });
+    });
+}
+
+putqueue.drain = function () {
+    processed = 0;
+    log(0,
+        '\n%d files (%s) synced successfully, '
+        + '%d files failed to sync (took %s)',
+        filesput, prettyBytes(bytesput), filesnotput,
+        prettyTime((Date.now() - putsstarted) || 0));
+    if (opts.delete)
+        dodelete();
+    else
+        done();
+};
+
+// 4. Find all destination files, and delete those that are not referenced at
+// source
+var deletequeue = vasync.queue(deletefile, opts.parallel);
+var filesdeleted = 0;
+var filesnotdeleted = 0;
+var remotefilestodelete = [];
+var deletesstarted;
+function dodelete() {
+    log(0, '\nbuilding destination file list for deletion...');
+    destdir.ftw({parallel: opts.parallel}, function (err, ee) {
+        if (err) {
+            var e = util.format('error listing destination files: %s',
+                err.code || err.message);
+            console.error('%s\n', e);
+            errors.push(e);
+            done();
+            return;
+        }
+
+        ee.on('file', function (file) {
+            var relativefile = file.substr(destdir.path.length);
+            var results = sourcefiles.filter(function (f) {
+                return (relativefile === f);
+            });
+
+            if (!results.length)
+                remotefilestodelete.push(relativefile);
+        });
+
+        ee.on('end', function () {
+         log(0, 'destination file list built, %d files found',
+            remotefilestodelete.length);
+            if (!remotefilestodelete.length)
+                return (done());
+            deletequeue.push(remotefilestodelete, function () {});
+            deletesstarted = Date.now();
+            return (0);
+        });
+    });
+}
+
+function deletefile(relativefile, cb) {
+    cb = once(nexttick(cb));
+
+    var obj = makeFiles(relativefile);
+    var dfile = obj.dfile;
+
+    if (opts.dry_run) {
+        log(0, '%s... deleted (dryrun)', dfile.path);
+        cb();
+        return;
+    }
+
+    dfile.remove(function (err) {
+        processed++;
+        if (err) {
+            var s = util.format('%s... error deleting: %s (%d/%d)',
+                dfile.path, err.code, processed, remotefilestodelete.length);
+            console.error(s);
+            errors.push(s);
+            filesnotdeleted++;
+        } else {
+            log(0, '%s... deleted (%d/%d)',
+                dfile.path, processed, remotefilestodelete.length);
+            filesdeleted++;
+        }
+        cb();
+    });
+}
+
+deletequeue.drain = function () {
+    log(0,
+        '\n%d files deleted successfully, %d files failed to delete (took %s)',
+        filesdeleted, filesnotdeleted,
+        prettyTime((Date.now() - deletesstarted) || 0));
+    done();
+};
+
+// 5. Done
+function done() {
+    var ret = 0;
+    if (errors.length) {
+        ret = 1;
+        console.error('\n== errors\n');
+        errors.forEach(function (error) {
+            console.error(error);
+        });
+    }
+    log(0, 'done');
+    client.close();
+    process.exit(ret);
+}
+
+// Signals
+process.on('SIGUSR2', function () {
+    if (infoqueue.length) {
+        log(0, '%d info tasks waiting to complete', infoqueue.tasks.length);
+        infoqueue.tasks.forEach(function (task) {
+            log(0, task.data.mantafile);
+        });
+    }
+    if (putqueue.length) {
+        log(0, '%d sync tasks waiting to complete', putqueue.tasks.length);
+        putqueue.tasks.forEach(function (task) {
+            log(0, task.data.mantafile);
+        });
+    }
+    if (deletequeue.length) {
+        log(0, '%d delete tasks waiting to complete', deletequeue.tasks.length);
+        deletequeue.tasks.forEach(function (task) {
+            log(0, task.data.mantafile);
+        });
+    }
+});

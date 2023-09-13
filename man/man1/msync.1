@@ -1,13 +1,11 @@
 .TH muntar 1 "May 2023" Manta "Manta Commands"
 .SH NAME
 .PP
-muntar \- deprecated; create a directory hierarchy from a tar file
+msync \- synchronize a directory hierarchy with Manta.
 .SH SYNOPSIS
 .PP
 \fB\fCmuntar\fR \-f tarfile [OPTION...] PATH...
 .SH DESCRIPTION
-.PP
-muntar is deprecated and will be removed in a future release.
 .PP
 The muntar utility extracts the contents of a tar file and creates
 the corresponding objects in the path specified. If the destination
@@ -16,26 +14,19 @@ directories do not exist, they are created.
 .PP
 .RS
 .nf
-$ muntar \-f shakespeare.tar  ~~/stor/plays/shakespeare
-~~/stor/plays/shakespeare/README
-~~/stor/plays/shakespeare/comedies/cymbeline
-~~/stor/plays/shakespeare/glossary
+$ muntar ./shakespeare/ ~~/stor/plays/shakespeare
+building source file list...
+source file list built, 1222 files found
+/fbulsara/stor/plays/shakespeare/index.html... not found, adding to sync list (1/1222)
+/fbulsara/stor/plays/shakespeare/test.html... not found, adding to sync list (2/1222)
+/fbulsara/stor/plays/shakespeare/favicon.ico... not found, adding to sync list (3/1222)
+/fbulsara/stor/plays/shakespeare/news.html... not found, adding to sync list (4/1222)
 \&. . .
-~~/stor/plays/shakespeare/comedies/merrywivesofwindsor
-~~/stor/plays/shakespeare/poetry/rapeoflucrece
-~~/stor/plays/shakespeare/poetry/various
-~~/stor/plays/shakespeare/poetry/sonnets
-.fi
-.RE
-.PP
-If the tarball is compressed, you can store it as an object and use muntar
-in the compute environment.
-.PP
-.RS
-.nf
-$ mput \-f /var/tmp/backup.tar.gz ~~/stor/backup.tar.gz
-$ echo ~~/stor/backup.tar.gz | \\
-    mjob create \-o \-m gzcat \-m 'muntar \-f $MANTA_INPUT_FILE ~~/stor'
+/fbulsara/stor/plays/shakespeare/History/2kinghenryvi/2henryvi.2.3.html... synced (1221/1222)
+/fbulsara/stor/plays/shakespeare/History/2kinghenryvi/2henryvi.4.8.html... synced (1222/1222)
+
+1222 files (24.07 MB) synced successfully, 0 files failed to sync (took 33s 758ms)
+done
 .fi
 .RE
 .SH OPTIONS
@@ -85,6 +76,27 @@ Manta base URL (such as \fB\fChttps://us\-central.manta.mnx.io\fR).
 .TP
 \fB\fC\-v, \-\-verbose\fR
 Print debug output to stderr.  Repeat option to increase verbosity.
+.TP
+\fB\fC\-j, \-\-just\-delete\fR
+don't send local files, just delete extra remote files.
+.TP
+\fB\fC\-l, \-\-ignore\-links\fR
+ignore symlinks.
+.TP
+\fB\fC\-m, \-\-md5\fR
+use md5 instead of file size (slower, but more accurate).
+.TP
+\fB\fC\-n, \-\-dry\-run\fR
+don't perform any remote PUT or DELETE operations.
+.TP
+\fB\fC\-p CONCURRENCY, \-\-parallel=CONCURRENCY\fR
+limit concurrent operations.
+.TP
+\fB\fC\-q, \-\-quiet\fR
+suppress all output.
+.TP
+\fB\fC\-r, \-\-reverse\fR
+manta to local sync.
 .SH ENVIRONMENT
 .TP
 \fB\fCMANTA_USER\fR
@@ -109,15 +121,8 @@ The shortcut \fB\fC~~\fR is equivalent to \fB\fC/:login\fR
 where \fB\fC:login\fR is the account login name.
 .SH DIAGNOSTICS
 .PP
-When using the \fB\fC\-v\fR option, diagnostics will be sent to stderr in bunyan
-output format.  As an example of tracing all information about a request,
-try:
-.PP
-.RS
-.nf
-$ mfind \-vv ~~/stor 2>&1 | bunyan
-.fi
-.RE
+Unlike other commands, \-v does not output bunyan logs. Instead, it will list
+each file status rather than only files that are out of sync.
 .SH NOTES
 .SH BUGS
 .PP

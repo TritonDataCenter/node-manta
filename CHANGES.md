@@ -4,6 +4,12 @@ See `CONTRIBUTING.md` for details on how to update this file
 
 ## not yet released
 
+## 5.4.0
+
+- [MANTA-5463](https://smartos.org/bugview/MANTA-5463) muntar has outlived its usefulness
+- [MANTA-5464](https://smartos.org/bugview/MANTA-5463) Want msync (manta-sync)
+- [#395](https://github.com/TritonDataCenter/node-manta/issues/395) Want npm lockfile
+
 ## 5.3.2
 
 - [#393](https://github.com/TritonDataCenter/node-manta/issues/393) AssertionError with node <=16 and OpenSSL3
