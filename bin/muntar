@@ -2,6 +2,7 @@
 // -*- mode: js -*-
 /*
  * Copyright 2018 Joyent, Inc.
+ * Copyright 2023 MNX Cloud, Inc.
  */
 
 var fs = require('fs');
@@ -271,6 +272,8 @@ function worker(client, tarball, callback, log) {
         log: log
     };
     var options = manta.parseOptions(parseArgs);
+
+    log.warn('muntar is deprecated. Switch to msync.');
 
     http.globalAgent.maxSockets = MAX_SOCKETS;
     https.globalAgent.maxSockets = MAX_SOCKETS;

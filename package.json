@@ -33,7 +33,7 @@
         "showdown": "~1.9.1",
         "smartdc-auth": "^2.4.1",
         "strsplit": "1.0.0",
-        "tar": "^4.4.16",
+        "tar": "~2.2.1",
         "uuid": "~2.0.2",
         "vasync": "^1.6.4",
         "verror": "^1.6.1",
