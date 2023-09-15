@@ -264,8 +264,13 @@ function worker(client, tarball, callback, log) {
     });
     var parser = optionsParser(name);
     var argTypes = ['mpath', 'none'];
+
+    var deprecation_warning = 'muntar is deprecated and will be removed in a' +
+        ' future release. Switch to msync.';
+
     var parseArgs = {
         name: name,
+        extra: 'path...\n\nWARNING: ' + deprecation_warning + '\n',
         parser: parser,
         argTypes: argTypes,
         parseCmdOptions: parseCmdOptions,
