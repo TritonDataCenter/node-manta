@@ -1,4 +1,4 @@
-muntar 1 "May 2023" Manta "Manta Commands"
+msync 1 "May 2023" Manta "Manta Commands"
 =======================================
 
 NAME
@@ -9,19 +9,25 @@ msync - synchronize a directory hierarchy with Manta.
 SYNOPSIS
 --------
 
-`muntar` -f tarfile [OPTION...] PATH...
+`msync` LOCAL\_PATH MANTA\_PATH
+
+`msync` -r MANTA\_PATH LOCAL\_PATH
 
 DESCRIPTION
 -----------
 
-The muntar utility extracts the contents of a tar file and creates
-the corresponding objects in the path specified. If the destination
-directories do not exist, they are created.
+The msync utility synchronizes the contents of a directory between a local
+filesystem and manta. By default a local directory will be uploaded to Manta.
+Using the `-r` flag will reverse the operation, downloading an entire Manta
+directory.
+
+Like rsync, msync will skip files already on the destination by checking the
+size (or alternatively the md5 sum).
 
 EXAMPLES
 --------
 
-    $ muntar ./shakespeare/ ~~/stor/plays/shakespeare
+    $ msync ./shakespeare/ ~~/stor/plays/shakespeare
     building source file list...
     source file list built, 1222 files found
     /fbulsara/stor/plays/shakespeare/index.html... not found, adding to sync list (1/1222)
@@ -88,7 +94,8 @@ OPTIONS
   don't send local files, just delete extra remote files.
 
 `-l, --ignore-links`
-  ignore symlinks.
+  ignore symlinks. Note: By default symlinks are followed. The linked file will
+  be uploaded as an object to Manta.
 
 `-m, --md5`
   use md5 instead of file size (slower, but more accurate).
