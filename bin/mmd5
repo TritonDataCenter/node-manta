@@ -2,6 +2,7 @@
 // -*- mode: js -*-
 /*
  * Copyright 2018 Joyent, Inc.
+ * Copyright 2023 MNX Cloud, Inc.
  */
 
 var fs = require('fs');
@@ -49,7 +50,7 @@ function parseCmdOptions(opts, parser) {
 
 
 function printEntry(p, md5) {
-    var _md5 = new Buffer(md5, 'base64');
+    var _md5 = new Buffer.from(md5, 'base64');
     console.log(_md5.toString('hex') + '  ' + p);
 }
 

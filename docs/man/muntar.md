@@ -1,10 +1,10 @@
-muntar 1 "May 2013" Manta "Manta Commands"
+muntar 1 "May 2023" Manta "Manta Commands"
 =======================================
 
 NAME
 ----
 
-muntar - create a directory hierarchy from a tar file
+muntar - deprecated; create a directory hierarchy from a tar file
 
 SYNOPSIS
 --------
@@ -13,6 +13,8 @@ SYNOPSIS
 
 DESCRIPTION
 -----------
+
+muntar is deprecated and will be removed in a future release.
 
 The muntar utility extracts the contents of a tar file and creates
 the corresponding objects in the path specified. If the destination
