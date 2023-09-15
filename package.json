@@ -42,7 +42,7 @@
     "devDependencies": {
         "forkexec": "^1.0.0",
         "semver": "^6.3.0",
-        "tap": "^12.7.0"
+        "tap": "^18.0.1"
     },
     "directories": {
         "bin": "./bin",
