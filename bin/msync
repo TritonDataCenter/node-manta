@@ -182,6 +182,26 @@ var OPTIONS_PARSER = dashdash.createParser({
 var opts;
 try {
     opts = OPTIONS_PARSER.parse(process.argv);
+    if (opts.completion) {
+        /*
+         * To ensure that all our stdout is written before 'process.exit()'
+         * terminates, we set stdout to blocking. This is an issue when
+         * (a) node v4 or later is used and (b) at least when exec'd by node
+         * as in test/completion.test.js. See
+         * https://gist.github.com/misterdjules/3aa4c77d8f881ffccba3b6e6f0050d03
+         * for some discussion. An alternative would be to exit the the node
+         * process without 'process.exit'.
+         */
+        if (process.stdout._handle &&
+                typeof (process.stdout._handle.setBlocking) === 'function')
+        {
+                process.stdout._handle.setBlocking(true);
+        }
+        console.log(OPTIONS_PARSER.bashCompletion({
+            name: path.basename(process.argv[1])
+        }));
+        process.exit(0);
+    }
     manta.checkBinEnv(opts);
 } catch (e) {
     usage(e.message);
@@ -228,26 +248,6 @@ opts.exclude.forEach(function (s) {
 });
 
 var args = opts._args;
-if (opts.completion) {
-    /*
-     * To ensure that all our stdout is written before 'process.exit()'
-     * terminates, we set stdout to blocking. This is an issue when
-     * (a) node v4 or later is used and (b) at least when exec'd by node
-     * as in test/completion.test.js. See
-     * https://gist.github.com/misterdjules/3aa4c77d8f881ffccba3b6e6f0050d03
-     * for some discussion. An alternative would be to exit the the node
-     * process without 'process.exit'.
-     */
-    if (process.stdout._handle &&
-            typeof (process.stdout._handle.setBlocking) === 'function')
-    {
-            process.stdout._handle.setBlocking(true);
-    }
-    console.log(OPTIONS_PARSER.bashCompletion({
-        name: path.basename(process.argv[1])
-    }));
-    process.exit(0);
-}
 
 // XXX maybe make this more like rsync?
 if (args.length !== 2) {
