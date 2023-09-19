@@ -29,7 +29,7 @@
         "pretty-bytes": "^1.0.3",
         "progbar": "^1.2.1",
         "readable-stream": "~1.1.9",
-        "restify-clients": "~1.6.0",
+        "restify-clients": "~4.2.0",
         "showdown": "~1.9.1",
         "smartdc-auth": "^2.4.1",
         "strsplit": "1.0.0",
