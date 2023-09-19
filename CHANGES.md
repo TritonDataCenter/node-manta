@@ -4,6 +4,11 @@ See `CONTRIBUTING.md` for details on how to update this file
 
 ## not yet released
 
+## 5.4.1
+
+- [#400](https://github.com/TritonDataCenter/node-manta/issues/400) msync --completion returns error if manta env vars are unset
+- [#401](https://github.com/TritonDataCenter/node-manta/issues/401) Newer npm breaks make cutarelease
+
 ## 5.4.0
 
 - [MANTA-5463](https://smartos.org/bugview/MANTA-5463) muntar has outlived its usefulness
@@ -12,7 +17,7 @@ See `CONTRIBUTING.md` for details on how to update this file
 
 ## 5.3.2
 
-- [#393](https://github.com/TritonDataCenter/node-manta/issues/393) AssertionError with node <=16 and OpenSSL3
+- [#393](https://github.com/TritonDataCenter/node-manta/issues/393) AssertionError with node `<=16` and OpenSSL3
 
 ## 5.3.1
 
