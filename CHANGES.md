@@ -4,6 +4,10 @@ See `CONTRIBUTING.md` for details on how to update this file
 
 ## not yet released
 
+## 5.4.2
+
+- [MANTA-5466](https://smartos.org/bugview/MANTA-5466) Update smartdc-auth for ed25519 key support
+
 ## 5.4.1
 
 - [#400](https://github.com/TritonDataCenter/node-manta/issues/400) msync --completion returns error if manta env vars are unset
