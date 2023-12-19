@@ -7,7 +7,7 @@
         "type": "git",
         "url": "https://github.com/TritonDataCenter/node-manta.git"
     },
-    "version": "5.4.1",
+    "version": "5.4.2",
     "main": "./lib/index.js",
     "dependencies": {
         "assert-plus": "^1.0.0",
@@ -31,7 +31,7 @@
         "readable-stream": "~1.1.9",
         "restify-clients": "~1.6.0",
         "showdown": "~1.9.1",
-        "smartdc-auth": "^2.4.1",
+        "smartdc-auth": "^2.6.0",
         "strsplit": "1.0.0",
         "tar": "~2.2.1",
         "uuid": "~2.0.2",
